@@ -42,7 +42,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = _getUserFriendlyErrorMessage(e);
         _isLoading = false;
       });
     }
@@ -139,6 +139,24 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       return '${difference.inHours}h ago';
     } else {
       return '${difference.inDays}d ago';
+    }
+  }
+
+  String _getUserFriendlyErrorMessage(dynamic error) {
+    final errorString = error.toString().toLowerCase();
+    
+    if (errorString.contains('socketexception') || 
+        errorString.contains('network') ||
+        errorString.contains('connection')) {
+      return 'Unable to connect to the network. Please check your internet connection.';
+    } else if (errorString.contains('timeout')) {
+      return 'Request timed out. Please try again.';
+    } else if (errorString.contains('404')) {
+      return 'Bookmarks file not found in the repository.';
+    } else if (errorString.contains('format')) {
+      return 'Invalid bookmark format. Please check the bookmarks file.';
+    } else {
+      return 'Failed to load bookmarks. Please try again later.';
     }
   }
 }

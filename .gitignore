@@ -503,3 +503,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Test data
+test_data/
