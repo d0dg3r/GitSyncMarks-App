@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-beta.3] - 2026-02
+
+### Fixed
+
+- Android Gradle Plugin upgraded (8.1.0 → 8.9.1) to fix release build on CI and Java 21
+- Kotlin upgraded to 2.1.0
+- Added `flutter: generate: true` and `flutter_localizations` for l10n build
+- Release workflow now produces APK on tag push
+
+---
+
 ## [0.2.0-beta.1] - 2026-02
 
 ### Added
