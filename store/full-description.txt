@@ -1,0 +1,23 @@
+GitSyncMarks-Mobile — view your bookmarks from your GitHub repo on your phone or tablet.
+
+**Why GitSyncMarks-Mobile?**
+Your bookmarks live in your Git repo. This app is the read-only mobile companion to the GitSyncMarks browser extension (Chrome, Firefox). Uses the same per-file format — sync once, browse offline. Works with the extension's folder structure (toolbar, menu, other, mobile).
+
+**Features:**
+• Sync from GitHub via Contents API
+• Local cache — bookmarks load from cache on app start (offline)
+• GitHub Personal Access Token — secure, repo scope
+• Folder selection — toolbar, menu, mobile, other
+• Favicons via DuckDuckGo
+• Pull-to-refresh
+• Light and dark mode (system theme)
+• German, English, Spanish, French
+
+**Setup:**
+1. Create a GitHub Personal Access Token with repo scope
+2. Enter token, repository owner, and name in Settings
+3. Set branch (main) and base path (bookmarks)
+4. Tap Sync to fetch your bookmarks
+
+**Requirements:**
+A GitSyncMarks-compatible repository. See github.com/d0dg3r/GitSyncMarks for the format. Read-only — for bidirectional sync, use the browser extension.

@@ -1,10 +1,12 @@
+import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
+
 import '../config/github_credentials.dart';
 import '../models/bookmark_node.dart';
 import '../repositories/bookmark_repository.dart';
 import '../services/bookmark_cache.dart';
 import '../services/github_api.dart';
 import '../services/storage_service.dart';
-import 'package:flutter/foundation.dart';
 
 /// App state: credentials, bookmarks, sync status.
 class BookmarkProvider extends ChangeNotifier {
@@ -185,6 +187,28 @@ class BookmarkProvider extends ChangeNotifier {
 
   void clearError() {
     _error = null;
+    notifyListeners();
+  }
+
+  /// Seeds the provider with test data for screenshot generation.
+  /// Use in test/screenshot_test.dart only.
+  @visibleForTesting
+  void seedWith(
+    List<BookmarkFolder> folders, {
+    GithubCredentials? credentials,
+  }) {
+    _rootFolders = folders;
+    _credentials = credentials ??
+        GithubCredentials(
+          token: 'test-token',
+          owner: 'user',
+          repo: 'bookmarks',
+          branch: 'main',
+        );
+    _selectedRootFolders =
+        folders.map((f) => f.title).toList();
+    _error = null;
+    _isLoading = false;
     notifyListeners();
   }
 

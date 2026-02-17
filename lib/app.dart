@@ -22,12 +22,16 @@ class _AppColors {
 }
 
 class GitSyncMarksApp extends StatelessWidget {
-  const GitSyncMarksApp({super.key});
+  const GitSyncMarksApp({super.key, this.provider});
+
+  /// Optional provider for screenshot tests; if null, creates a fresh provider.
+  final BookmarkProvider? provider;
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => BookmarkProvider()..loadCredentials(),
+    final bookmarkProvider = provider ?? BookmarkProvider()..loadCredentials();
+    return ChangeNotifierProvider<BookmarkProvider>.value(
+      value: bookmarkProvider,
       child: MaterialApp(
         title: 'GitSyncMarks',
         theme: _buildLightTheme(),
@@ -47,6 +51,9 @@ class GitSyncMarksApp extends StatelessWidget {
       ),
     );
   }
+
+  /// Theme for screenshot tests and tooling.
+  static ThemeData get testLightTheme => _buildLightTheme();
 
   static ThemeData _buildLightTheme() {
     final scheme = ColorScheme.light(

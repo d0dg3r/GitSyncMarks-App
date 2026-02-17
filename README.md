@@ -18,6 +18,12 @@
   <strong>Why GitSyncMarks-Mobile?</strong> View your <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> bookmarks on mobile. Uses the same per-file format — bookmarks live in <em>your</em> Git repo. Sync once, browse offline. Works with the browser extension's bookmark structure (toolbar, menu, other, mobile).
 </p>
 
+<p align="center">
+  <img src="metadata/en-US/images/phoneScreenshots/1_bookmarks.png" alt="Bookmark list" width="240">
+  <img src="metadata/en-US/images/phoneScreenshots/2_empty_state.png" alt="Empty state" width="240">
+  <img src="metadata/en-US/images/phoneScreenshots/3_settings.png" alt="Settings" width="240">
+</p>
+
 See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## Features
@@ -77,6 +83,11 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
    flutter run -d android
    ```
 
+4. **Regenerate screenshots** (optional):
+   ```bash
+   flutter test --update-goldens test/screenshot_test.dart
+   ```
+
 ## Releases
 
 Releases are built automatically on tag push (`v*`). Example:
@@ -93,6 +104,7 @@ The APK appears under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/r
 - **[docs/README.md](docs/README.md)** — Project context and continuation guide
 - **[docs/PLAN.md](docs/PLAN.md)** — Implementation phases
 - **[docs/BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md)** — Bookmark JSON structure
+- **[store/README.md](store/README.md)** — App store submission (descriptions, screenshots)
 - **[CHANGELOG.md](CHANGELOG.md)** — Version history
 
 ## License
