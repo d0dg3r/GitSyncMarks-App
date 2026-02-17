@@ -14,7 +14,7 @@
   "couldNotOpenUrl": "Could not open {url}",
   "@couldNotOpenUrl": {
     "placeholders": {
-      "url": {}
+      "url": {"type": "Object"}
     }
   },
   "couldNotOpenLink": "Could not open link",
