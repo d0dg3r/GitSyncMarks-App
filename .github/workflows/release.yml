@@ -52,14 +52,14 @@ jobs:
           body: |
             ## GitSyncMarks-Android ${{ steps.version.outputs.VERSION }}
 
-            Mobile app (Android) für [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) – Lesezeichen aus dem GitHub-Repo anzeigen.
+            Mobile app (Android) for [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) – view bookmarks from your GitHub repo.
 
             ### Installation
 
-            1. Lade `GitSyncMarks-Android-${{ steps.version.outputs.VERSION }}.apk` herunter
-            2. Öffne die Datei auf deinem Android-Gerät („Aus unbekannten Quellen" erlauben, falls nötig)
-            3. App installieren und in den Einstellungen GitHub-Token + Repo konfigurieren
+            1. Download `GitSyncMarks-Android-${{ steps.version.outputs.VERSION }}.apk`
+            2. Open the file on your Android device (allow from unknown sources if prompted)
+            3. Install the app and configure GitHub token and repo in Settings
 
-            Mehr Infos: [README](https://github.com/${{ github.repository }}/blob/main/README.md)
+            More info: [README](https://github.com/${{ github.repository }}/blob/main/README.md)
           files: build/release/*.apk
           draft: false

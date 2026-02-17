@@ -64,7 +64,7 @@
 
 - [x] Error handling (401, 403, network)
 - [x] Loading indicators
-- [x] Dark mode (folgt System)
+- [x] Dark mode (follows system)
 - [x] i18n (DE, EN, ES, FR)
 
 ---

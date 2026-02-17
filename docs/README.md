@@ -14,9 +14,9 @@ When opening this project fresh: read CONTEXT.md and PLAN.md first so you have f
 
 ## Current Status
 
-- Phase 1–4, 6 done: Scaffold, GitHub API, Local Cache (Hive), Bookmark UI, Favicons, Ordnerauswahl, About/Help, i18n (DE/EN/ES/FR), Dark Mode
+- Phase 1–4, 6 done: Scaffold, GitHub API, Local Cache (Hive), Bookmark UI, Favicons, folder selection, About/Help, i18n (DE/EN/ES/FR), Dark Mode
 - Settings: Token, Owner, Repo, Branch, Base Path, Root-Folder Multi-Select
-- Release-Workflow: APK-Build bei Tag-Push (v*)
+- Release workflow: APK build on tag push (v*)
 - Android + iOS
 
 ## Related Repos
