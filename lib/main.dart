@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'screens/bookmarks_screen.dart';
 
-import 'app.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  await Hive.openBox('bookmark_cache');
+void main() {
   runApp(const GitSyncMarksApp());
+}
+
+class GitSyncMarksApp extends StatelessWidget {
+  const GitSyncMarksApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'GitSyncMarks',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      home: const BookmarksScreen(),
+    );
+  }
 }

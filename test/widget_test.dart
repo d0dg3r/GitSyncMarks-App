@@ -1,14 +1,18 @@
-// Basic Flutter widget test for GitSyncMarks app.
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:gitsyncmarks_app/app.dart';
+import 'package:gitsyncmarks/main.dart';
 
 void main() {
-  testWidgets('App smoke test', (WidgetTester tester) async {
+  testWidgets('App starts and shows title', (WidgetTester tester) async {
     await tester.pumpWidget(const GitSyncMarksApp());
 
-    expect(find.text('GitSyncMarks'), findsOneWidget);
-    expect(find.text('No bookmarks yet'), findsOneWidget);
+    expect(find.text('GitSyncMarks'), findsOneOrMoreWidgets);
+  });
+
+  testWidgets('App shows loading indicator on start', (WidgetTester tester) async {
+    await tester.pumpWidget(const GitSyncMarksApp());
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 }

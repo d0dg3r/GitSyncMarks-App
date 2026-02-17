@@ -1,88 +1,59 @@
-# GitSyncMarks-Android
+# GitSyncMarks
 
-Mobile app (iOS + Android) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser. Read-only companion to the [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension.
-
-**Documentation:** See [docs/README.md](docs/README.md) – start there when resuming work.
+A cross-platform (iOS + Android) Flutter app for syncing and viewing bookmarks from the GitSyncMarks GitHub repository.
 
 ## Features
 
-- Sync bookmarks from a GitHub repo (format like GitSyncMarks)
-- Local cache: Bookmarks nach Sync gespeichert, beim Start aus Cache geladen (offline nutzbar)
-- GitHub Personal Access Token authentication
-- Select which root folders to display (toolbar, menu, mobile, other, etc.)
-- Favicons for bookmarks (via DuckDuckGo)
-- Pull-to-refresh
-- Light and Dark mode (folgt System)
-- i18n: Deutsch, Englisch, Spanisch, Französisch
-- About, Help, Settings als Tabs
+- ✅ Syncs bookmarks from the GitSyncMarks GitHub repo (read-only)
+- ✅ Displays the bookmark tree (toolbar, other, subfolders)
+- ✅ Opens URLs in the user-selected browser on tap
+- ✅ Caches bookmarks locally for offline use
+- ✅ No tab saving – read-only sync and open only
 
-## Projektverweise
+## Getting Started
 
-Das Lesezeichen-Format stammt von [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks). Dein Lesezeichen-Repo sollte diesem Format folgen (Ordner wie `toolbar`, `menu`, `other` mit JSON-Dateien pro Lesezeichen).
+### Prerequisites
 
-Dieses Projekt wurde mit [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) als Referenz entwickelt – der Browser-Extension für bidirektionale Lesezeichen-Sync.
+- Flutter SDK (3.0.0 or higher)
+- Android Studio (for Android development)
+- Xcode (for iOS development, macOS only)
 
-## Prerequisites
+### Installation
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.2.0 or later)
-
-## Setup
-
-1. **Install Flutter** (if not already installed):
+1. Clone the repository:
    ```bash
-   # Arch Linux / CachyOS
-   paru -S flutter
-   # or: https://docs.flutter.dev/get-started/install
-   ```
-
-2. **Create platform folders** (required first time):
-   ```bash
+   git clone https://github.com/d0dg3r/GitSyncMarks-Android.git
    cd GitSyncMarks-Android
-   flutter create . --org com.gitsyncmarks
    ```
 
-3. **Get dependencies**:
+2. Install dependencies:
    ```bash
    flutter pub get
    ```
 
-4. **Run on device/emulator**:
+3. Run the app:
    ```bash
    flutter run
    ```
 
-   For Android:
-   ```bash
-   flutter run -d android
-   ```
+## Usage
 
-## Project Structure
+- The app automatically syncs bookmarks from the GitSyncMarks repository on launch
+- Tap the refresh icon to manually sync bookmarks
+- Tap on a bookmark to open it in your default browser
+- Folders can be expanded/collapsed to view nested bookmarks
+- The last sync time is displayed in the app bar
 
-```
-lib/
-  main.dart              # Entry point
-  app.dart               # MaterialApp, theme, routes
-  config/
-  models/
-  repositories/
-  screens/
-    bookmark_list_screen.dart   # Main screen
-    settings_screen.dart        # Settings | About | Help (tabbed)
-  services/
-  utils/
-```
+## Architecture
 
-## Releases
+- **Models**: Bookmark data models
+- **Services**: Bookmark fetching and caching logic
+- **Screens**: UI screens for displaying bookmarks
+- **Local Storage**: SharedPreferences for offline caching
 
-Releases werden automatisch gebaut bei Tag-Push (`v*`). Beispiel:
+## Dependencies
 
-```bash
-git tag v0.2.0-beta.1
-git push origin v0.2.0-beta.1
-```
-
-Die APK erscheint unter [Releases](https://github.com/d0dg3r/GitSyncMarks-Android/releases).
-
-## License
-
-MIT – see [LICENSE](LICENSE).
+- `http`: For fetching bookmarks from GitHub
+- `path_provider`: For local file system access
+- `shared_preferences`: For persistent local storage
+- `url_launcher`: For opening URLs in external browsers
