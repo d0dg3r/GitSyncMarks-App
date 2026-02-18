@@ -1,0 +1,1 @@
+Version 0.2.0: Browser selection, improved first-start experience. Full app flow with Settings, local cache (Hive), and credential storage. Multilingual (DE, EN, ES, FR). Pull-to-refresh, favicons, light/dark mode.

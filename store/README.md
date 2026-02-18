@@ -36,6 +36,10 @@ Use `metadata/en-US/images/phoneScreenshots/` for Play Store and F-Droid.
 
 ## F-Droid
 
-1. **Summary**: First line or shortened from `short-description.txt`
-2. **Description**: Use `full-description.txt`
-3. **Screenshots**: Same as Play Store, or from metadata
+The app includes fastlane-compatible metadata for F-Droid. See `metadata/en-US/`:
+
+- `short_description.txt`, `full_description.txt` — descriptions (auto-used by F-Droid)
+- `images/icon.png` (512x512), `images/phoneScreenshots/*.png`
+- `changelogs/{versionCode}.txt` — What's New per release
+
+For submitting to F-Droid, see [fdroid/README.md](../fdroid/README.md).
