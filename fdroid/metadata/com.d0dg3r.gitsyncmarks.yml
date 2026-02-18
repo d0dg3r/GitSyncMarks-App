@@ -1,0 +1,34 @@
+# F-Droid build metadata for GitSyncMarks-Mobile
+# Copy this file to your fdroiddata fork: metadata/com.d0dg3r.gitsyncmarks.yml
+# Then: git add metadata/com.d0dg3r.gitsyncmarks.yml && git commit -m "New App: com.d0dg3r.gitsyncmarks"
+# Create MR at: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/new
+
+Categories:
+  - Internet
+  - Bookmark
+License: MIT
+AuthorName: Joe Mild
+SourceCode: https://github.com/d0dg3r/GitSyncMarks-Mobile
+IssueTracker: https://github.com/d0dg3r/GitSyncMarks-Mobile/issues
+
+RepoType: git
+Repo: https://github.com/d0dg3r/GitSyncMarks-Mobile
+
+Builds:
+  - versionName: '0.2.0-pre.2'
+    versionCode: 6
+    commit: ab3dbad232cbf4c9734ccfa950c437bc6f92d1c0
+    subdir: android
+    gradle:
+      - yes
+    output: ../build/app/outputs/flutter-apk/app-release.apk
+    sudo:
+      - apt-get update
+      - apt-get install -y -t bookworm-backports openjdk-17-jdk-headless
+      - update-alternatives --auto java
+
+UpdateCheckMode: Tags
+UpdateCheckName: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
+AutoUpdateMode: Version
+CurrentVersion: '0.2.0-pre.2'
+CurrentVersionCode: 6
