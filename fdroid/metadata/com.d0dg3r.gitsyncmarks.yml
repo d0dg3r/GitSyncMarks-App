@@ -22,13 +22,9 @@ Builds:
     gradle:
       - yes
     output: ../build/app/outputs/flutter-apk/app-release.apk
-    sudo:
-      - apt-get update
-      - apt-get install -y -t bookworm-backports openjdk-17-jdk-headless
-      - update-alternatives --auto java
 
 UpdateCheckMode: Tags
-UpdateCheckName: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
+UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
 AutoUpdateMode: Version
 CurrentVersion: '0.2.0-pre.2'
 CurrentVersionCode: 6
