@@ -13,7 +13,7 @@ Repo: https://github.com/d0dg3r/GitSyncMarks-Mobile
 Builds:
   - versionName: 0.2.0
     versionCode: 6
-    commit: ab3dbad232cbf4c9734ccfa950c437bc6f92d1c0
+    commit: 805d23f37621f774276b63090be726cddebb59cd
     output: build/app/outputs/flutter-apk/app-release.apk
     srclibs:
       - flutter@3.41.1
