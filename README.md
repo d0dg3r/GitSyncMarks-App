@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://f-droid.org/packages/com.d0dg3r.gitsyncmarks"><img src="assets/badges/badge_fdroid.png" alt="Get it on F-Droid" height="50"></a>
   <a href="https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="assets/badges/badge_github.png" alt="Get it on GitHub" height="50"></a>
-  <a href="http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="50"></a>
+  <a href="http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="assets/badges/badge_obtainium.png" alt="Get it on Obtainium" height="50"></a>
 </p>
 
 <p align="center">
