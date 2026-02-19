@@ -105,6 +105,10 @@ git push origin v0.2.0-beta.5
 
 The APK appears under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases).
 
+## Roadmap
+
+- [ ] iOS app (planned for a future release)
+
 ## Documentation
 
 - **[docs/README.md](docs/README.md)** — Project context and continuation guide
