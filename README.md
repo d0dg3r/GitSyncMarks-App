@@ -15,6 +15,12 @@
 </p>
 
 <p align="center">
+  <a href="https://f-droid.org/packages/com.d0dg3r.gitsyncmarks"><img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="75"></a>
+  <a href="https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="https://img.shields.io/badge/Get_it_on-GitHub-blue?logo=github&style=for-the-badge" alt="Get it on GitHub" height="75"></a>
+  <a href="http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="75"></a>
+</p>
+
+<p align="center">
   <strong>Why GitSyncMarks-Mobile?</strong> View your <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> bookmarks on mobile. Uses the same per-file format — bookmarks live in <em>your</em> Git repo. Sync once, browse offline. Works with the browser extension's bookmark structure (toolbar, menu, other, mobile).
 </p>
 
