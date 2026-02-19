@@ -25,9 +25,9 @@
 </p>
 
 <p align="center">
-  <img src="metadata/en-US/images/phoneScreenshots/1_bookmarks.png" alt="Bookmark list" width="240">
-  <img src="metadata/en-US/images/phoneScreenshots/2_empty_state.png" alt="Empty state" width="240">
-  <img src="metadata/en-US/images/phoneScreenshots/3_settings.png" alt="Settings" width="240">
+  <img src="metadata/en-US/images/combinedScreenshots/1_bookmarks_combined.png" alt="Bookmark list – Light &amp; Dark" width="240">
+  <img src="metadata/en-US/images/combinedScreenshots/2_empty_state_combined.png" alt="Empty state – Light &amp; Dark" width="240">
+  <img src="metadata/en-US/images/combinedScreenshots/3_settings_combined.png" alt="Settings – Light &amp; Dark" width="240">
 </p>
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.

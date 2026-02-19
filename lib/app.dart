@@ -52,8 +52,9 @@ class GitSyncMarksApp extends StatelessWidget {
     );
   }
 
-  /// Theme for screenshot tests and tooling.
+  /// Themes for screenshot tests and tooling.
   static ThemeData get testLightTheme => _buildLightTheme();
+  static ThemeData get testDarkTheme => _buildDarkTheme();
 
   static ThemeData _buildLightTheme() {
     final scheme = ColorScheme.light(

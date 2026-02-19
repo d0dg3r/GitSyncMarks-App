@@ -34,6 +34,13 @@ final _sampleFolders = [
   ),
 ];
 
+const _localizationsDelegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+];
+
 void main() {
   group('Screenshot:', () {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -53,48 +60,143 @@ void main() {
       return const SettingsScreen();
     });
   });
+
+  group('Combined:', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+
+    _combinedScreenshot('1_bookmarks', (provider) {
+      provider.seedWith(_sampleFolders);
+      return const BookmarkListScreen();
+    });
+
+    _combinedScreenshot('2_empty_state', (provider) {
+      provider.seedWith([]);
+      return const BookmarkListScreen();
+    });
+
+    _combinedScreenshot('3_settings', (provider) {
+      provider.seedWith(_sampleFolders);
+      return const SettingsScreen();
+    });
+  });
 }
 
+/// Generates per-device screenshots in both light and dark themes.
 void _screenshot(
   String description,
   Widget Function(BookmarkProvider provider) buildContent,
 ) {
-  group(description, () {
-    for (final goldenDevice in GoldenScreenshotDevices.values) {
-      testGoldens('for ${goldenDevice.name}', (tester) async {
-        final device = goldenDevice.device;
+  final themes = {
+    '': GitSyncMarksApp.testLightTheme,
+    '_dark': GitSyncMarksApp.testDarkTheme,
+  };
 
-        final provider = BookmarkProvider();
-        final content = buildContent(provider);
+  for (final entry in themes.entries) {
+    final suffix = entry.key;
+    final theme = entry.value;
 
-        await tester.pumpWidget(
-          ScreenshotApp(
-            device: device,
-            title: 'GitSyncMarks',
-            theme: GitSyncMarksApp.testLightTheme,
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: AppLocalizations.supportedLocales,
-            locale: const Locale('en'),
-            home: ChangeNotifierProvider<BookmarkProvider>.value(
-              value: provider,
-              child: content,
+    group('$description$suffix', () {
+      for (final goldenDevice in GoldenScreenshotDevices.values) {
+        testGoldens('for ${goldenDevice.name}', (tester) async {
+          final device = goldenDevice.device;
+
+          final provider = BookmarkProvider();
+          final content = buildContent(provider);
+
+          await tester.pumpWidget(
+            ScreenshotApp(
+              device: device,
+              title: 'GitSyncMarks',
+              theme: theme,
+              localizationsDelegates: _localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              locale: const Locale('en'),
+              home: ChangeNotifierProvider<BookmarkProvider>.value(
+                value: provider,
+                child: content,
+              ),
             ),
-          ),
-        );
+          );
 
-        await tester.loadAssets();
-        await tester.pumpFrames(
-          tester.widget(find.byType(ScreenshotApp)),
-          const Duration(seconds: 1),
-        );
+          await tester.loadAssets();
+          await tester.pumpFrames(
+            tester.widget(find.byType(ScreenshotApp)),
+            const Duration(seconds: 1),
+          );
 
-        await tester.expectScreenshot(device, description);
-      });
-    }
+          await tester.expectScreenshot(device, '$description$suffix');
+        });
+      }
+    });
+  }
+}
+
+/// Generates a single golden with light (left) and dark (right) side by side.
+void _combinedScreenshot(
+  String description,
+  Widget Function(BookmarkProvider provider) buildContent,
+) {
+  const phoneWidth = 427.0;
+  const phoneHeight = 952.0;
+  const totalWidth = phoneWidth * 2;
+
+  testGoldens('$description combined', (tester) async {
+    tester.view.physicalSize = const Size(totalWidth, phoneHeight);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final lightProvider = BookmarkProvider();
+    final lightContent = buildContent(lightProvider);
+    final darkProvider = BookmarkProvider();
+    final darkContent = buildContent(darkProvider);
+
+    const combinedKey = ValueKey('combined');
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Row(
+          key: combinedKey,
+          textDirection: TextDirection.ltr,
+          children: [
+            _themedApp(GitSyncMarksApp.testLightTheme, lightProvider,
+                lightContent, phoneWidth, phoneHeight),
+            _themedApp(GitSyncMarksApp.testDarkTheme, darkProvider,
+                darkContent, phoneWidth, phoneHeight),
+          ],
+        ),
+      ),
+    );
+
+    await tester.loadAssets();
+    await tester.pump(const Duration(seconds: 1));
+
+    await expectLater(
+      find.byKey(combinedKey),
+      matchesGoldenFile(
+          '../metadata/en-US/images/combinedScreenshots/${description}_combined.png'),
+    );
   });
+}
+
+Widget _themedApp(ThemeData theme, BookmarkProvider provider, Widget content,
+    double width, double height) {
+  return SizedBox(
+    width: width,
+    height: height,
+    child: MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: theme,
+      localizationsDelegates: _localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'),
+      home: ChangeNotifierProvider<BookmarkProvider>.value(
+        value: provider,
+        child: content,
+      ),
+    ),
+  );
 }
