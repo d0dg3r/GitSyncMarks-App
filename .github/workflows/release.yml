@@ -63,6 +63,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk build/release/GitSyncMarks-Mobile-${{ steps.version.outputs.VERSION }}.apk
           cd build/linux/x64/release/bundle
           zip -r ../../../../release/GitSyncMarks-Mobile-${{ steps.version.outputs.VERSION }}-linux-x64.zip .
+          tar -czf ../../../../release/GitSyncMarks-Mobile-Linux-Portable.tar.gz .
           cd -
 
       - name: Upload Android + Linux
@@ -70,6 +71,12 @@ jobs:
         with:
           name: release-android-linux
           path: build/release/
+
+      - name: Upload Linux bundle for Flatpak
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-bundle
+          path: build/release/GitSyncMarks-Mobile-Linux-Portable.tar.gz
 
   build-windows:
     runs-on: windows-latest
@@ -134,9 +141,44 @@ jobs:
           name: release-macos
           path: build/release/
 
+  build-flatpak:
+    runs-on: ubuntu-latest
+    needs: build-android-linux
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-bundle
+
+      - name: Prepare Flatpak build
+        run: |
+          cp linux-bundle/GitSyncMarks-Mobile-Linux-Portable.tar.gz flatpak/ 2>/dev/null || \
+            cp linux-bundle/build/release/GitSyncMarks-Mobile-Linux-Portable.tar.gz flatpak/ 2>/dev/null || \
+            cp "$(find linux-bundle -name '*.tar.gz' | head -1)" flatpak/GitSyncMarks-Mobile-Linux-Portable.tar.gz
+          chmod +x flatpak/build-flatpak.sh
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: GitSyncMarks-Mobile-${{ github.ref_name }}.flatpak
+          manifest-path: flatpak/io.github.d0dg3r.GitSyncMarksMobile.yml
+          cache-key: flatpak-${{ github.sha }}
+          upload-artifact: false
+
+      - name: Upload Flatpak
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-flatpak
+          path: "**/GitSyncMarks-Mobile-*.flatpak"
+
   release:
     runs-on: ubuntu-latest
-    needs: [build-android-linux, build-windows, build-macos]
+    needs: [build-android-linux, build-windows, build-macos, build-flatpak]
     steps:
       - name: Get version
         id: version
@@ -153,6 +195,7 @@ jobs:
           cp release-artifacts/release-android-linux/* build/release/ 2>/dev/null || true
           cp release-artifacts/release-windows/* build/release/ 2>/dev/null || true
           cp release-artifacts/release-macos/* build/release/ 2>/dev/null || true
+          find release-artifacts/release-flatpak -name "*.flatpak" -exec cp {} build/release/ \; 2>/dev/null || true
           ls -la build/release/
 
       - name: Detect prerelease
@@ -181,14 +224,16 @@ jobs:
             | Android | `GitSyncMarks-Mobile-${{ steps.version.outputs.VERSION }}.apk` |
             | Windows | `GitSyncMarks-Mobile-${{ steps.version.outputs.VERSION }}-windows-x64.zip` |
             | macOS | `GitSyncMarks-Mobile-${{ steps.version.outputs.VERSION }}-macos.zip` |
-            | Linux | `GitSyncMarks-Mobile-${{ steps.version.outputs.VERSION }}-linux-x64.zip` |
+            | Linux (Flatpak) | `GitSyncMarks-Mobile-${{ github.ref_name }}.flatpak` |
+            | Linux (ZIP) | `GitSyncMarks-Mobile-${{ steps.version.outputs.VERSION }}-linux-x64.zip` |
 
             ### Installation
 
             - **Android**: Download APK, open on device (allow from unknown sources if prompted), install
             - **Windows**: Extract ZIP, run `gitsyncmarks.exe`
             - **macOS**: Extract ZIP, move `gitsyncmarks.app` to Applications (or run from Downloads)
-            - **Linux**: Extract ZIP, run `./gitsyncmarks_app` (or `gitsyncmarks`)
+            - **Linux (Flatpak)**: `flatpak install --user ./GitSyncMarks-Mobile-${{ github.ref_name }}.flatpak` then `flatpak run io.github.d0dg3r.GitSyncMarksMobile`
+            - **Linux (ZIP)**: Extract ZIP, run `./gitsyncmarks_app`
 
             Configure GitHub token and repo in Settings. More info: [README](https://github.com/${{ github.repository }}/blob/main/README.md)
           files: build/release/*

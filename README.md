@@ -50,10 +50,38 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## Installation
 
+### Android
+
 1. Go to the [Releases page](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
 2. Download `GitSyncMarks-Mobile-X.X.X.apk` (or a pre-release build for testing)
 3. Open the file on your Android device (allow from unknown sources if prompted)
 4. Install the app
+
+### Linux (Flatpak, recommended)
+
+1. Download `GitSyncMarks-Mobile-vX.X.X.flatpak` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
+2. Install:
+   ```bash
+   flatpak install --user ./GitSyncMarks-Mobile-vX.X.X.flatpak
+   ```
+3. Run:
+   ```bash
+   flatpak run io.github.d0dg3r.GitSyncMarksMobile
+   ```
+
+### Linux (ZIP fallback)
+
+1. Download `GitSyncMarks-Mobile-X.X.X-linux-x64.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
+2. Extract and run:
+   ```bash
+   unzip GitSyncMarks-Mobile-X.X.X-linux-x64.zip -d GitSyncMarks-Mobile
+   cd GitSyncMarks-Mobile
+   ./gitsyncmarks_app
+   ```
+
+### Windows / macOS
+
+Download the respective `.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases), extract, and run the executable.
 
 ### Configure the app
 
@@ -117,7 +145,7 @@ git tag v0.3.0
 git push origin v0.3.0
 ```
 
-The APK appears under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases).
+Artifacts appear under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases): APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS).
 
 ## Roadmap
 
