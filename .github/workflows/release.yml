@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   build-android-linux:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,6 +80,7 @@ jobs:
           path: build/release/GitSyncMarks-Mobile-Linux-Portable.tar.gz
 
   build-windows:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -110,6 +112,7 @@ jobs:
           path: build/release/
 
   build-macos:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -142,6 +145,7 @@ jobs:
           path: build/release/
 
   build-flatpak:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     needs: build-android-linux
     container:
@@ -183,6 +187,7 @@ jobs:
           path: "**/GitSyncMarks-Mobile-*.flatpak"
 
   release:
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     needs: [build-android-linux, build-windows, build-macos, build-flatpak]
     steps:
@@ -204,20 +209,11 @@ jobs:
           find release-artifacts/release-flatpak -name "*.flatpak" -exec cp {} build/release/ \; 2>/dev/null || true
           ls -la build/release/
 
-      - name: Detect prerelease
-        id: prerelease
-        run: |
-          if [[ "${{ github.ref_name }}" =~ -(pre|alpha|beta|rc)[.-][0-9]+$ ]]; then
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-          else
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "GitSyncMarks-Mobile ${{ github.ref_name }}"
-          prerelease: ${{ steps.prerelease.outputs.prerelease }}
+          prerelease: false
           body: |
             ## GitSyncMarks-Mobile ${{ github.ref_name }}
 
