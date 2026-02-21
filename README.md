@@ -156,11 +156,17 @@ To test the Flatpak build without running the full release workflow (Windows, ma
 
 This runs only `build-android-linux` and `build-flatpak`. The `.flatpak` artifact can be downloaded from the workflow run.
 
-## Roadmap
+## Platform Status
 
-- [x] iOS app
-- [x] Desktop: Windows, macOS, Linux (single codebase; Share-from-browser on mobile only)
-- [ ] iOS build in CI (requires macOS runner)
+| Platform | Status | Notes |
+|----------|--------|-------|
+| Android  | **Stable** | Primary platform, actively developed |
+| Windows  | Alpha | Built from same codebase, developed as time permits |
+| Linux    | Alpha | Flatpak + ZIP; developed as time permits |
+| macOS    | Alpha | Built from same codebase, developed as time permits |
+| iOS      | Alpha | Built from same codebase; no CI build yet (requires macOS runner) |
+
+Android is the main focus. All other platforms share the same Flutter codebase and are maintained on a best-effort basis -- contributions welcome!
 
 ## Documentation
 
