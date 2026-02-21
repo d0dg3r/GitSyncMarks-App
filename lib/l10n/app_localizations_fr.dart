@@ -321,4 +321,227 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get folders => 'Dossiers';
+
+  @override
+  String get tabGitHub => 'GitHub';
+
+  @override
+  String get tabSync => 'Sync';
+
+  @override
+  String get tabFiles => 'Fichiers';
+
+  @override
+  String get tabHelp => 'Aide';
+
+  @override
+  String get tabAbout => 'À propos';
+
+  @override
+  String get subTabProfile => 'Profil';
+
+  @override
+  String get subTabConnection => 'Connexion';
+
+  @override
+  String get subTabExportImport => 'Exporter / Importer';
+
+  @override
+  String get subTabSettings => 'Paramètres';
+
+  @override
+  String get searchPlaceholder => 'Rechercher des favoris...';
+
+  @override
+  String noSearchResults(String query) {
+    return 'Aucun résultat pour \"$query\"';
+  }
+
+  @override
+  String get clearSearch => 'Effacer la recherche';
+
+  @override
+  String get automaticSync => 'Synchronisation automatique';
+
+  @override
+  String get autoSyncActive => 'Auto-sync actif';
+
+  @override
+  String get autoSyncDisabled => 'Auto-sync désactivé';
+
+  @override
+  String nextSyncIn(String time) {
+    return 'Prochaine sync dans $time';
+  }
+
+  @override
+  String get syncProfileRealtime => 'Temps réel';
+
+  @override
+  String get syncProfileFrequent => 'Fréquent';
+
+  @override
+  String get syncProfileNormal => 'Normal';
+
+  @override
+  String get syncProfilePowersave => 'Économie d\'énergie';
+
+  @override
+  String get syncProfileCustom => 'Personnalisé';
+
+  @override
+  String lastSynced(String time) {
+    return 'Dernière synchronisation $time';
+  }
+
+  @override
+  String get neverSynced => 'Jamais synchronisé';
+
+  @override
+  String get syncOnStart => 'Sync au démarrage de l\'app';
+
+  @override
+  String get allowMoveReorder => 'Autoriser déplacer et réordonner';
+
+  @override
+  String get allowMoveReorderDesc =>
+      'Poignées de glissement et déplacer vers dossier. Désactiver pour vue lecture seule.';
+
+  @override
+  String get allowMoveReorderDisable => 'Lecture seule (masquer les poignées)';
+
+  @override
+  String get allowMoveReorderEnable =>
+      'Activer l\'édition (afficher les poignées)';
+
+  @override
+  String bookmarkCount(int count, int folders) {
+    return '$count favoris dans $folders dossiers';
+  }
+
+  @override
+  String get syncNow => 'Synchroniser maintenant';
+
+  @override
+  String get addBookmark => 'Ajouter un favori';
+
+  @override
+  String get addBookmarkTitle => 'Ajouter un favori';
+
+  @override
+  String get bookmarkTitle => 'Titre du favori';
+
+  @override
+  String get selectFolder => 'Sélectionner le dossier';
+
+  @override
+  String get exportBookmarks => 'Exporter les favoris';
+
+  @override
+  String get settingsSyncToGit =>
+      'Synchroniser les paramètres vers Git (chiffré)';
+
+  @override
+  String get settingsSyncPassword => 'Mot de passe de chiffrement';
+
+  @override
+  String get settingsSyncPasswordHint =>
+      'Définir une fois par appareil. Doit être identique sur tous les appareils.';
+
+  @override
+  String get settingsSyncRememberPassword => 'Mémoriser le mot de passe';
+
+  @override
+  String get settingsSyncPasswordSaved =>
+      'Mot de passe enregistré (pour Push/Pull)';
+
+  @override
+  String get settingsSyncClearPassword => 'Effacer le mot de passe enregistré';
+
+  @override
+  String get settingsSyncSaveBtn => 'Enregistrer le mot de passe';
+
+  @override
+  String get settingsSyncPasswordMissing => 'Veuillez entrer un mot de passe.';
+
+  @override
+  String get settingsSyncWithBookmarks =>
+      'Synchroniser les paramètres avec les favoris';
+
+  @override
+  String get settingsSyncPush => 'Pousser les paramètres';
+
+  @override
+  String get settingsSyncPull => 'Récupérer les paramètres';
+
+  @override
+  String get settingsSyncModeLabel => 'Mode de synchronisation';
+
+  @override
+  String get settingsSyncModeGlobal =>
+      'Global — partagé sur tous les appareils';
+
+  @override
+  String get settingsSyncModeIndividual =>
+      'Individuel — cet appareil uniquement';
+
+  @override
+  String get settingsSyncImportTitle => 'Importer depuis un autre appareil';
+
+  @override
+  String get settingsSyncLoadConfigs =>
+      'Charger les configurations disponibles';
+
+  @override
+  String get settingsSyncImport => 'Importer';
+
+  @override
+  String get settingsSyncImportEmpty =>
+      'Aucune configuration d\'appareil trouvée';
+
+  @override
+  String get settingsSyncImportSuccess => 'Paramètres importés avec succès';
+
+  @override
+  String get reportIssue => 'Signaler un problème';
+
+  @override
+  String get documentation => 'Documentation';
+
+  @override
+  String get voteBacklog => 'Voter sur le backlog';
+
+  @override
+  String get discussions => 'Discussions';
+
+  @override
+  String get moveUp => 'Monter';
+
+  @override
+  String get moveDown => 'Descendre';
+
+  @override
+  String get shareLinkAddBookmark => 'Ajouter le lien partagé comme favori';
+
+  @override
+  String get clearCache => 'Vider le cache';
+
+  @override
+  String get clearCacheDesc =>
+      'Supprimer les données en cache. La synchronisation se lance automatiquement si GitHub est configuré.';
+
+  @override
+  String get clearCacheSuccess => 'Cache vidé.';
+
+  @override
+  String get moveToFolder => 'Déplacer vers le dossier';
+
+  @override
+  String get moveToFolderSuccess => 'Favori déplacé';
+
+  @override
+  String get moveToFolderFailed => 'Échec du déplacement du favori';
+
+  @override
+  String get orderUpdated => 'Ordre mis à jour';
 }

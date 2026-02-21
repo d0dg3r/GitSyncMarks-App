@@ -121,9 +121,154 @@ class GithubApi {
     return utf8.decode(base64.decode(base64Content.replaceAll('\n', '')));
   }
 
+  /// Encodes string content to base64 (for API requests).
+  String encodeContent(String content) {
+    return base64.encode(utf8.encode(content));
+  }
+
+  /// Creates or updates a file in the repository.
+  /// [path] is relative to repo root (e.g. "bookmarks/toolbar/file.json").
+  /// [content] is the raw file content (will be base64-encoded).
+  /// [message] is the commit message.
+  /// [sha] is required when updating an existing file (get from GET contents response).
+  /// Returns the new file's sha and commit sha.
+  Future<CreateOrUpdateResult> createOrUpdateFile(
+    String path,
+    String content,
+    String message, {
+    String? sha,
+  }) async {
+    final pathEncoded = path
+        .split('/')
+        .map((s) => Uri.encodeComponent(s))
+        .join('/');
+    final uri = Uri.parse('$_baseUrl/repos/$owner/$repo/contents/$pathEncoded');
+
+    final body = <String, dynamic>{
+      'message': message,
+      'content': encodeContent(content),
+      'branch': branch,
+    };
+    if (sha != null && sha.isNotEmpty) {
+      body['sha'] = sha;
+    }
+
+    final response = await _client.put(
+      uri,
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'token $token',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(body),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final message = _parseGitHubErrorMessage(response.body) ??
+          'Failed to write file: ${response.statusCode}';
+      throw GithubApiException(
+        message,
+        statusCode: response.statusCode,
+        body: response.body,
+      );
+    }
+
+    final decoded = json.decode(response.body) as Map<String, dynamic>;
+    final contentData = decoded['content'];
+    final commitData = decoded['commit'];
+    return CreateOrUpdateResult(
+      contentSha: contentData is Map ? contentData['sha'] as String? : null,
+      commitSha: commitData is Map ? commitData['sha'] as String? : null,
+    );
+  }
+
+  /// Deletes a file from the repository.
+  /// [path] is relative to repo root (e.g. "bookmarks/toolbar/file.json").
+  /// [sha] is required (get from getFileMeta).
+  Future<void> deleteFile(String path, String sha, String message) async {
+    final pathEncoded = path
+        .split('/')
+        .map((s) => Uri.encodeComponent(s))
+        .join('/');
+    final uri = Uri.parse('$_baseUrl/repos/$owner/$repo/contents/$pathEncoded');
+
+    final response = await _client.delete(
+      uri,
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'token $token',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(<String, dynamic>{
+        'message': message,
+        'sha': sha,
+        'branch': branch,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final errMsg = _parseGitHubErrorMessage(response.body) ??
+          'Failed to delete file: ${response.statusCode}';
+      throw GithubApiException(
+        errMsg,
+        statusCode: response.statusCode,
+        body: response.body,
+      );
+    }
+  }
+
+  /// Fetches a file's metadata including sha (for updates).
+  /// Returns null if file does not exist.
+  Future<FileMeta?> getFileMeta(String path) async {
+    final pathEncoded = path
+        .split('/')
+        .map((s) => Uri.encodeComponent(s))
+        .join('/');
+    final uri = Uri.parse(
+      '$_baseUrl/repos/$owner/$repo/contents/$pathEncoded?ref=${Uri.encodeQueryComponent(branch)}',
+    );
+    final response = await _client.get(
+      uri,
+      headers: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'token $token',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    );
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      final message = _parseGitHubErrorMessage(response.body) ??
+          'Failed to fetch file: ${response.statusCode}';
+      throw GithubApiException(
+        message,
+        statusCode: response.statusCode,
+        body: response.body,
+      );
+    }
+    final decoded = json.decode(response.body) as Map<String, dynamic>;
+    return FileMeta(sha: decoded['sha'] as String?);
+  }
+
   void close() {
     _client.close();
   }
+}
+
+/// Result of createOrUpdateFile.
+class CreateOrUpdateResult {
+  CreateOrUpdateResult({this.contentSha, this.commitSha});
+
+  final String? contentSha;
+  final String? commitSha;
+}
+
+/// File metadata from GitHub API.
+class FileMeta {
+  FileMeta({this.sha});
+
+  final String? sha;
 }
 
 /// Single entry from GitHub Contents API (file or directory).

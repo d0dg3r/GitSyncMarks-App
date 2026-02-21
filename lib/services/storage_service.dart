@@ -1,12 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:uuid/uuid.dart';
 
 import '../config/github_credentials.dart';
 import '../models/profile.dart';
 
 const _profilesKey = 'profiles_json';
 const _activeProfileIdKey = 'active_profile_id';
+const _settingsSyncPasswordKey = 'settings_sync_password';
+const _syncSettingsToGitKey = 'sync_settings_to_git';
+const _settingsSyncModeKey = 'settings_sync_mode';
+const _deviceIdKey = 'device_id';
 
 // Legacy single-credential keys (for migration).
 const _legacyTokenKey = 'github_token';
@@ -161,6 +166,65 @@ class StorageService {
     );
     return active.selectedRootFolders;
   }
+
+  // ---------------------------------------------------------------------------
+  // Settings sync password (device-local, never synced)
+  // ---------------------------------------------------------------------------
+
+  Future<String?> loadSettingsSyncPassword() async {
+    return _storage.read(key: _settingsSyncPasswordKey);
+  }
+
+  Future<void> saveSettingsSyncPassword(String password) async {
+    await _storage.write(key: _settingsSyncPasswordKey, value: password);
+  }
+
+  Future<void> deleteSettingsSyncPassword() async {
+    await _storage.delete(key: _settingsSyncPasswordKey);
+  }
+
+  Future<bool> hasSettingsSyncPassword() async {
+    final p = await _storage.read(key: _settingsSyncPasswordKey);
+    return p != null && p.isNotEmpty;
+  }
+
+  Future<bool> loadSyncSettingsToGit() async {
+    final v = await _storage.read(key: _syncSettingsToGitKey);
+    return v == 'true';
+  }
+
+  Future<void> saveSyncSettingsToGit(bool value) async {
+    await _storage.write(
+      key: _syncSettingsToGitKey,
+      value: value ? 'true' : 'false',
+    );
+  }
+
+  Future<String> loadSettingsSyncMode() async {
+    final v = await _storage.read(key: _settingsSyncModeKey);
+    return (v == 'individual' || v == 'global') ? v! : 'global';
+  }
+
+  Future<void> saveSettingsSyncMode(String value) async {
+    await _storage.write(
+      key: _settingsSyncModeKey,
+      value: (value == 'individual' || value == 'global') ? value : 'global',
+    );
+  }
+
+  /// Returns device ID (UUID). Generates and saves if not present (extension-compatible).
+  Future<String> getOrCreateDeviceId() async {
+    final existing = await _storage.read(key: _deviceIdKey);
+    if (existing != null && existing.isNotEmpty) return existing;
+    const uuid = Uuid();
+    final id = uuid.v4();
+    await _storage.write(key: _deviceIdKey, value: id);
+    return id;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Folder selection
+  // ---------------------------------------------------------------------------
 
   Future<void> saveSelectedRootFolders(List<String> names) async {
     final profiles = await loadProfiles();

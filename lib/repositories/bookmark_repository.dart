@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../config/github_credentials.dart';
 import '../models/bookmark_node.dart';
 import '../services/github_api.dart';
+import '../utils/bookmark_filename.dart';
 
 /// Orchestrates syncing bookmarks from GitHub and parsing the tree.
 class BookmarkRepository {
@@ -20,6 +21,190 @@ class BookmarkRepository {
     );
     try {
       return await _fetchRootFolders(api, creds.basePath);
+    } finally {
+      api.close();
+    }
+  }
+
+  /// Adds a bookmark to a folder in the repo.
+  /// [folderPath] is e.g. "bookmarks/toolbar" (basePath/folderName).
+  /// Returns true on success.
+  Future<bool> addBookmarkToFolder(
+    GithubCredentials creds,
+    String folderPath,
+    String title,
+    String url,
+  ) async {
+    final api = GithubApi(
+      token: creds.token,
+      owner: creds.owner,
+      repo: creds.repo,
+      branch: creds.branch,
+      basePath: creds.basePath,
+    );
+    try {
+      final filename = bookmarkFilename(title, url);
+      final content = json.encode({'title': title, 'url': url});
+
+      final filePath = '$folderPath/$filename';
+      await api.createOrUpdateFile(
+        filePath,
+        content,
+        'Add bookmark: $title',
+      );
+
+      final orderPath = '$folderPath/_order.json';
+      String? orderJson;
+      String? orderSha;
+      try {
+        orderJson = await api.getFileContent(orderPath);
+        final meta = await api.getFileMeta(orderPath);
+        orderSha = meta?.sha;
+      } catch (_) {}
+
+      final List<dynamic> orderList;
+      if (orderJson != null && orderJson.trim().isNotEmpty) {
+        final decoded = json.decode(orderJson);
+        orderList = decoded is List ? List.from(decoded) : [];
+      } else {
+        orderList = [];
+      }
+
+      if (!orderList.contains(filename)) {
+        orderList.insert(0, filename);
+        final newOrderJson = const JsonEncoder.withIndent('  ').convert(orderList);
+        await api.createOrUpdateFile(
+          orderPath,
+          newOrderJson,
+          'Update order: add $filename',
+          sha: orderSha,
+        );
+      }
+
+      return true;
+    } finally {
+      api.close();
+    }
+  }
+
+  /// Moves a bookmark from one folder to another in the repo.
+  /// [fromFolderPath] and [toFolderPath] are e.g. "bookmarks/toolbar" (basePath/folderName).
+  /// Returns true on success.
+  Future<bool> moveBookmarkToFolder(
+    GithubCredentials creds,
+    String fromFolderPath,
+    String toFolderPath,
+    Bookmark bookmark,
+  ) async {
+    final api = GithubApi(
+      token: creds.token,
+      owner: creds.owner,
+      repo: creds.repo,
+      branch: creds.branch,
+      basePath: creds.basePath,
+    );
+    try {
+      final sourceFilename = bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
+      final fromFilePath = '$fromFolderPath/$sourceFilename';
+
+      if (fromFolderPath == toFolderPath) return true;
+
+      final content = json.encode({'title': bookmark.title, 'url': bookmark.url});
+      final toFilename = bookmarkFilename(bookmark.title, bookmark.url);
+      final toFilePath = '$toFolderPath/$toFilename';
+
+      await api.createOrUpdateFile(toFilePath, content, 'Move bookmark: ${bookmark.title}');
+
+      final toOrderPath = '$toFolderPath/_order.json';
+      String? toOrderJson;
+      String? toOrderSha;
+      try {
+        toOrderJson = await api.getFileContent(toOrderPath);
+        final meta = await api.getFileMeta(toOrderPath);
+        toOrderSha = meta?.sha;
+      } catch (_) {}
+      final toOrderList = _orderListFromJson(toOrderJson);
+      if (!toOrderList.contains(toFilename)) {
+        toOrderList.add(toFilename);
+        await api.createOrUpdateFile(
+          toOrderPath,
+          const JsonEncoder.withIndent('  ').convert(toOrderList),
+          'Update order: add $toFilename',
+          sha: toOrderSha,
+        );
+      }
+
+      final fileMeta = await api.getFileMeta(fromFilePath);
+      if (fileMeta != null && fileMeta.sha != null) {
+        await api.deleteFile(fromFilePath, fileMeta.sha!, 'Move bookmark: ${bookmark.title}');
+      }
+
+      final fromOrderPath = '$fromFolderPath/_order.json';
+      String? fromOrderJson;
+      String? fromOrderSha;
+      try {
+        fromOrderJson = await api.getFileContent(fromOrderPath);
+        final meta = await api.getFileMeta(fromOrderPath);
+        fromOrderSha = meta?.sha;
+      } catch (_) {}
+      final fromOrderList = _orderListFromJson(fromOrderJson);
+      fromOrderList.remove(sourceFilename);
+      await api.createOrUpdateFile(
+        fromOrderPath,
+        const JsonEncoder.withIndent('  ').convert(fromOrderList),
+        'Update order: remove $sourceFilename',
+        sha: fromOrderSha,
+      );
+
+      return true;
+    } finally {
+      api.close();
+    }
+  }
+
+  List<dynamic> _orderListFromJson(String? jsonStr) {
+    if (jsonStr == null || jsonStr.trim().isEmpty) return [];
+    try {
+      final decoded = json.decode(jsonStr);
+      if (decoded is List) return List<dynamic>.from(decoded);
+    } catch (_) {}
+    return [];
+  }
+
+  /// Updates _order.json in a folder to match the given order entries.
+  Future<bool> updateOrderInFolder(
+    GithubCredentials creds,
+    String folderPath,
+    List<OrderEntry> orderEntries,
+  ) async {
+    final api = GithubApi(
+      token: creds.token,
+      owner: creds.owner,
+      repo: creds.repo,
+      branch: creds.branch,
+      basePath: creds.basePath,
+    );
+    try {
+      final orderPath = '$folderPath/_order.json';
+      final list = orderEntries.map((e) {
+        if (e.isFile) return e.filename!;
+        return {'dir': e.dirName, 'title': e.title ?? e.dirName};
+      }).toList();
+      final orderJson = const JsonEncoder.withIndent('  ').convert(list);
+
+      String? sha;
+      try {
+        final meta = await api.getFileMeta(orderPath);
+        sha = meta?.sha;
+      } catch (_) {}
+
+      await api.createOrUpdateFile(
+        orderPath,
+        orderJson,
+        'Reorder bookmarks',
+        sha: sha,
+      );
+      return true;
     } finally {
       api.close();
     }
@@ -69,8 +254,9 @@ class BookmarkRepository {
   Future<BookmarkFolder> _fetchFolder(
     GithubApi api,
     String path,
-    String title,
-  ) async {
+    String title, {
+    String? dirName,
+  }) async {
     final entries = await api.getContents(path);
     final entriesByName = {for (final e in entries) e.name: e};
 
@@ -91,6 +277,26 @@ class BookmarkRepository {
     }
     if (orderJson != null) {
       orderEntries = _parseOrder(orderJson);
+      // Append dirs from disk not in _order.json (like extension: "picked up automatically")
+      final orderDirNames = orderEntries
+          .where((e) => !e.isFile)
+          .map((e) => e.dirName!)
+          .toSet();
+      for (final e in entries) {
+        if (e.type == 'dir' && !orderDirNames.contains(e.name)) {
+          orderEntries = [...orderEntries, OrderEntry.folder(e.name, e.name)];
+        }
+      }
+      // Append files from disk not in _order.json
+      final orderFiles = orderEntries.where((e) => e.isFile).map((e) => e.filename!).toSet();
+      for (final e in entries) {
+        if (e.type == 'file' &&
+            e.name.endsWith('.json') &&
+            e.name != '_order.json' &&
+            !orderFiles.contains(e.name)) {
+          orderEntries = [...orderEntries, OrderEntry.file(e.name)];
+        }
+      }
     } else {
       // No _order.json: use natural order (files first, then dirs)
       final files = entries
@@ -123,7 +329,7 @@ class BookmarkRepository {
             continue;
           }
         }
-        final bookmark = _parseBookmark(content);
+        final bookmark = _parseBookmark(content, filename);
         if (bookmark != null) {
           children.add(bookmark);
         }
@@ -143,22 +349,21 @@ class BookmarkRepository {
             api,
             '$path/${subdirEntry.name}',
             entry.title ?? subdirEntry.name,
+            dirName: subdirEntry.name,
           );
-          if (_hasContent(subfolder)) {
-            children.add(subfolder);
-          }
+          // Always add subfolders to preserve structure (incl. empty ones)
+          children.add(subfolder);
         }
       }
     }
 
-    return BookmarkFolder(title: title, children: children);
+    final dName = dirName ?? path.split('/').lastOrNull;
+    return BookmarkFolder(title: title, children: children, dirName: dName);
   }
 
+  /// Returns true if folder has bookmarks or subfolders (incl. empty subfolders).
   bool _hasContent(BookmarkFolder folder) {
-    for (final child in folder.children) {
-      if (child is Bookmark) return true;
-      if (child is BookmarkFolder && _hasContent(child)) return true;
-    }
+    if (folder.children.isNotEmpty) return true;
     return false;
   }
 
@@ -188,7 +393,7 @@ class BookmarkRepository {
     }).whereType<OrderEntry>().toList();
   }
 
-  Bookmark? _parseBookmark(String jsonStr) {
+  Bookmark? _parseBookmark(String jsonStr, [String? filename]) {
     try {
       final map = json.decode(jsonStr) as Map<String, dynamic>;
       final title = (map['title'] ?? map['name']) as String?;
@@ -197,7 +402,7 @@ class BookmarkRepository {
           title.isNotEmpty &&
           url != null &&
           url.toString().isNotEmpty) {
-        return Bookmark(title: title, url: url.toString());
+        return Bookmark(title: title, url: url.toString(), filename: filename);
       }
     } catch (_) {}
     return null;

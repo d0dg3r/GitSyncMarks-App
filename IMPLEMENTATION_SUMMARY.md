@@ -1,7 +1,15 @@
 # Implementation Summary
 
 ## Overview
-Successfully implemented a cross-platform Flutter application for iOS and Android that syncs and displays bookmarks from the GitSyncMarks GitHub repository.
+Successfully implemented a cross-platform Flutter application for iOS and Android that syncs and displays bookmarks from the GitSyncMarks GitHub repository. As of v0.3.0, the app supports move, reorder, add-via-share, and encrypted settings sync (extension-compatible).
+
+## v0.3.0 Additions
+
+- **Settings Sync to Git**: Extension-compatible encryption (gitsyncmarks-enc:v1), Global/Individual mode, Push/Pull, Import from other device
+- **Move bookmarks**: Long-press → hierarchical folder picker (including subfolders)
+- **Reorder bookmarks**: Drag-and-drop in root and subfolders; persisted to _order.json
+- **Share link as bookmark**: receive_sharing_intent for URLs from browser
+- **Recursive folder display**: Subfolders and nested bookmarks
 
 ## ✅ Requirements Met
 

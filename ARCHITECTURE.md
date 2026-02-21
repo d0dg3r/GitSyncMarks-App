@@ -28,37 +28,30 @@ GitSyncMarks is a Flutter application following a clean architecture pattern wit
 ### lib/models/
 Contains data models that represent the domain entities.
 
-- `bookmark.dart`: Bookmark model with JSON serialization
+- `bookmark_node.dart`: BookmarkNode, BookmarkFolder, Bookmark with JSON serialization
   - Represents both folders and link bookmarks
   - Supports nested hierarchical structure
-  - Handles multiple JSON formats
+  - GitSyncMarks per-file format
+- `profile.dart`: Profile with credentials, sync settings, selected folders
 
 ### lib/services/
 Contains business logic and external integrations.
 
-- `bookmark_service.dart`: Main service for bookmark operations
-  - Fetches bookmarks from GitHub
-  - Handles local caching with SharedPreferences
-  - Parses multiple bookmark formats
-  - Implements offline-first strategy
+- `github_api.dart`: GitHub Contents API client (GET, PUT, DELETE)
+- `settings_sync_service.dart`: Encrypted settings push/pull (extension-compatible)
+- `settings_crypto.dart`: PBKDF2 + AES-256-GCM (gitsyncmarks-enc:v1)
+- `storage_service.dart`: flutter_secure_storage for credentials, profiles, settings sync password
+- `bookmark_cache.dart`: Hive-based offline cache
+
+### lib/repositories/
+- `bookmark_repository.dart`: Fetches bookmarks, move, reorder, add; orchestrates GitHub API
 
 ### lib/screens/
-Contains full-screen UI components.
+- `bookmark_list_screen.dart`: Main screen with folder tabs, ReorderableListView, move-to-folder
+- `settings_screen.dart`: Tabbed Settings (GitHub, Sync, Files, Help, About)
 
-- `bookmarks_screen.dart`: Main screen displaying bookmark tree
-  - Manages app state (loading, error, success)
-  - Handles user interactions
-  - Displays last sync time
-  - Provides refresh functionality
-
-### lib/widgets/
-Contains reusable UI components.
-
-- Currently contains `BookmarkTile` (inline in bookmarks_screen.dart)
-  - Recursive widget for displaying bookmarks
-  - Handles both folders and links
-  - Uses ExpansionTile for folders
-  - Uses ListTile for links
+### lib/providers/
+- `bookmark_provider.dart`: App state, sync, move, reorder; uses ChangeNotifier
 
 ### lib/main.dart
 Application entry point.
@@ -114,18 +107,13 @@ External Browser Opens
 
 ## State Management
 
-The app uses Flutter's built-in `StatefulWidget` for state management.
+The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 
-### State Variables
-- `_bookmarks`: List of root bookmarks
-- `_isLoading`: Loading state indicator
-- `_error`: Error message (if any)
-- `_lastSync`: Timestamp of last successful sync
-
-### State Updates
-- Initial load on app start
-- Manual refresh via button
-- Error states with fallback to cache
+### State (BookmarkProvider)
+- `_rootFolders`, `_credentials`, `_profiles`, `_activeProfileId`
+- `_lastSyncTime`, `_isLoading`, `_error`
+- `_searchQuery`, `_selectedRootFolders`
+- Auto-sync timer, sync-on-start
 
 ## Caching Strategy
 
@@ -136,10 +124,9 @@ The app uses Flutter's built-in `StatefulWidget` for state management.
 4. On failure: fallback to cache if available
 
 ### Cache Implementation
-- Uses SharedPreferences for persistent storage
-- Stores JSON-serialized bookmark data
+- Uses Hive for bookmark cache (BookmarkCacheService)
+- flutter_secure_storage for credentials, profiles, settings sync password
 - Stores last sync timestamp
-- No expiration (manual refresh required)
 
 ## Error Handling
 
@@ -193,14 +180,11 @@ The app uses Flutter's built-in `StatefulWidget` for state management.
 ### Integration Tests
 - (Future) End-to-end user flows
 
-## Future Enhancements
+## Features (v0.3.0)
 
-Potential improvements while maintaining read-only nature:
-- Search functionality
-- Bookmark sorting options
-- Multiple repository support
-- Sync scheduling
-- Export bookmarks
-- Statistics and analytics
-- Dark mode
-- Accessibility improvements
+- Settings Sync to Git (extension-compatible, Global/Individual)
+- Move bookmarks to folder (hierarchical picker)
+- Reorder bookmarks (drag-and-drop, persisted)
+- Share link as bookmark (receive_sharing_intent)
+- Recursive folder display
+- Search, Export settings, Export bookmarks

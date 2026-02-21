@@ -319,4 +319,223 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get folders => 'Carpetas';
+
+  @override
+  String get tabGitHub => 'GitHub';
+
+  @override
+  String get tabSync => 'Sync';
+
+  @override
+  String get tabFiles => 'Archivos';
+
+  @override
+  String get tabHelp => 'Ayuda';
+
+  @override
+  String get tabAbout => 'Acerca de';
+
+  @override
+  String get subTabProfile => 'Perfil';
+
+  @override
+  String get subTabConnection => 'Conexión';
+
+  @override
+  String get subTabExportImport => 'Exportar / Importar';
+
+  @override
+  String get subTabSettings => 'Ajustes';
+
+  @override
+  String get searchPlaceholder => 'Buscar marcadores...';
+
+  @override
+  String noSearchResults(String query) {
+    return 'Sin resultados para \"$query\"';
+  }
+
+  @override
+  String get clearSearch => 'Borrar búsqueda';
+
+  @override
+  String get automaticSync => 'Sincronización automática';
+
+  @override
+  String get autoSyncActive => 'Auto-sync activo';
+
+  @override
+  String get autoSyncDisabled => 'Auto-sync desactivado';
+
+  @override
+  String nextSyncIn(String time) {
+    return 'Próximo sync en $time';
+  }
+
+  @override
+  String get syncProfileRealtime => 'Tiempo real';
+
+  @override
+  String get syncProfileFrequent => 'Frecuente';
+
+  @override
+  String get syncProfileNormal => 'Normal';
+
+  @override
+  String get syncProfilePowersave => 'Ahorro de energía';
+
+  @override
+  String get syncProfileCustom => 'Personalizado';
+
+  @override
+  String lastSynced(String time) {
+    return 'Última sincronización $time';
+  }
+
+  @override
+  String get neverSynced => 'Nunca sincronizado';
+
+  @override
+  String get syncOnStart => 'Sync al iniciar la app';
+
+  @override
+  String get allowMoveReorder => 'Permitir mover y reordenar';
+
+  @override
+  String get allowMoveReorderDesc =>
+      'Asas de arrastre y mover a carpeta. Desactivar para vista solo lectura.';
+
+  @override
+  String get allowMoveReorderDisable => 'Solo lectura (ocultar asas)';
+
+  @override
+  String get allowMoveReorderEnable => 'Activar edición (mostrar asas)';
+
+  @override
+  String bookmarkCount(int count, int folders) {
+    return '$count marcadores en $folders carpetas';
+  }
+
+  @override
+  String get syncNow => 'Sincronizar ahora';
+
+  @override
+  String get addBookmark => 'Añadir marcador';
+
+  @override
+  String get addBookmarkTitle => 'Añadir marcador';
+
+  @override
+  String get bookmarkTitle => 'Título del marcador';
+
+  @override
+  String get selectFolder => 'Seleccionar carpeta';
+
+  @override
+  String get exportBookmarks => 'Exportar marcadores';
+
+  @override
+  String get settingsSyncToGit => 'Sincronizar ajustes con Git (encriptado)';
+
+  @override
+  String get settingsSyncPassword => 'Contraseña de cifrado';
+
+  @override
+  String get settingsSyncPasswordHint =>
+      'Establecer una vez por dispositivo. Debe ser la misma en todos los dispositivos.';
+
+  @override
+  String get settingsSyncRememberPassword => 'Recordar contraseña';
+
+  @override
+  String get settingsSyncPasswordSaved =>
+      'Contraseña guardada (para Push/Pull)';
+
+  @override
+  String get settingsSyncClearPassword => 'Borrar contraseña guardada';
+
+  @override
+  String get settingsSyncSaveBtn => 'Guardar contraseña';
+
+  @override
+  String get settingsSyncPasswordMissing =>
+      'Por favor, introduce la contraseña.';
+
+  @override
+  String get settingsSyncWithBookmarks => 'Sincronizar ajustes con marcadores';
+
+  @override
+  String get settingsSyncPush => 'Subir ajustes';
+
+  @override
+  String get settingsSyncPull => 'Cargar ajustes';
+
+  @override
+  String get settingsSyncModeLabel => 'Modo de sincronización';
+
+  @override
+  String get settingsSyncModeGlobal =>
+      'Global — compartido en todos los dispositivos';
+
+  @override
+  String get settingsSyncModeIndividual => 'Individual — solo este dispositivo';
+
+  @override
+  String get settingsSyncImportTitle => 'Importar desde otro dispositivo';
+
+  @override
+  String get settingsSyncLoadConfigs => 'Cargar configuraciones disponibles';
+
+  @override
+  String get settingsSyncImport => 'Importar';
+
+  @override
+  String get settingsSyncImportEmpty =>
+      'No se encontraron configuraciones de dispositivos';
+
+  @override
+  String get settingsSyncImportSuccess => 'Ajustes importados correctamente';
+
+  @override
+  String get reportIssue => 'Reportar problema';
+
+  @override
+  String get documentation => 'Documentación';
+
+  @override
+  String get voteBacklog => 'Votar en backlog';
+
+  @override
+  String get discussions => 'Discusiones';
+
+  @override
+  String get moveUp => 'Subir';
+
+  @override
+  String get moveDown => 'Bajar';
+
+  @override
+  String get shareLinkAddBookmark => 'Añadir enlace compartido como marcador';
+
+  @override
+  String get clearCache => 'Borrar caché';
+
+  @override
+  String get clearCacheDesc =>
+      'Eliminar datos en caché. Se sincronizará automáticamente si GitHub está configurado.';
+
+  @override
+  String get clearCacheSuccess => 'Caché borrada.';
+
+  @override
+  String get moveToFolder => 'Mover a carpeta';
+
+  @override
+  String get moveToFolderSuccess => 'Marcador movido';
+
+  @override
+  String get moveToFolderFailed => 'Error al mover el marcador';
+
+  @override
+  String get orderUpdated => 'Orden actualizado';
 }

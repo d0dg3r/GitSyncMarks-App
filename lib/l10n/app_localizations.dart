@@ -653,6 +653,414 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Folders'**
   String get folders;
+
+  /// No description provided for @tabGitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub'**
+  String get tabGitHub;
+
+  /// No description provided for @tabSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get tabSync;
+
+  /// No description provided for @tabFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get tabFiles;
+
+  /// No description provided for @tabHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get tabHelp;
+
+  /// No description provided for @tabAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get tabAbout;
+
+  /// No description provided for @subTabProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get subTabProfile;
+
+  /// No description provided for @subTabConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection'**
+  String get subTabConnection;
+
+  /// No description provided for @subTabExportImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export / Import'**
+  String get subTabExportImport;
+
+  /// No description provided for @subTabSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get subTabSettings;
+
+  /// No description provided for @searchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search bookmarks...'**
+  String get searchPlaceholder;
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for \"{query}\"'**
+  String noSearchResults(String query);
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearch;
+
+  /// No description provided for @automaticSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic synchronization'**
+  String get automaticSync;
+
+  /// No description provided for @autoSyncActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-sync active'**
+  String get autoSyncActive;
+
+  /// No description provided for @autoSyncDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-sync disabled'**
+  String get autoSyncDisabled;
+
+  /// No description provided for @nextSyncIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Next sync in {time}'**
+  String nextSyncIn(String time);
+
+  /// No description provided for @syncProfileRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Real-time'**
+  String get syncProfileRealtime;
+
+  /// No description provided for @syncProfileFrequent.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequent'**
+  String get syncProfileFrequent;
+
+  /// No description provided for @syncProfileNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get syncProfileNormal;
+
+  /// No description provided for @syncProfilePowersave.
+  ///
+  /// In en, this message translates to:
+  /// **'Power save'**
+  String get syncProfilePowersave;
+
+  /// No description provided for @syncProfileCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get syncProfileCustom;
+
+  /// No description provided for @lastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced {time}'**
+  String lastSynced(String time);
+
+  /// No description provided for @neverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get neverSynced;
+
+  /// No description provided for @syncOnStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync on app start'**
+  String get syncOnStart;
+
+  /// No description provided for @allowMoveReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow move and reorder'**
+  String get allowMoveReorder;
+
+  /// No description provided for @allowMoveReorderDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag handles and move-to-folder. Disable for read-only view.'**
+  String get allowMoveReorderDesc;
+
+  /// No description provided for @allowMoveReorderDisable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable read-only (hide handles)'**
+  String get allowMoveReorderDisable;
+
+  /// No description provided for @allowMoveReorderEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable editing (show handles)'**
+  String get allowMoveReorderEnable;
+
+  /// No description provided for @bookmarkCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} bookmarks in {folders} folders'**
+  String bookmarkCount(int count, int folders);
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Now'**
+  String get syncNow;
+
+  /// No description provided for @addBookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bookmark'**
+  String get addBookmark;
+
+  /// No description provided for @addBookmarkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Bookmark'**
+  String get addBookmarkTitle;
+
+  /// No description provided for @bookmarkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark title'**
+  String get bookmarkTitle;
+
+  /// No description provided for @selectFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select folder'**
+  String get selectFolder;
+
+  /// No description provided for @exportBookmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Export bookmarks'**
+  String get exportBookmarks;
+
+  /// No description provided for @settingsSyncToGit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync settings to Git (encrypted)'**
+  String get settingsSyncToGit;
+
+  /// No description provided for @settingsSyncPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Encryption password'**
+  String get settingsSyncPassword;
+
+  /// No description provided for @settingsSyncPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set once per device. Must be the same on all devices.'**
+  String get settingsSyncPasswordHint;
+
+  /// No description provided for @settingsSyncRememberPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Remember password'**
+  String get settingsSyncRememberPassword;
+
+  /// No description provided for @settingsSyncPasswordSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Password saved (used for Push/Pull)'**
+  String get settingsSyncPasswordSaved;
+
+  /// No description provided for @settingsSyncClearPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear saved password'**
+  String get settingsSyncClearPassword;
+
+  /// No description provided for @settingsSyncSaveBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Save password'**
+  String get settingsSyncSaveBtn;
+
+  /// No description provided for @settingsSyncPasswordMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a password.'**
+  String get settingsSyncPasswordMissing;
+
+  /// No description provided for @settingsSyncWithBookmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync settings when syncing bookmarks'**
+  String get settingsSyncWithBookmarks;
+
+  /// No description provided for @settingsSyncPush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push settings'**
+  String get settingsSyncPush;
+
+  /// No description provided for @settingsSyncPull.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull settings'**
+  String get settingsSyncPull;
+
+  /// No description provided for @settingsSyncModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync mode'**
+  String get settingsSyncModeLabel;
+
+  /// No description provided for @settingsSyncModeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'Global — shared across all devices'**
+  String get settingsSyncModeGlobal;
+
+  /// No description provided for @settingsSyncModeIndividual.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual — this device only'**
+  String get settingsSyncModeIndividual;
+
+  /// No description provided for @settingsSyncImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from other device'**
+  String get settingsSyncImportTitle;
+
+  /// No description provided for @settingsSyncLoadConfigs.
+  ///
+  /// In en, this message translates to:
+  /// **'Load available configs'**
+  String get settingsSyncLoadConfigs;
+
+  /// No description provided for @settingsSyncImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get settingsSyncImport;
+
+  /// No description provided for @settingsSyncImportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No device configs found'**
+  String get settingsSyncImportEmpty;
+
+  /// No description provided for @settingsSyncImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings imported successfully'**
+  String get settingsSyncImportSuccess;
+
+  /// No description provided for @reportIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Issue'**
+  String get reportIssue;
+
+  /// No description provided for @documentation.
+  ///
+  /// In en, this message translates to:
+  /// **'Documentation'**
+  String get documentation;
+
+  /// No description provided for @voteBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Vote on backlog'**
+  String get voteBacklog;
+
+  /// No description provided for @discussions.
+  ///
+  /// In en, this message translates to:
+  /// **'Discussions'**
+  String get discussions;
+
+  /// No description provided for @moveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get moveUp;
+
+  /// No description provided for @moveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get moveDown;
+
+  /// No description provided for @shareLinkAddBookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Add shared link as bookmark'**
+  String get shareLinkAddBookmark;
+
+  /// No description provided for @clearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cache'**
+  String get clearCache;
+
+  /// No description provided for @clearCacheDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove cached bookmark data. Sync will run automatically if GitHub is configured.'**
+  String get clearCacheDesc;
+
+  /// No description provided for @clearCacheSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache cleared.'**
+  String get clearCacheSuccess;
+
+  /// No description provided for @moveToFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get moveToFolder;
+
+  /// No description provided for @moveToFolderSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark moved'**
+  String get moveToFolderSuccess;
+
+  /// No description provided for @moveToFolderFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to move bookmark'**
+  String get moveToFolderFailed;
+
+  /// No description provided for @orderUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Order updated'**
+  String get orderUpdated;
 }
 
 class _AppLocalizationsDelegate

@@ -11,7 +11,7 @@
 
 <p align="center">
   Mobile app (iOS + Android) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.<br>
-  Read-only companion to the <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> browser extension.
+  Companion to the <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> browser extension. Supports move, reorder, add via share, and encrypted settings sync.
 </p>
 
 <p align="center">
@@ -35,6 +35,10 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 ## Features
 
 - **Sync from GitHub**: Bookmarks from your GitSyncMarks-compatible repository via Contents API
+- **Settings Sync to Git**: Encrypted sync (extension-compatible), Global/Individual mode, Import from other device
+- **Move bookmarks**: Long-press to move bookmarks to any folder (including subfolders)
+- **Reorder bookmarks**: Drag-and-drop to reorder; changes persisted to repo
+- **Share link as bookmark**: Add shared URLs from browser or other apps as bookmarks
 - **Local cache**: Bookmarks saved after sync, loaded from cache on app start (offline-capable)
 - **GitHub Personal Access Token**: Secure authentication with `repo` scope
 - **Folder selection**: Choose which root folders to display (toolbar, menu, mobile, other)
@@ -63,7 +67,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## Project References
 
-The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks). Your repo should use folders like `toolbar`, `menu`, `other`, `mobile` with JSON files per bookmark. This app is read-only — for bidirectional sync, use the [browser extension](https://github.com/d0dg3r/GitSyncMarks).
+The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks). Your repo should use folders like `toolbar`, `menu`, `other`, `mobile` with JSON files per bookmark. The app supports moving, reordering, and adding bookmarks. Settings can be synced encrypted (extension-compatible). For full bidirectional sync, use the [browser extension](https://github.com/d0dg3r/GitSyncMarks).
 
 ## Prerequisites (Development)
 
@@ -99,8 +103,8 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
 Releases are built automatically on tag push (`v*`). Example:
 
 ```bash
-git tag v0.2.0-beta.5
-git push origin v0.2.0-beta.5
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 The APK appears under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases).

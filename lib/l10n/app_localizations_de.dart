@@ -321,4 +321,226 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get folders => 'Ordner';
+
+  @override
+  String get tabGitHub => 'GitHub';
+
+  @override
+  String get tabSync => 'Sync';
+
+  @override
+  String get tabFiles => 'Dateien';
+
+  @override
+  String get tabHelp => 'Hilfe';
+
+  @override
+  String get tabAbout => 'Über';
+
+  @override
+  String get subTabProfile => 'Profil';
+
+  @override
+  String get subTabConnection => 'Verbindung';
+
+  @override
+  String get subTabExportImport => 'Export / Import';
+
+  @override
+  String get subTabSettings => 'Einstellungen';
+
+  @override
+  String get searchPlaceholder => 'Lesezeichen suchen...';
+
+  @override
+  String noSearchResults(String query) {
+    return 'Keine Ergebnisse für \"$query\"';
+  }
+
+  @override
+  String get clearSearch => 'Suche löschen';
+
+  @override
+  String get automaticSync => 'Automatische Synchronisation';
+
+  @override
+  String get autoSyncActive => 'Auto-Sync aktiv';
+
+  @override
+  String get autoSyncDisabled => 'Auto-Sync deaktiviert';
+
+  @override
+  String nextSyncIn(String time) {
+    return 'Nächster Sync in $time';
+  }
+
+  @override
+  String get syncProfileRealtime => 'Echtzeit';
+
+  @override
+  String get syncProfileFrequent => 'Häufig';
+
+  @override
+  String get syncProfileNormal => 'Normal';
+
+  @override
+  String get syncProfilePowersave => 'Energiesparen';
+
+  @override
+  String get syncProfileCustom => 'Benutzerdefiniert';
+
+  @override
+  String lastSynced(String time) {
+    return 'Zuletzt synchronisiert $time';
+  }
+
+  @override
+  String get neverSynced => 'Noch nie synchronisiert';
+
+  @override
+  String get syncOnStart => 'Sync beim App-Start';
+
+  @override
+  String get allowMoveReorder => 'Verschieben und Sortieren erlauben';
+
+  @override
+  String get allowMoveReorderDesc =>
+      'Zieh-Handles und In-Ordner-verschieben. Deaktivieren für schreibgeschützte Ansicht.';
+
+  @override
+  String get allowMoveReorderDisable =>
+      'Schreibschutz ein (Handles ausblenden)';
+
+  @override
+  String get allowMoveReorderEnable =>
+      'Bearbeiten aktivieren (Handles anzeigen)';
+
+  @override
+  String bookmarkCount(int count, int folders) {
+    return '$count Lesezeichen in $folders Ordnern';
+  }
+
+  @override
+  String get syncNow => 'Jetzt synchronisieren';
+
+  @override
+  String get addBookmark => 'Lesezeichen hinzufügen';
+
+  @override
+  String get addBookmarkTitle => 'Lesezeichen hinzufügen';
+
+  @override
+  String get bookmarkTitle => 'Lesezeichentitel';
+
+  @override
+  String get selectFolder => 'Ordner auswählen';
+
+  @override
+  String get exportBookmarks => 'Lesezeichen exportieren';
+
+  @override
+  String get settingsSyncToGit =>
+      'Einstellungen zu Git synchronisieren (verschlüsselt)';
+
+  @override
+  String get settingsSyncPassword => 'Verschlüsselungspasswort';
+
+  @override
+  String get settingsSyncPasswordHint =>
+      'Einmal pro Gerät setzen. Muss auf allen Geräten gleich sein.';
+
+  @override
+  String get settingsSyncRememberPassword => 'Passwort merken';
+
+  @override
+  String get settingsSyncPasswordSaved =>
+      'Passwort gespeichert (für Push/Pull)';
+
+  @override
+  String get settingsSyncClearPassword => 'Gespeichertes Passwort löschen';
+
+  @override
+  String get settingsSyncSaveBtn => 'Passwort speichern';
+
+  @override
+  String get settingsSyncPasswordMissing => 'Bitte Passwort eingeben.';
+
+  @override
+  String get settingsSyncWithBookmarks =>
+      'Einstellungen bei Lesezeichen-Sync mitsynchronisieren';
+
+  @override
+  String get settingsSyncPush => 'Einstellungen hochladen';
+
+  @override
+  String get settingsSyncPull => 'Einstellungen laden';
+
+  @override
+  String get settingsSyncModeLabel => 'Sync-Modus';
+
+  @override
+  String get settingsSyncModeGlobal => 'Global — für alle Geräte gemeinsam';
+
+  @override
+  String get settingsSyncModeIndividual => 'Individuell — nur dieses Gerät';
+
+  @override
+  String get settingsSyncImportTitle => 'Von anderem Gerät importieren';
+
+  @override
+  String get settingsSyncLoadConfigs => 'Verfügbare Konfigurationen laden';
+
+  @override
+  String get settingsSyncImport => 'Importieren';
+
+  @override
+  String get settingsSyncImportEmpty => 'Keine Geräte-Konfigurationen gefunden';
+
+  @override
+  String get settingsSyncImportSuccess =>
+      'Einstellungen erfolgreich importiert';
+
+  @override
+  String get reportIssue => 'Fehler melden';
+
+  @override
+  String get documentation => 'Dokumentation';
+
+  @override
+  String get voteBacklog => 'Backlog bewerten';
+
+  @override
+  String get discussions => 'Diskussionen';
+
+  @override
+  String get moveUp => 'Nach oben';
+
+  @override
+  String get moveDown => 'Nach unten';
+
+  @override
+  String get shareLinkAddBookmark =>
+      'Geteilten Link als Lesezeichen hinzufügen';
+
+  @override
+  String get clearCache => 'Cache leeren';
+
+  @override
+  String get clearCacheDesc =>
+      'Gecachte Lesezeichen-Daten entfernen. Bei konfiguriertem GitHub wird automatisch synchronisiert.';
+
+  @override
+  String get clearCacheSuccess => 'Cache geleert.';
+
+  @override
+  String get moveToFolder => 'In Ordner verschieben';
+
+  @override
+  String get moveToFolderSuccess => 'Lesezeichen verschoben';
+
+  @override
+  String get moveToFolderFailed => 'Lesezeichen konnte nicht verschoben werden';
+
+  @override
+  String get orderUpdated => 'Sortierung aktualisiert';
 }

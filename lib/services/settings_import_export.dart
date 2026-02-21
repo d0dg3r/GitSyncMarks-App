@@ -8,10 +8,18 @@ import '../models/profile.dart';
 
 /// Result of parsing a GitSyncMarks settings JSON file.
 class ImportResult {
-  ImportResult({required this.profiles, required this.activeProfileId});
+  ImportResult({
+    required this.profiles,
+    required this.activeProfileId,
+    this.syncSettingsToGit,
+    this.settingsSyncMode,
+  });
 
   final List<Profile> profiles;
   final String activeProfileId;
+  /// From JSON if present (for apply on import/pull).
+  final bool? syncSettingsToGit;
+  final String? settingsSyncMode;
 }
 
 /// Handles import / export of GitSyncMarks settings JSON.
@@ -53,13 +61,31 @@ class SettingsImportExportService {
 
     final activeId =
         (data['activeProfileId'] as String?) ?? profiles.first.id;
+    final syncSettingsToGit = data['syncSettingsToGit'] as bool?;
+    final settingsSyncMode = data['settingsSyncMode'] as String?;
 
-    return ImportResult(profiles: profiles, activeProfileId: activeId);
+    return ImportResult(
+      profiles: profiles,
+      activeProfileId: activeId,
+      syncSettingsToGit: syncSettingsToGit,
+      settingsSyncMode: (settingsSyncMode == 'global' || settingsSyncMode == 'individual')
+          ? settingsSyncMode
+          : null,
+    );
   }
 
   /// Builds a JSON string from the given profiles, compatible with the
   /// GitSyncMarks browser extension import format.
-  String buildExportJson(List<Profile> profiles, String activeProfileId) {
+  ///
+  /// [activeProfile] can be provided to add extension-compatible globals
+  /// (autoSync, syncInterval, syncProfile, syncOnStart) from the active profile.
+  String buildExportJson(
+    List<Profile> profiles,
+    String activeProfileId, {
+    Profile? activeProfile,
+    bool? syncSettingsToGit,
+    String? settingsSyncMode,
+  }) {
     final profilesMap = <String, dynamic>{};
     for (final p in profiles) {
       profilesMap[p.id] = p.toJson();
@@ -68,6 +94,15 @@ class SettingsImportExportService {
       'profiles': profilesMap,
       'activeProfileId': activeProfileId,
     };
+    if (activeProfile != null) {
+      data['autoSync'] = activeProfile.autoSyncEnabled;
+      data['syncInterval'] = activeProfile.syncIntervalMinutes;
+      data['syncProfile'] = activeProfile.syncProfile;
+      data['syncOnStartup'] = activeProfile.syncOnStart;
+      data['syncOnStart'] = activeProfile.syncOnStart;
+    }
+    if (syncSettingsToGit != null) data['syncSettingsToGit'] = syncSettingsToGit;
+    if (settingsSyncMode != null) data['settingsSyncMode'] = settingsSyncMode;
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 

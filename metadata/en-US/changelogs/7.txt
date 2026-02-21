@@ -1,0 +1,1 @@
+Version 0.3.0: Settings Sync to Git (extension-compatible, Global/Individual mode). Move bookmarks to folder with hierarchical picker. Reorder bookmarks in root and subfolders. Share link as bookmark. Recursive folder display. UI improvements (status over search, removed redundant Sync button).

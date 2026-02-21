@@ -10,6 +10,7 @@ import 'l10n/app_localizations.dart';
 import 'providers/bookmark_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/settings_import_export.dart';
+import 'widgets/add_bookmark_dialog.dart';
 
 /// GitSyncMarks brand colors (from extension options.css / popup.css).
 class _AppColors {
@@ -289,10 +290,52 @@ class _ShareIntentWrapperState extends State<_ShareIntentWrapper> {
     super.dispose();
   }
 
+  static final _urlRegex = RegExp(
+    r'https?://[^\s<>"{}|\\^`\[\]]+',
+    caseSensitive: false,
+  );
+
+  String? _extractUrl(String text, SharedMediaType type) {
+    final t = text.trim();
+    if (t.isEmpty) return null;
+    if (type == SharedMediaType.url) return t;
+    final match = _urlRegex.firstMatch(t);
+    return match?.group(0);
+  }
+
+  String _urlToTitle(String url) {
+    try {
+      final uri = Uri.parse(url);
+      if (uri.host.isNotEmpty) return uri.host;
+    } catch (_) {}
+    return '';
+  }
+
   Future<void> _handleSharedFiles(List<SharedMediaFile> files) async {
     if (files.isEmpty) return;
 
     for (final file in files) {
+      if (file.type == SharedMediaType.text || file.type == SharedMediaType.url) {
+        final url = _extractUrl(file.path, file.type);
+        if (url == null || url.isEmpty) continue;
+
+        if (!mounted) return;
+        final title = _urlToTitle(url);
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AddBookmarkDialog(
+            url: url,
+            initialTitle: title,
+            provider: widget.bookmarkProvider,
+          ),
+        );
+        if (confirmed == true) {
+          ReceiveSharingIntent.instance.reset();
+          return;
+        }
+        continue;
+      }
+
       final path = file.path;
       if (!path.endsWith('.json')) continue;
 

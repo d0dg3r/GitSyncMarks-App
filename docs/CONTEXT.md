@@ -11,15 +11,15 @@ This document captures the context and decisions from when the project was creat
 **This app:** Companion mobile app (iOS + Android) for users who want to:
 1. View their synced bookmarks on mobile
 2. Open links in their preferred browser
-3. Work read-only – no editing or tab-saving in this app
+3. Move, reorder, add bookmarks (synced to repo)
+4. Sync settings encrypted (extension-compatible)
 
 ## Decisions Made
 
 | Topic | Decision |
 |-------|----------|
 | **Platform** | Flutter (iOS + Android from one codebase) |
-| **Scope** | Read-only sync, display tree, open in browser |
-| **No** | Tab-profiles, editing bookmarks, writing to repo |
+| **Scope** | Sync, display tree, open in browser; move/reorder/add bookmarks; settings sync |
 | **Storage** | GitHub repo (same format as extension); local cache for offline |
 | **Browser** | User selects preferred browser; URLs open via `url_launcher` |
 

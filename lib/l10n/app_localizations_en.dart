@@ -317,4 +317,220 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get folders => 'Folders';
+
+  @override
+  String get tabGitHub => 'GitHub';
+
+  @override
+  String get tabSync => 'Sync';
+
+  @override
+  String get tabFiles => 'Files';
+
+  @override
+  String get tabHelp => 'Help';
+
+  @override
+  String get tabAbout => 'About';
+
+  @override
+  String get subTabProfile => 'Profile';
+
+  @override
+  String get subTabConnection => 'Connection';
+
+  @override
+  String get subTabExportImport => 'Export / Import';
+
+  @override
+  String get subTabSettings => 'Settings';
+
+  @override
+  String get searchPlaceholder => 'Search bookmarks...';
+
+  @override
+  String noSearchResults(String query) {
+    return 'No results for \"$query\"';
+  }
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String get automaticSync => 'Automatic synchronization';
+
+  @override
+  String get autoSyncActive => 'Auto-sync active';
+
+  @override
+  String get autoSyncDisabled => 'Auto-sync disabled';
+
+  @override
+  String nextSyncIn(String time) {
+    return 'Next sync in $time';
+  }
+
+  @override
+  String get syncProfileRealtime => 'Real-time';
+
+  @override
+  String get syncProfileFrequent => 'Frequent';
+
+  @override
+  String get syncProfileNormal => 'Normal';
+
+  @override
+  String get syncProfilePowersave => 'Power save';
+
+  @override
+  String get syncProfileCustom => 'Custom';
+
+  @override
+  String lastSynced(String time) {
+    return 'Last synced $time';
+  }
+
+  @override
+  String get neverSynced => 'Never synced';
+
+  @override
+  String get syncOnStart => 'Sync on app start';
+
+  @override
+  String get allowMoveReorder => 'Allow move and reorder';
+
+  @override
+  String get allowMoveReorderDesc =>
+      'Drag handles and move-to-folder. Disable for read-only view.';
+
+  @override
+  String get allowMoveReorderDisable => 'Enable read-only (hide handles)';
+
+  @override
+  String get allowMoveReorderEnable => 'Enable editing (show handles)';
+
+  @override
+  String bookmarkCount(int count, int folders) {
+    return '$count bookmarks in $folders folders';
+  }
+
+  @override
+  String get syncNow => 'Sync Now';
+
+  @override
+  String get addBookmark => 'Add bookmark';
+
+  @override
+  String get addBookmarkTitle => 'Add Bookmark';
+
+  @override
+  String get bookmarkTitle => 'Bookmark title';
+
+  @override
+  String get selectFolder => 'Select folder';
+
+  @override
+  String get exportBookmarks => 'Export bookmarks';
+
+  @override
+  String get settingsSyncToGit => 'Sync settings to Git (encrypted)';
+
+  @override
+  String get settingsSyncPassword => 'Encryption password';
+
+  @override
+  String get settingsSyncPasswordHint =>
+      'Set once per device. Must be the same on all devices.';
+
+  @override
+  String get settingsSyncRememberPassword => 'Remember password';
+
+  @override
+  String get settingsSyncPasswordSaved => 'Password saved (used for Push/Pull)';
+
+  @override
+  String get settingsSyncClearPassword => 'Clear saved password';
+
+  @override
+  String get settingsSyncSaveBtn => 'Save password';
+
+  @override
+  String get settingsSyncPasswordMissing => 'Please enter a password.';
+
+  @override
+  String get settingsSyncWithBookmarks =>
+      'Sync settings when syncing bookmarks';
+
+  @override
+  String get settingsSyncPush => 'Push settings';
+
+  @override
+  String get settingsSyncPull => 'Pull settings';
+
+  @override
+  String get settingsSyncModeLabel => 'Sync mode';
+
+  @override
+  String get settingsSyncModeGlobal => 'Global — shared across all devices';
+
+  @override
+  String get settingsSyncModeIndividual => 'Individual — this device only';
+
+  @override
+  String get settingsSyncImportTitle => 'Import from other device';
+
+  @override
+  String get settingsSyncLoadConfigs => 'Load available configs';
+
+  @override
+  String get settingsSyncImport => 'Import';
+
+  @override
+  String get settingsSyncImportEmpty => 'No device configs found';
+
+  @override
+  String get settingsSyncImportSuccess => 'Settings imported successfully';
+
+  @override
+  String get reportIssue => 'Report Issue';
+
+  @override
+  String get documentation => 'Documentation';
+
+  @override
+  String get voteBacklog => 'Vote on backlog';
+
+  @override
+  String get discussions => 'Discussions';
+
+  @override
+  String get moveUp => 'Move up';
+
+  @override
+  String get moveDown => 'Move down';
+
+  @override
+  String get shareLinkAddBookmark => 'Add shared link as bookmark';
+
+  @override
+  String get clearCache => 'Clear cache';
+
+  @override
+  String get clearCacheDesc =>
+      'Remove cached bookmark data. Sync will run automatically if GitHub is configured.';
+
+  @override
+  String get clearCacheSuccess => 'Cache cleared.';
+
+  @override
+  String get moveToFolder => 'Move to folder';
+
+  @override
+  String get moveToFolderSuccess => 'Bookmark moved';
+
+  @override
+  String get moveToFolderFailed => 'Failed to move bookmark';
+
+  @override
+  String get orderUpdated => 'Order updated';
 }

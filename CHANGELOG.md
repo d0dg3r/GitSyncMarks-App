@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-21
+
+### Added
+
+- **Settings Sync to Git** (extension-compatible): Encrypted settings sync (global/individual mode), Push/Pull, Import from other device
+- **Move bookmarks to folder**: Long-press on bookmark → "In Ordner verschieben" with hierarchical folder picker (including subfolders)
+- **Reorder bookmarks**: Drag-and-drop to reorder in root folders and subfolders; changes persisted to `_order.json`
+- **Share link as bookmark**: Receive shared URLs (e.g. from Chrome) and add as bookmark
+- **Recursive folder display**: Subfolders and nested bookmarks now displayed correctly
+
+### Changed
+
+- Settings Sync UI aligned with Chrome extension: main toggle, sync mode (Global/Individual), Save password, Import from other device
+- Status (last sync, bookmark count) moved above search bar
+- Removed redundant blue "Sync now" button (Sync icon in AppBar remains)
+- Extension-compatible encryption (`gitsyncmarks-enc:v1`) for settings.enc
+
+### Fixed
+
+- Folder picker for move: Unterordner des Quellordners werden angezeigt (vorher ausgefiltert)
+- Infinite height layout error in ReorderableListView
+- Debug instrumentation removed
+
+---
+
 ## [0.2.0] - 2026-02-18
 
 ### Added

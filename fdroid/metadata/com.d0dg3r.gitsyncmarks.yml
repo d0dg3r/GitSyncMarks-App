@@ -11,6 +11,10 @@ RepoType: git
 Repo: https://github.com/d0dg3r/GitSyncMarks-Mobile
 
 Builds:
+  - versionName: 0.3.0
+    versionCode: 7
+    # Vor Release: commit mit "git rev-parse HEAD" setzen
+    commit: HEAD
   - versionName: 0.2.0
     versionCode: 6
     commit: 9ed8ecea448a47b9cc49c98d5333d3782a48d5a6
@@ -33,5 +37,5 @@ Builds:
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
-CurrentVersion: 0.2.0
-CurrentVersionCode: 6
+CurrentVersion: 0.3.0
+CurrentVersionCode: 7

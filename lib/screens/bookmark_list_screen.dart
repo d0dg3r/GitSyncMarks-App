@@ -7,7 +7,6 @@ import '../l10n/app_localizations.dart';
 import '../models/bookmark_node.dart';
 import '../providers/bookmark_provider.dart';
 import '../utils/favicon_utils.dart';
-import 'info_screen.dart';
 import 'settings_screen.dart';
 
 class _AppIcon extends StatelessWidget {
@@ -65,7 +64,18 @@ class BookmarkListScreen extends StatelessWidget {
           );
         }
 
-        final folders = provider.displayedRootFolders;
+        final folders = provider.filteredDisplayedRootFolders;
+        final hasSearch = provider.searchQuery.trim().isNotEmpty;
+        if (hasSearch && folders.isEmpty) {
+          return Scaffold(
+            appBar: _buildAppBar(context, provider),
+            body: _SearchNoResultsView(
+              query: provider.searchQuery,
+              onClearSearch: () => provider.setSearchQuery(''),
+            ),
+          );
+        }
+
         return _TabbedBookmarkView(
           folders: folders,
           provider: provider,
@@ -92,7 +102,16 @@ class BookmarkListScreen extends StatelessWidget {
             onPressed:
                 provider.isLoading ? null : () => provider.syncBookmarks(),
           ),
-        _OverflowMenu(),
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            );
+          },
+          tooltip: AppLocalizations.of(context)!.settings,
+        ),
       ],
     );
   }
@@ -102,7 +121,7 @@ class BookmarkListScreen extends StatelessWidget {
 // Tabbed bookmark view (shown when bookmarks exist)
 // =============================================================================
 
-class _TabbedBookmarkView extends StatelessWidget {
+class _TabbedBookmarkView extends StatefulWidget {
   const _TabbedBookmarkView({
     required this.folders,
     required this.provider,
@@ -112,9 +131,46 @@ class _TabbedBookmarkView extends StatelessWidget {
   final BookmarkProvider provider;
 
   @override
+  State<_TabbedBookmarkView> createState() => _TabbedBookmarkViewState();
+}
+
+class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
+  late TextEditingController _searchController;
+  bool _searchExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.provider.searchQuery);
+  }
+
+  @override
+  void didUpdateWidget(_TabbedBookmarkView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.provider.searchQuery != widget.provider.searchQuery &&
+        _searchController.text != widget.provider.searchQuery) {
+      _searchController.text = widget.provider.searchQuery;
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final provider = widget.provider;
+    final folders = widget.folders;
+    final l = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final activeProfile = provider.activeProfile;
+    final autoSyncEnabled = activeProfile?.autoSyncEnabled ?? false;
+    final nextAt = provider.nextAutoSyncAt;
+
     return DefaultTabController(
-      length: folders.length,
+      length: folders.isEmpty ? 1 : folders.length,
       child: Scaffold(
         appBar: AppBar(
           title: _ProfileDropdown(),
@@ -131,25 +187,219 @@ class _TabbedBookmarkView extends StatelessWidget {
               onPressed:
                   provider.isLoading ? null : () => provider.syncBookmarks(),
             ),
-            _OverflowMenu(),
+            if (provider.hasCredentials)
+              IconButton(
+                icon: Icon(
+                  (activeProfile?.allowMoveReorder ?? true)
+                      ? Icons.reorder
+                      : Icons.lock_outline,
+                  color: (activeProfile?.allowMoveReorder ?? true)
+                      ? null
+                      : scheme.outline,
+                ),
+                onPressed: () {
+                  provider.updateSyncSettings(
+                    allowMoveReorder:
+                        !(activeProfile?.allowMoveReorder ?? true),
+                  );
+                },
+                tooltip: (activeProfile?.allowMoveReorder ?? true)
+                    ? l.allowMoveReorderDisable
+                    : l.allowMoveReorderEnable,
+              ),
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => setState(() => _searchExpanded = true),
+              tooltip: l.searchPlaceholder,
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+              tooltip: l.settings,
+            ),
           ],
-          bottom: TabBar(
-            isScrollable: folders.length > 3,
-            tabs: folders
-                .map((f) => Tab(
-                      icon: const Icon(Icons.folder_outlined, size: 20),
-                      text: f.title,
-                    ))
-                .toList(),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: _StatusArea(provider: provider),
+            ),
+            if (folders.isNotEmpty)
+              TabBar(
+                tabAlignment: TabAlignment.start,
+                isScrollable: true,
+                tabs: folders
+                    .map((f) => Tab(text: f.title))
+                    .toList(),
+              ),
+            if (_searchExpanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: l.searchPlaceholder,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        setState(() {
+                          _searchExpanded = false;
+                          _searchController.clear();
+                          provider.setSearchQuery('');
+                        });
+                      },
+                    ),
+                  ),
+                  onChanged: (v) => provider.setSearchQuery(v),
+                ),
+              ),
+            Expanded(
+              child: folders.isEmpty
+                  ? const SizedBox.shrink()
+                  : TabBarView(
+                      children: folders.map((folder) {
+                        return RefreshIndicator(
+                          onRefresh: () =>
+                              provider.syncBookmarks().then((_) async {}),
+                          child: _FolderContentList(
+                            folder: folder,
+                            provider: provider,
+                            canReorder: provider.searchQuery.trim().isEmpty &&
+                                (provider.activeProfile?.allowMoveReorder ?? true),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: autoSyncEnabled
+                          ? scheme.primary
+                          : scheme.outline.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    autoSyncEnabled ? l.autoSyncActive : l.autoSyncDisabled,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.outline,
+                        ),
+                  ),
+                  if (autoSyncEnabled && nextAt != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      l.nextSyncIn(_formatDuration(nextAt.difference(DateTime.now()))),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.outline,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatDuration(Duration d) {
+    if (d.isNegative) return '0:00';
+    final m = d.inMinutes;
+    final s = d.inSeconds % 60;
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+}
+
+class _StatusArea extends StatelessWidget {
+  const _StatusArea({required this.provider});
+
+  final BookmarkProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final scheme = Theme.of(context).colorScheme;
+    final lastSync = provider.lastSyncTime;
+    final count = provider.bookmarkCount;
+    final folderCount = provider.displayedRootFolders.length;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            lastSync != null
+                ? l.lastSynced(_formatTimeAgo(lastSync))
+                : l.neverSynced,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.outline,
+                ),
           ),
         ),
-        body: TabBarView(
-          children: folders.map((folder) {
-            return RefreshIndicator(
-              onRefresh: () => provider.syncBookmarks().then((_) async {}),
-              child: _FolderContentList(folder: folder),
-            );
-          }).toList(),
+        Text(
+          l.bookmarkCount(count, folderCount),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.outline,
+              ),
+        ),
+      ],
+    );
+  }
+
+  static String _formatTimeAgo(DateTime then) {
+    final now = DateTime.now();
+    final diff = now.difference(then);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} h ago';
+    return '${diff.inDays} d ago';
+  }
+}
+
+class _SearchNoResultsView extends StatelessWidget {
+  const _SearchNoResultsView({
+    required this.query,
+    required this.onClearSearch,
+  });
+
+  final String query;
+  final VoidCallback onClearSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l.noSearchResults(query),
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: onClearSearch,
+              child: Text(l.clearSearch),
+            ),
+          ],
         ),
       ),
     );
@@ -237,62 +487,19 @@ class _ProfileDropdown extends StatelessWidget {
 }
 
 // =============================================================================
-// Overflow menu (⋮) for Settings + Info
-// =============================================================================
-
-class _OverflowMenu extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert),
-      offset: const Offset(0, 48),
-      onSelected: (value) {
-        switch (value) {
-          case 'settings':
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
-          case 'info':
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const InfoScreen()),
-            );
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'settings',
-          child: ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: Text(l.settings),
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-        PopupMenuItem(
-          value: 'info',
-          child: ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: Text(l.info),
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// =============================================================================
 // Folder content list (children of a root folder)
 // =============================================================================
 
 class _FolderContentList extends StatelessWidget {
-  const _FolderContentList({required this.folder});
+  const _FolderContentList({
+    required this.folder,
+    required this.provider,
+    this.canReorder = true,
+  });
 
   final BookmarkFolder folder;
+  final BookmarkProvider provider;
+  final bool canReorder;
 
   @override
   Widget build(BuildContext context) {
@@ -307,19 +514,79 @@ class _FolderContentList extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
+    if (!canReorder) {
+      return ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        itemCount: folder.children.length,
+        itemBuilder: (context, index) {
+          final node = folder.children[index];
+          return switch (node) {
+            BookmarkFolder() => _FolderTile(
+                folder: node,
+                level: 0,
+                initiallyExpanded: index == 0,
+                provider: provider,
+              ),
+            Bookmark() => _BookmarkTile(
+                bookmark: node,
+                sourceFolder: folder,
+                provider: provider,
+              ),
+          };
+        },
+      );
+    }
+
+    return ReorderableListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       itemCount: folder.children.length,
+      buildDefaultDragHandles: false,
+      onReorder: (oldIndex, newIndex) {
+        final adj = oldIndex < newIndex ? newIndex - 1 : newIndex;
+        final folderPath = provider.getFolderPath(folder);
+        if (folderPath != null) {
+          provider.reorderInFolder(folder, folderPath, oldIndex, adj).then((ok) {
+            if (context.mounted) {
+              final l = AppLocalizations.of(context)!;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    ok ? l.orderUpdated : (provider.error ?? l.moveToFolderFailed),
+                  ),
+                  backgroundColor: ok ? null : Theme.of(context).colorScheme.errorContainer,
+                ),
+              );
+            }
+          });
+        }
+      },
       itemBuilder: (context, index) {
         final node = folder.children[index];
+        final key = switch (node) {
+          Bookmark(:final url) => ValueKey('b-$index-$url'),
+          BookmarkFolder(:final dirName, :final title) =>
+            ValueKey('f-$index-${dirName ?? title}'),
+        };
         return switch (node) {
           BookmarkFolder() => _FolderTile(
+              key: key,
               folder: node,
               level: 0,
               initiallyExpanded: index == 0,
+              reorderIndex: index,
+              provider: provider,
+              folderPath: provider.getFolderPath(node),
+              canReorder: canReorder,
             ),
-          Bookmark() => _BookmarkTile(bookmark: node),
+          Bookmark() => _ReorderableBookmarkTile(
+              key: key,
+              bookmark: node,
+              index: index,
+              sourceFolder: folder,
+              provider: provider,
+            ),
         };
       },
     );
@@ -451,23 +718,167 @@ class _ErrorView extends StatelessWidget {
 }
 
 // =============================================================================
+// Move to folder dialog
+// =============================================================================
+
+void _showMoveToFolderDialog(
+  BuildContext context,
+  Bookmark bookmark,
+  BookmarkFolder sourceFolder,
+  BookmarkProvider provider,
+) {
+  final l = AppLocalizations.of(context)!;
+  final rootFolders = provider.rootFolders;
+
+  showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l.selectFolder),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: _FolderPickerList(
+          folders: rootFolders,
+          sourceFolder: sourceFolder,
+          onSelect: (target) async {
+            Navigator.of(context).pop();
+            final ok = await provider.moveBookmarkToFolder(
+              bookmark,
+              sourceFolder,
+              target,
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    ok ? l.moveToFolderSuccess : (provider.error ?? l.moveToFolderFailed),
+                  ),
+                  backgroundColor: ok ? null : Theme.of(context).colorScheme.errorContainer,
+                ),
+              );
+            }
+          },
+        ),
+      ),
+    ),
+  );
+}
+
+class _FolderPickerList extends StatelessWidget {
+  const _FolderPickerList({
+    required this.folders,
+    required this.sourceFolder,
+    required this.onSelect,
+    this.depth = 0,
+  });
+
+  final List<BookmarkFolder> folders;
+  final BookmarkFolder? sourceFolder;
+  final void Function(BookmarkFolder) onSelect;
+  final int depth;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context)!;
+
+    return ListView(
+      shrinkWrap: true,
+      children: folders.map((f) {
+        final isSource = identical(f, sourceFolder);
+        final hasSubfolders = f.children.any((c) => c is BookmarkFolder);
+        final childFolders = f.children.whereType<BookmarkFolder>().toList();
+
+        if (hasSubfolders && childFolders.isNotEmpty) {
+          return ExpansionTile(
+            leading: Icon(Icons.folder, color: scheme.primary, size: 22),
+            title: Row(
+              children: [
+                Expanded(child: Text(f.title)),
+                if (!isSource)
+                  TextButton(
+                    onPressed: () => onSelect(f),
+                    child: Text(l.selectFolder),
+                  ),
+              ],
+            ),
+            children: [
+              _FolderPickerList(
+                folders: childFolders,
+                sourceFolder: sourceFolder,
+                onSelect: onSelect,
+                depth: depth + 1,
+              ),
+            ],
+          );
+        }
+        if (isSource) return null;
+        return ListTile(
+          leading: Icon(Icons.folder, color: scheme.primary, size: 22),
+          title: Text(f.title),
+          trailing: TextButton(
+            onPressed: () => onSelect(f),
+            child: Text(l.selectFolder),
+          ),
+        );
+      }).whereType<Widget>().toList(),
+    );
+  }
+}
+
+// =============================================================================
 // Folder tile (expandable)
 // =============================================================================
 
 class _FolderTile extends StatelessWidget {
   const _FolderTile({
+    super.key,
     required this.folder,
     this.level = 0,
     this.initiallyExpanded = false,
+    this.reorderIndex,
+    this.provider,
+    this.folderPath,
+    this.canReorder = false,
   });
 
   final BookmarkFolder folder;
   final int level;
   final bool initiallyExpanded;
+  final int? reorderIndex;
+  final BookmarkProvider? provider;
+  final String? folderPath;
+  final bool canReorder;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final folderIcon = Icon(
+      initiallyExpanded || level == 0
+          ? Icons.folder_open
+          : Icons.folder,
+      color: scheme.primary,
+      size: 22,
+    );
+    final leading = reorderIndex != null
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ReorderableDragStartListener(
+                index: reorderIndex!,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Icon(
+                    Icons.drag_handle,
+                    color: scheme.outline,
+                    size: 20,
+                  ),
+                ),
+              ),
+              folderIcon,
+            ],
+          )
+        : folderIcon;
+
     return Card(
       margin: EdgeInsets.only(
         left: level > 0 ? 12.0 : 4,
@@ -477,13 +888,7 @@ class _FolderTile extends StatelessWidget {
       ),
       child: ExpansionTile(
         initiallyExpanded: initiallyExpanded,
-        leading: Icon(
-          initiallyExpanded || level == 0
-              ? Icons.folder_open
-              : Icons.folder,
-          color: scheme.primary,
-          size: 22,
-        ),
+        leading: leading,
         shape: const RoundedRectangleBorder(),
         collapsedShape: const RoundedRectangleBorder(),
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -495,22 +900,86 @@ class _FolderTile extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
         ),
-        children: folder.children
-            .asMap()
-            .entries
-            .map(
-              (entry) => switch (entry.value) {
-                BookmarkFolder() => _FolderTile(
-                    folder: entry.value as BookmarkFolder,
-                    level: level + 1,
-                  ),
-                Bookmark() =>
-                  _BookmarkTile(bookmark: entry.value as Bookmark),
-              },
-            )
-            .toList(),
+        children: _buildFolderChildren(context),
       ),
     );
+  }
+
+  List<Widget> _buildFolderChildren(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    if (folder.children.isEmpty) return [];
+    final p = provider;
+    final path = folderPath;
+    final doReorder = canReorder && p != null && path != null;
+
+    if (!doReorder) {
+      return folder.children.asMap().entries.map((entry) {
+        return switch (entry.value) {
+          BookmarkFolder() => _FolderTile(
+              folder: entry.value as BookmarkFolder,
+              level: level + 1,
+              provider: p,
+            ),
+          Bookmark() => _BookmarkTile(
+              bookmark: entry.value as Bookmark,
+              sourceFolder: folder,
+              provider: p,
+            ),
+        };
+      }).toList();
+    }
+
+    final c = path;
+    final prov = p;
+    return [
+      ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        buildDefaultDragHandles: false,
+        itemCount: folder.children.length,
+        onReorder: (oldIndex, newIndex) {
+          final adj = oldIndex < newIndex ? newIndex - 1 : newIndex;
+          prov.reorderInFolder(folder, c, oldIndex, adj).then((ok) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    ok ? l.orderUpdated : (prov.error ?? l.moveToFolderFailed),
+                  ),
+                  backgroundColor: ok ? null : Theme.of(context).colorScheme.errorContainer,
+                ),
+              );
+            }
+          });
+        },
+        itemBuilder: (context, index) {
+          final node = folder.children[index];
+          final key = switch (node) {
+            Bookmark(:final url) => ValueKey('b-$index-$url'),
+            BookmarkFolder(:final dirName, :final title) =>
+              ValueKey('f-$index-${dirName ?? title}'),
+          };
+          return switch (node) {
+            BookmarkFolder() => _FolderTile(
+                key: key,
+                folder: node,
+                level: level + 1,
+                provider: prov,
+                folderPath: '$c/${node.dirName ?? node.title}',
+                canReorder: true,
+                reorderIndex: index,
+              ),
+            Bookmark() => _ReorderableBookmarkTile(
+                key: key,
+                bookmark: node,
+                index: index,
+                sourceFolder: folder,
+                provider: prov,
+              ),
+          };
+        },
+      ),
+    ];
   }
 }
 
@@ -518,10 +987,63 @@ class _FolderTile extends StatelessWidget {
 // Bookmark tile
 // =============================================================================
 
-class _BookmarkTile extends StatelessWidget {
-  const _BookmarkTile({required this.bookmark});
+class _ReorderableBookmarkTile extends StatelessWidget {
+  const _ReorderableBookmarkTile({
+    super.key,
+    required this.bookmark,
+    required this.index,
+    required this.sourceFolder,
+    required this.provider,
+  });
 
   final Bookmark bookmark;
+  final int index;
+  final BookmarkFolder sourceFolder;
+  final BookmarkProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ReorderableDragStartListener(
+            index: index,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4, right: 8),
+              child: Icon(
+                Icons.drag_handle,
+                color: scheme.outline,
+                size: 20,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _BookmarkTile(
+              bookmark: bookmark,
+              sourceFolder: sourceFolder,
+              provider: provider,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookmarkTile extends StatelessWidget {
+  const _BookmarkTile({
+    super.key,
+    required this.bookmark,
+    this.sourceFolder,
+    this.provider,
+  });
+
+  final Bookmark bookmark;
+  final BookmarkFolder? sourceFolder;
+  final BookmarkProvider? provider;
 
   Widget _buildLeading(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -549,6 +1071,12 @@ class _BookmarkTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context)!;
+    final canMove = sourceFolder != null &&
+        provider != null &&
+        provider!.hasCredentials &&
+        (provider!.activeProfile?.allowMoveReorder ?? true);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       child: ListTile(
@@ -573,6 +1101,26 @@ class _BookmarkTile extends StatelessWidget {
               ),
         ),
         onTap: () => _openUrl(context, bookmark.url),
+        onLongPress: canMove
+            ? () => showModalBottomSheet<void>(
+                  context: context,
+                  builder: (context) => SafeArea(
+                    child: ListTile(
+                      leading: const Icon(Icons.drive_file_move),
+                      title: Text(l.moveToFolder),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showMoveToFolderDialog(
+                          context,
+                          bookmark,
+                          sourceFolder!,
+                          provider!,
+                        );
+                      },
+                    ),
+                  ),
+                )
+            : null,
       ),
     );
   }

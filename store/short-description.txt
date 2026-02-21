@@ -1,1 +1,1 @@
-View your GitSyncMarks bookmarks on mobile. Sync from GitHub, browse offline.
+Sync your GitSyncMarks bookmarks on mobile. Move, reorder, add via share, settings sync. Works offline.
