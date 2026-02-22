@@ -114,8 +114,13 @@ lib/
 
 ---
 
-## Next Steps (Immediate)
+## Future Work
 
-1. Install Flutter (if not done): `paru -S flutter` or https://docs.flutter.dev/get-started/install
-2. Run: `flutter create . --org com.gitsyncmarks` (if android/ and ios/ missing)
-3. Run: `flutter pub get` and `flutter run`
+- [ ] **CI Screenshot Automation**: Dedicated workflow step using `Xvfb` + `flutter screenshot --type=device` to auto-generate Flatpak/store screenshots on each release. Removes manual screenshot capture step.
+- [ ] iOS build & distribution (TestFlight / IPA)
+- [ ] Flathub submission
+
+## Development Quick Start
+
+1. Install Flutter: `paru -S flutter` or https://docs.flutter.dev/get-started/install
+2. Run: `flutter pub get && flutter run`

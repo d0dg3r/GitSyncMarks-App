@@ -1,12 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>io.github.d0dg3r.GitSyncMarksMobile</id>
-  <name>GitSyncMarks-Mobile</name>
+  <name>GitSyncMarks Mobile</name>
   <summary>View and sync bookmarks from your GitSyncMarks GitHub repo</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
+
+  <developer id="io.github.d0dg3r">
+    <name>d0dg3r</name>
+  </developer>
+
   <description>
-    <p>Cross-platform companion app for the GitSyncMarks browser extension. Sync bookmarks from your GitHub repository, view them offline, and open URLs in your preferred browser.</p>
+    <p>Cross-platform companion app for the GitSyncMarks browser extension.
+       Sync bookmarks stored in a GitHub repository, browse them offline,
+       and open URLs in your preferred browser.</p>
+    <p>Features:</p>
+    <ul>
+      <li>Sync bookmarks from GitHub (GitSyncMarks per-file format)</li>
+      <li>Expandable folder tree with recursive subfolder display</li>
+      <li>Drag-and-drop reorder and move bookmarks between folders</li>
+      <li>Encrypted settings sync compatible with the browser extension</li>
+      <li>Export and import settings with password protection</li>
+      <li>Offline-capable with local Hive cache</li>
+      <li>Full-text search across all bookmarks</li>
+      <li>Configurable root folder for tab-based navigation</li>
+      <li>Light and dark mode</li>
+      <li>Multilingual (English, German, French, Spanish)</li>
+    </ul>
   </description>
+
+  <url type="homepage">https://github.com/d0dg3r/GitSyncMarks-Mobile</url>
+  <url type="bugtracker">https://github.com/d0dg3r/GitSyncMarks-Mobile/issues</url>
+  <url type="vcs-browser">https://github.com/d0dg3r/GitSyncMarks-Mobile</url>
+
   <launchable type="desktop-id">io.github.d0dg3r.GitSyncMarksMobile.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Bookmark list with expandable folder tree</caption>
+      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-Mobile/main/flatpak/screenshots/bookmark-list.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Search across all bookmarks</caption>
+      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-Mobile/main/flatpak/screenshots/search.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>GitHub settings configuration</caption>
+      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-Mobile/main/flatpak/screenshots/settings-github.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="0.3.0" date="2026-02-21">
+      <description>
+        <p>Major feature release: encrypted settings sync, drag-and-drop
+           reorder, move bookmarks between folders, configurable root folder,
+           password-protected export/import, Flatpak support.</p>
+      </description>
+    </release>
+    <release version="0.2.0" date="2026-02-18">
+      <description>
+        <p>Browser selection, offline cache, multilingual support (EN, DE, FR, ES),
+           CI/CD release pipeline for Android, Linux, Windows, macOS.</p>
+      </description>
+    </release>
+    <release version="0.1.0" date="2026-02-01">
+      <description>
+        <p>Initial release with bookmark sync from GitHub, expandable folder tree,
+           settings screen, and favicon display.</p>
+      </description>
+    </release>
+  </releases>
+
+  <categories>
+    <category>Utility</category>
+    <category>Network</category>
+  </categories>
+
+  <keywords>
+    <keyword>bookmarks</keyword>
+    <keyword>sync</keyword>
+    <keyword>github</keyword>
+    <keyword>gitsyncmarks</keyword>
+  </keywords>
 </component>
