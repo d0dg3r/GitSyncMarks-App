@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Password-protected export/import**: Settings export encrypted with AES-256-GCM; import prompts for password when encrypted file detected
+- **Configurable root folder**: Select any folder as "root" for tab navigation; its subfolders become tabs
+- **Auto-lock edit mode**: Edit mode (reorder/move) auto-locks after 60 seconds of inactivity; any edit action resets the timer
+- **Delete bookmarks**: Long-press on any bookmark to delete (available even when edit mode is locked)
+- **Post-import auto-sync**: After importing settings, bookmarks sync automatically if credentials are valid
+- **Reset all data**: Button in About tab to clear all profiles, settings, and cached data
+- **Import on empty state**: "Import Settings" button shown when no credentials are configured
+- **Default profile creation**: Default profile is automatically created on first launch or when saving credentials
+- **CI screenshot generation**: Golden tests generate screenshots; CI workflow includes screenshot generation job
+- **Pre-release CI tags**: Tags with `-beta`, `-rc`, `-test` etc. build all platforms but create pre-releases instead of latest releases
+
+### Changed
+
+- Edit mode defaults to locked on every app launch
+- Edit mode toggle moved to AppBar (lock/unlock icon)
+- Removed `golden_screenshot` dependency; replaced with simple `matchesGoldenFile` golden tests
+- Desktop export uses `FilePicker.saveFile()` instead of `Share.shareXFiles()` (Linux/Windows/macOS)
+- Flatpak metainfo updated with auto-generated screenshots
+
+### Fixed
+
+- Profile dropdown overflow in AppBar (Flexible text with ellipsis)
+- Infinite sync loop when importing settings (replaceProfiles with triggerSync guard)
+- "Bad state: No element" crash when exporting with no profiles
+- `allowMoveReorder` now always defaults to false (not persisted)
+
+---
+
 ## [0.3.0] - 2026-02-21
 
 ### Added

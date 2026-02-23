@@ -25,9 +25,9 @@
 </p>
 
 <p align="center">
-  <img src="metadata/en-US/images/combinedScreenshots/1_bookmarks_combined.png" alt="Bookmark list – Light &amp; Dark" width="240">
-  <img src="metadata/en-US/images/combinedScreenshots/2_empty_state_combined.png" alt="Empty state – Light &amp; Dark" width="240">
-  <img src="metadata/en-US/images/combinedScreenshots/3_settings_combined.png" alt="Settings – Light &amp; Dark" width="240">
+  <img src="flatpak/screenshots/bookmark-list.png" alt="Bookmark list" width="200">
+  <img src="flatpak/screenshots/bookmark-list-dark.png" alt="Bookmark list (Dark)" width="200">
+  <img src="flatpak/screenshots/settings-github.png" alt="Settings" width="200">
 </p>
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
@@ -38,7 +38,12 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 - **Settings Sync to Git**: Encrypted sync (extension-compatible), Global/Individual mode, Import from other device
 - **Move bookmarks**: Long-press to move bookmarks to any folder (including subfolders)
 - **Reorder bookmarks**: Drag-and-drop to reorder; changes persisted to repo
+- **Delete bookmarks**: Long-press to delete (available even when edit mode is locked)
 - **Share link as bookmark** (Android/iOS): Add shared URLs from browser or other apps as bookmarks; on desktop use "Add bookmark" dialog
+- **Password-protected export/import**: Export settings with AES-256-GCM encryption; import detects encrypted files and prompts for password
+- **Configurable root folder**: Select any folder as "root" for tab navigation
+- **Auto-lock edit mode**: Edit mode auto-locks after 60 seconds of inactivity
+- **Reset all data**: Clear all profiles, settings, and cached data from the About tab
 - **Local cache**: Bookmarks saved after sync, loaded from cache on app start (offline-capable)
 - **GitHub Personal Access Token**: Secure authentication with `repo` scope
 - **Folder selection**: Choose which root folders to display (toolbar, menu, mobile, other)
@@ -99,7 +104,7 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
 
 ## Prerequisites (Development)
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.2.0 or later)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.41.0 or later)
 
 ## Setup (Development)
 
@@ -138,12 +143,19 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
 
 ## Releases
 
-Releases are built automatically on tag push (`v*`). Example:
+Releases are built automatically on tag push (`v*`). All tags trigger builds for all platforms.
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+# Stable release (marked as "latest")
+git tag v0.3.0 && git push origin v0.3.0
+
+# Pre-release (visible under Releases, but not marked as "latest")
+git tag v0.3.0-beta.1 && git push origin v0.3.0-beta.1
 ```
+
+**Tag convention:**
+- `v1.2.3` — stable release, marked as "latest"
+- `v1.2.3-beta.1`, `v1.2.3-rc.1`, `v1.2.3-test.1` — pre-release (any tag with `-` suffix)
 
 Artifacts appear under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases): APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS).
 

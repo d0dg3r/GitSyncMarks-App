@@ -1,7 +1,7 @@
 # Implementation Summary
 
 ## Overview
-Successfully implemented a cross-platform Flutter application (Android, iOS, Windows, macOS, Linux) that syncs and displays bookmarks from the GitSyncMarks GitHub repository. As of v0.3.0, the app supports move, reorder, add-via-share, encrypted settings sync (extension-compatible), and Flatpak distribution for Linux.
+Successfully implemented a cross-platform Flutter application (Android, iOS, Windows, macOS, Linux) that syncs and displays bookmarks from the GitSyncMarks GitHub repository. The app supports move, reorder, delete, add-via-share, encrypted settings sync (extension-compatible), password-protected export/import, configurable root folder navigation, and Flatpak distribution for Linux.
 
 ## v0.3.0 Additions
 
@@ -10,6 +10,20 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - **Reorder bookmarks**: Drag-and-drop in root and subfolders; persisted to _order.json
 - **Share link as bookmark**: receive_sharing_intent for URLs from browser
 - **Recursive folder display**: Subfolders and nested bookmarks
+
+## Post-v0.3.0 Additions
+
+- **Password-protected export/import**: Settings export encrypted with AES-256-GCM; import detects encrypted files and prompts for password
+- **Configurable root folder**: Select any folder as "root" for tab navigation; subfolders become tabs
+- **Auto-lock edit mode**: Edit mode auto-locks after 60 seconds of inactivity; edit actions reset the timer
+- **Delete bookmarks**: Long-press on any bookmark to delete (available even when edit mode is locked)
+- **Post-import auto-sync**: After importing settings, bookmarks sync automatically if credentials are valid
+- **Reset all data**: Button in About tab to clear all profiles, settings, and cached data
+- **Import on empty state**: "Import Settings" button shown when no credentials configured
+- **Default profile creation**: Default profile automatically created on first launch
+- **Pre-release CI tags**: Tags with `-beta`, `-rc`, `-test` build all platforms as pre-releases
+- **CI screenshot generation**: Golden tests auto-generate screenshots on each release
+- **Desktop export**: `FilePicker.saveFile()` on Linux/Windows/macOS (replaces `Share.shareXFiles`)
 
 ## ✅ Requirements Met
 
@@ -116,14 +130,18 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - **Platforms**: Android, iOS, Windows, macOS, Linux
 - **Dependencies**: http, hive, provider, url_launcher, flutter_secure_storage, pointycastle, receive_sharing_intent, and more
 
-## 🎯 Key Features
+## Key Features
 
 1. **Offline-First**: Works without internet after initial sync
 2. **Error Resilient**: Graceful fallback to cached data
 3. **User-Friendly**: Clear error messages and loading states
-4. **Expandable UI**: Collapsible folder tree, move, reorder
+4. **Expandable UI**: Collapsible folder tree, move, reorder, delete
 5. **Settings Sync**: Encrypted sync to Git (extension-compatible)
 6. **Share as Bookmark**: Add URLs from browser (mobile) or Add dialog (desktop)
+7. **Password-Protected Export/Import**: AES-256-GCM encrypted settings files
+8. **Configurable Root Folder**: Any folder can be the tab root
+9. **Auto-Lock Edit Mode**: 60-second inactivity timer
+10. **Reset All Data**: Full app reset from About tab
 
 ## 🚀 Next Steps for Users
 
@@ -139,14 +157,17 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - Bookmark format: [BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md)
 - Material Design 3 provides modern, consistent UI
 
-## ✨ Highlights
+## Highlights
 
 - **Clean Architecture**: Repositories, providers, services, models
 - **Desktop + Mobile**: Same codebase for all platforms
 - **Flatpak**: Linux distribution via CI
 - **Settings Sync**: Extension-compatible encryption
+- **Password-Protected Export/Import**: Secure settings sharing between devices
+- **Auto-Lock Edit Mode**: Prevents accidental edits
+- **CI Screenshots**: Auto-generated via golden tests
 - **Production Ready**: Error handling, caching, offline support
 
-## 🎉 Conclusion
+## Conclusion
 
-The app is a complete, production-ready solution for syncing and managing bookmarks from GitHub with support for Android, iOS, Windows, macOS, and Linux (Flatpak + ZIP).
+The app is a complete, production-ready solution for syncing and managing bookmarks from GitHub with support for Android (stable), iOS, Windows, macOS, and Linux (all alpha). All platforms are built from the same codebase via CI on tag push.

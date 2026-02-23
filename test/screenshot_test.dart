@@ -1,13 +1,16 @@
-/// Screenshot tests for README and store metadata.
+/// Screenshot golden tests for README, Flatpak metainfo and store metadata.
 ///
-/// Run with `flutter test --update-goldens` to generate screenshots
-/// or `flutter test` to compare against golden files.
+/// Run with `flutter test test/screenshot_test.dart --update-goldens`
+/// to generate / refresh screenshot PNGs.
+///
+/// Output lands in test/goldens/. The CI workflow copies these into
+/// flatpak/screenshots/ so the AppStream metainfo can reference them.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:golden_screenshot/golden_screenshot.dart';
 import 'package:provider/provider.dart';
 
 import 'package:gitsyncmarks/app.dart';
@@ -24,12 +27,28 @@ final _sampleFolders = [
     children: [
       Bookmark(title: 'GitHub', url: 'https://github.com'),
       Bookmark(title: 'Flutter Docs', url: 'https://docs.flutter.dev'),
+      Bookmark(title: 'Stack Overflow', url: 'https://stackoverflow.com'),
       BookmarkFolder(
-        title: 'Dev',
+        title: 'Dev Tools',
         children: [
           Bookmark(title: 'Pub.dev', url: 'https://pub.dev'),
+          Bookmark(title: 'DartPad', url: 'https://dartpad.dev'),
         ],
       ),
+      BookmarkFolder(
+        title: 'News',
+        children: [
+          Bookmark(title: 'Hacker News', url: 'https://news.ycombinator.com'),
+          Bookmark(title: 'TechCrunch', url: 'https://techcrunch.com'),
+        ],
+      ),
+    ],
+  ),
+  const BookmarkFolder(
+    title: 'other bookmarks',
+    children: [
+      Bookmark(title: 'Wikipedia', url: 'https://wikipedia.org'),
+      Bookmark(title: 'Reddit', url: 'https://reddit.com'),
     ],
   ),
 ];
@@ -41,162 +60,81 @@ const _localizationsDelegates = [
   GlobalCupertinoLocalizations.delegate,
 ];
 
+const _width = 480.0;
+const _height = 960.0;
+const _pixelRatio = 2.0;
+
 void main() {
-  group('Screenshot:', () {
-    TestWidgetsFlutterBinding.ensureInitialized();
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    _screenshot('1_bookmarks', (provider) {
-      provider.seedWith(_sampleFolders);
-      return const BookmarkListScreen();
-    });
-
-    _screenshot('2_empty_state', (provider) {
-      provider.seedWith([]);
-      return const BookmarkListScreen();
-    });
-
-    _screenshot('3_settings', (provider) {
-      provider.seedWith(_sampleFolders);
-      return const SettingsScreen();
-    });
-  });
-
-  group('Combined:', () {
-    TestWidgetsFlutterBinding.ensureInitialized();
-
-    _combinedScreenshot('1_bookmarks', (provider) {
-      provider.seedWith(_sampleFolders);
-      return const BookmarkListScreen();
-    });
-
-    _combinedScreenshot('2_empty_state', (provider) {
-      provider.seedWith([]);
-      return const BookmarkListScreen();
-    });
-
-    _combinedScreenshot('3_settings', (provider) {
-      provider.seedWith(_sampleFolders);
-      return const SettingsScreen();
-    });
-  });
-}
-
-/// Generates per-device screenshots in both light and dark themes.
-void _screenshot(
-  String description,
-  Widget Function(BookmarkProvider provider) buildContent,
-) {
-  final themes = {
-    '': GitSyncMarksApp.testLightTheme,
-    '_dark': GitSyncMarksApp.testDarkTheme,
-  };
-
-  for (final entry in themes.entries) {
-    final suffix = entry.key;
-    final theme = entry.value;
-
-    group('$description$suffix', () {
-      for (final goldenDevice in GoldenScreenshotDevices.values) {
-        testGoldens('for ${goldenDevice.name}', (tester) async {
-          final device = goldenDevice.device;
-
-          final provider = BookmarkProvider();
-          final content = buildContent(provider);
-
-          await tester.pumpWidget(
-            ScreenshotApp(
-              device: device,
-              title: 'GitSyncMarks',
-              theme: theme,
-              localizationsDelegates: _localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              locale: const Locale('en'),
-              home: ChangeNotifierProvider<BookmarkProvider>.value(
-                value: provider,
-                child: content,
-              ),
-            ),
-          );
-
-          await tester.loadAssets();
-          await tester.pumpFrames(
-            tester.widget(find.byType(ScreenshotApp)),
-            const Duration(seconds: 1),
-          );
-
-          await tester.expectScreenshot(device, '$description$suffix');
-        });
+  setUpAll(() {
+    const channel = MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'getTemporaryDirectory' ||
+          call.method == 'getApplicationSupportDirectory' ||
+          call.method == 'getApplicationDocumentsDirectory') {
+        return '/tmp/test_screenshots';
       }
+      return null;
     });
-  }
+  });
+
+  group('Screenshots', () {
+    _goldenTest('bookmark-list', (provider) {
+      provider.seedWith(_sampleFolders);
+      return const BookmarkListScreen();
+    });
+
+    _goldenTest('bookmark-list-dark', (provider) {
+      provider.seedWith(_sampleFolders);
+      return const BookmarkListScreen();
+    }, dark: true);
+
+    _goldenTest('settings-github', (provider) {
+      provider.seedWith(_sampleFolders);
+      return const SettingsScreen();
+    });
+  });
 }
 
-/// Generates a single golden with light (left) and dark (right) side by side.
-void _combinedScreenshot(
-  String description,
-  Widget Function(BookmarkProvider provider) buildContent,
-) {
-  const phoneWidth = 427.0;
-  const phoneHeight = 952.0;
-  const totalWidth = phoneWidth * 2;
-
-  testGoldens('$description combined', (tester) async {
-    tester.view.physicalSize = const Size(totalWidth, phoneHeight);
-    tester.view.devicePixelRatio = 1.0;
+void _goldenTest(
+  String name,
+  Widget Function(BookmarkProvider provider) buildContent, {
+  bool dark = false,
+}) {
+  testWidgets(name, (tester) async {
+    tester.view.physicalSize = const Size(_width * _pixelRatio, _height * _pixelRatio);
+    tester.view.devicePixelRatio = _pixelRatio;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
 
-    final lightProvider = BookmarkProvider();
-    final lightContent = buildContent(lightProvider);
-    final darkProvider = BookmarkProvider();
-    final darkContent = buildContent(darkProvider);
-
-    const combinedKey = ValueKey('combined');
+    final provider = BookmarkProvider();
+    final content = buildContent(provider);
+    final theme =
+        dark ? GitSyncMarksApp.testDarkTheme : GitSyncMarksApp.testLightTheme;
 
     await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: Row(
-          key: combinedKey,
-          textDirection: TextDirection.ltr,
-          children: [
-            _themedApp(GitSyncMarksApp.testLightTheme, lightProvider,
-                lightContent, phoneWidth, phoneHeight),
-            _themedApp(GitSyncMarksApp.testDarkTheme, darkProvider,
-                darkContent, phoneWidth, phoneHeight),
-          ],
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: theme,
+        localizationsDelegates: _localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: ChangeNotifierProvider<BookmarkProvider>.value(
+          value: provider,
+          child: content,
         ),
       ),
     );
 
-    await tester.loadAssets();
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
 
     await expectLater(
-      find.byKey(combinedKey),
-      matchesGoldenFile(
-          '../metadata/en-US/images/combinedScreenshots/${description}_combined.png'),
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/$name.png'),
     );
   });
-}
-
-Widget _themedApp(ThemeData theme, BookmarkProvider provider, Widget content,
-    double width, double height) {
-  return SizedBox(
-    width: width,
-    height: height,
-    child: MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: theme,
-      localizationsDelegates: _localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: ChangeNotifierProvider<BookmarkProvider>.value(
-        value: provider,
-        child: content,
-      ),
-    ),
-  );
 }

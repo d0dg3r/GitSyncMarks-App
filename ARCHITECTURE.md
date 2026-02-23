@@ -113,7 +113,9 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 - `_rootFolders`, `_credentials`, `_profiles`, `_activeProfileId`
 - `_lastSyncTime`, `_isLoading`, `_error`
 - `_searchQuery`, `_selectedRootFolders`
-- Auto-sync timer, sync-on-start
+- `_viewRootFolder` — configurable root folder for tab navigation
+- `allowMoveReorder` — edit mode toggle (defaults to false, not persisted)
+- Auto-sync timer, sync-on-start, auto-lock timer (60s inactivity)
 
 ## Caching Strategy
 
@@ -158,12 +160,17 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 ### Core Dependencies
 - `flutter`: SDK framework
 - `http`: Network requests
-- `hive`: Bookmark cache (offline)
+- `hive` / `hive_flutter`: Bookmark cache (offline)
 - `flutter_secure_storage`: Credentials, profiles, settings sync password
 - `provider`: State management (BookmarkProvider)
 - `url_launcher`: External browser integration
 - `pointycastle`: Settings sync encryption (PBKDF2, AES-256-GCM)
 - `receive_sharing_intent`: Share link as bookmark (Android/iOS)
+- `file_picker`: Desktop export (save file dialog) and import
+- `share_plus`: Mobile export (share sheet)
+- `uuid`: Device ID generation for individual settings sync
+- `cached_network_image`: Favicon caching
+- `package_info_plus`: App version info
 
 ### Dev Dependencies
 - `flutter_test`: Testing framework
@@ -172,10 +179,11 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 ## CI / Release
 
 ### Release Workflow (`.github/workflows/release.yml`)
-- **Trigger:** Tag push `v*`
-- **Artifacts:** APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS)
+- **Trigger:** Tag push `v*` (all tags build; `-beta`/`-rc`/`-test` → pre-release; clean versions → latest)
+- **Jobs:** `generate-screenshots`, `build-android-linux`, `build-windows`, `build-macos`, `build-flatpak`, `release`
+- **Artifacts:** APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS), screenshots
 - **Linux bundle:** Flutter Linux build packed as tar.gz with `--owner=root --group=root`
-- **Prepare Flatpak step:** Uses `find` to locate tar.gz after `download-artifact` (extracts to workspace root)
+- **Screenshots:** Golden tests generate PNGs, uploaded as artifacts
 
 ### Flatpak Test Workflow (`.github/workflows/flatpak-test.yml`)
 - **Trigger:** `workflow_dispatch` or tag `v*-flatpak-test*`
@@ -202,11 +210,18 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 ### Integration Tests
 - (Future) End-to-end user flows
 
-## Features (v0.3.0)
+## Features (v0.3.x)
 
 - Settings Sync to Git (extension-compatible, Global/Individual)
 - Move bookmarks to folder (hierarchical picker)
 - Reorder bookmarks (drag-and-drop, persisted)
+- Delete bookmarks (long-press, available in locked mode)
 - Share link as bookmark (receive_sharing_intent)
 - Recursive folder display
+- Password-protected settings export/import (AES-256-GCM)
+- Configurable root folder for tab navigation
+- Auto-lock edit mode (60s inactivity timer)
+- Post-import auto-sync
+- Reset all data (profiles, settings, cache)
 - Search, Export settings, Export bookmarks
+- CI screenshot generation via golden tests

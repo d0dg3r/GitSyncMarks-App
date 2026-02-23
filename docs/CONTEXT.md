@@ -19,17 +19,17 @@ This document captures the context and decisions from when the project was creat
 | Topic | Decision |
 |-------|----------|
 | **Platform** | Flutter (Android, iOS, Windows, macOS, Linux from one codebase) |
-| **Scope** | Sync, display tree, open in browser; move/reorder/add bookmarks; settings sync |
+| **Scope** | Sync, display tree, open in browser; move/reorder/delete/add bookmarks; settings sync; encrypted export/import; configurable root folder; auto-lock edit mode; reset all data |
 | **Storage** | GitHub repo (same format as extension); local cache for offline |
 | **Browser** | User selects preferred browser; URLs open via `url_launcher` |
 
 ## POC Scope (Completed)
 
-- Flutter project in this repo
-- Main screen: Bookmark list (empty state with "Configure in Settings")
-- Settings screen: Form with Token, Owner, Repo, Branch, Base Path
-- Navigation between screens
-- No persistence yet, no API calls
+- [x] Flutter project in this repo
+- [x] Main screen: Bookmark list (empty state with "Configure in Settings")
+- [x] Settings screen: Form with Token, Owner, Repo, Branch, Base Path
+- [x] Navigation between screens
+- [x] `flutter create . --org com.gitsyncmarks` (android/, ios/ generated)
 
 ## Tech Stack (Implemented)
 
@@ -68,9 +68,12 @@ Token: GitHub PAT with `repo` scope.
 
 ## UI Decisions
 
-- **Bookmark list:** Expandable tree (folders + bookmarks), ReorderableListView, move-to-folder (long-press)
-- **Folder picker:** Hierarchical picker for move; root folder tabs (toolbar, menu, other, mobile)
+- **Bookmark list:** Expandable tree (folders + bookmarks), ReorderableListView, move-to-folder (long-press), delete (long-press)
+- **Folder picker:** Hierarchical picker for move; root folder tabs (toolbar, menu, other, mobile); configurable root folder
 - **Settings:** Token, Owner, Repo, Branch, Base Path, Browser choice; 5 tabs (GitHub, Sync, Files, Help, About)
+- **Edit mode:** Lock/unlock icon in AppBar; auto-locks after 60s inactivity; defaults to locked
+- **Export/Import:** Password-protected (AES-256-GCM); desktop uses FilePicker, mobile uses Share
+- **Empty state:** Import Settings button when no credentials configured
 
 ## Platforms
 
@@ -82,5 +85,7 @@ Token: GitHub PAT with `repo` scope.
 
 - User wanted to start with a POC
 - Flutter was not installed on dev machine; project structure created manually
-- `flutter create .` still needed to generate android/ and ios/ folders
+- `flutter create .` done to generate android/ and ios/ folders
 - Related idea (Tab-Profiles) documented in GitSyncMarks repo – separate feature
+- Android is the primary platform; all others (iOS, Windows, macOS, Linux) are alpha
+- Pre-release CI tags (`-beta`, `-rc`, `-test`) build all platforms but mark as pre-release

@@ -30,9 +30,33 @@ No code changes required. Use **Test Connection** to verify access, then **Save*
 
 For bidirectional sync and browser integration, use the [GitSyncMarks browser extension](https://github.com/d0dg3r/GitSyncMarks) to export/manage bookmarks.
 
+## Settings Sync
+
+The app can sync settings (profiles, credentials) to your GitHub repo, encrypted and compatible with the GitSyncMarks browser extension:
+
+1. Go to **Settings → Sync** tab
+2. Enable **Sync Settings to Git**
+3. Set a **Sync Password** (used for AES-256-GCM encryption)
+4. Choose **Sync Mode**: Global (one config for all devices) or Individual (per-device)
+5. Click **Save** — settings are pushed to `gitsyncmarks-settings/` in your repo
+
+## Export / Import Settings
+
+Settings can be exported and imported as files, optionally password-protected:
+
+- **Export**: Settings → Files tab → Export Settings. You can set a password for encryption (AES-256-GCM).
+- **Import**: Settings → Files tab → Import Settings. If the file is encrypted, you'll be prompted for the password.
+- On first launch with no credentials, an **Import Settings** button is shown on the main screen.
+- After import, the app automatically syncs bookmarks if valid credentials are found.
+
+## Reset All Data
+
+To start fresh: Settings → About tab → **Reset all data**. This clears all profiles, settings, and cached bookmarks.
+
 ## Security Considerations
 
 - Use a GitHub PAT with minimal scope (`repo` for private repos)
 - Do not include sensitive information in bookmark URLs or titles
 - Credentials are stored via `flutter_secure_storage`
+- Settings sync uses AES-256-GCM encryption (`gitsyncmarks-enc:v1` format, compatible with browser extension)
 - Bookmarks are cached locally (Hive) for offline access

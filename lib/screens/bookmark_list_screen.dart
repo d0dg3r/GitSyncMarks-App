@@ -560,7 +560,12 @@ class _ProfileDropdown extends StatelessWidget {
         children: [
           appIcon,
           const SizedBox(width: 8),
-          Text(AppLocalizations.of(context)!.appTitle),
+          Flexible(
+            child: Text(
+              AppLocalizations.of(context)!.appTitle,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       );
     }

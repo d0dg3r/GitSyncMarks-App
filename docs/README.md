@@ -14,15 +14,20 @@ When opening this project fresh: read CONTEXT.md and PLAN.md first so you have f
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Technical architecture, CI/Release |
 | [CHANGELOG.md](../CHANGELOG.md) | Version history |
 
-## Current Status (v0.3.0)
+## Current Status (v0.3.x)
 
-- Bookmark sync, move, reorder, add via share
+- Bookmark sync, move, reorder, delete, add via share
 - Settings Sync to Git (extension-compatible, Global/Individual mode)
+- Password-protected export/import of settings
+- Configurable root folder for tab-based navigation
+- Auto-lock edit mode (60s inactivity timer)
+- Post-import auto-sync, reset all data
 - Local cache (Hive), Profiles, multi-root-folder selection
 - i18n (DE/EN/ES/FR), Dark Mode, Favicons
-- **Platforms:** Android, iOS, Windows, macOS, Linux
-- **Release workflow:** Tag `v*` → APK, Flatpak + ZIP (Linux), ZIP (Windows, macOS)
+- **Platforms:** Android (stable), iOS, Windows, macOS, Linux (all alpha)
+- **Release workflow:** Tag `v*` → APK, Flatpak + ZIP (Linux), ZIP (Windows, macOS); pre-release tags supported
 - **Flatpak test workflow:** `workflow_dispatch` or tag `v*-flatpak-test*` for isolated Flatpak build
+- **CI screenshots:** Golden tests auto-generate screenshots on each release
 
 ## Related Repos
 

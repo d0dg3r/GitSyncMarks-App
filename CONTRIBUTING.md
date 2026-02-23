@@ -4,7 +4,7 @@ Thank you for considering contributing to GitSyncMarks-Mobile!
 
 ## Development Setup
 
-1. Install Flutter SDK (3.2.0 or higher)
+1. Install Flutter SDK (3.41.0 or higher)
 2. Clone the repository:
    ```bash
    git clone git@github.com:d0dg3r/GitSyncMarks-Mobile.git
@@ -42,10 +42,13 @@ flutter run -d windows
 flutter run -d macos
 ```
 
-### Chrome (for web testing)
+## Generating Screenshots
+
 ```bash
-flutter run -d chrome
+flutter test test/screenshot_test.dart --update-goldens
 ```
+
+Screenshots are generated as golden files in `test/goldens/` and copied to `flatpak/screenshots/`.
 
 ## Testing
 
