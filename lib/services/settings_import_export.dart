@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/profile.dart';
 import 'settings_crypto.dart';
+import 'web_download_stub.dart'
+    if (dart.library.html) 'web_download_web.dart';
 
 /// Result of parsing a GitSyncMarks settings JSON file.
 class ImportResult {
@@ -120,7 +123,6 @@ class SettingsImportExportService {
   }) async {
     final jsonString = buildExportJson(profiles, activeProfileId);
 
-    final dir = await getTemporaryDirectory();
     final now = DateTime.now();
     final datePart =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
@@ -134,12 +136,29 @@ class SettingsImportExportService {
       content = jsonString;
       ext = 'json';
     }
-
     final fileName = 'gitsyncmarks-settings-$datePart.$ext';
+
+    if (kIsWeb) {
+      final webBytes = Uint8List.fromList(utf8.encode(content));
+      await downloadBytesForWeb(webBytes, fileName, 'application/octet-stream');
+      return;
+    }
+
+    late final Directory dir;
+    try {
+      dir = await getTemporaryDirectory();
+    } catch (e) {
+      rethrow;
+    }
     final file = File('${dir.path}/$fileName');
     await file.writeAsString(content);
 
-    final isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+    late final bool isDesktop;
+    try {
+      isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+    } catch (e) {
+      rethrow;
+    }
     if (isDesktop) {
       final savePath = await FilePicker.platform.saveFile(
         dialogTitle: 'Save Settings',

@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +18,8 @@ import '../providers/bookmark_provider.dart';
 import '../services/bookmark_export.dart';
 import '../services/settings_crypto.dart';
 import '../services/settings_import_export.dart';
+import '../services/web_import_picker_stub.dart'
+    if (dart.library.html) '../services/web_import_picker_web.dart';
 
 const String _gitSyncMarksUrl = 'https://github.com/d0dg3r/GitSyncMarks';
 const String _gitSyncMarksMobileUrl = 'https://github.com/d0dg3r/GitSyncMarks-Mobile';
@@ -200,11 +204,34 @@ class _SettingsScreenState extends State<SettingsScreen>
   Future<void> _onImport() async {
     final l = AppLocalizations.of(context)!;
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.any);
-      if (result == null || result.files.isEmpty) return;
-      final path = result.files.single.path;
-      if (path == null) return;
-      var content = await File(path).readAsString();
+      final result = kIsWeb
+          ? null
+          : await FilePicker.platform.pickFiles(
+              type: FileType.any,
+              allowMultiple: false,
+              withData: false,
+            );
+      WebPickedFile? webFallback;
+      if (kIsWeb && (result == null || result.files.isEmpty)) {
+        webFallback = await pickFileBytesWithWebFallback();
+      }
+      if ((result == null || result.files.isEmpty) && webFallback == null) {
+        if (mounted) {
+          _showSnackBar('No file selected.', isError: true);
+        }
+        return;
+      }
+      final picked = result?.files.isNotEmpty == true ? result!.files.single : null;
+      String content;
+      if (kIsWeb) {
+        final bytes = picked?.bytes ?? webFallback?.bytes;
+        if (bytes == null) return;
+        content = utf8.decode(bytes);
+      } else {
+        final path = picked?.path;
+        if (path == null) return;
+        content = await File(path).readAsString();
+      }
 
       if (SettingsImportExportService.isEncrypted(content)) {
         if (!mounted) return;
@@ -244,9 +271,23 @@ class _SettingsScreenState extends State<SettingsScreen>
         ),
       );
       if (confirmed != true || !mounted) return;
+      var activeId = parsed.activeProfileId;
+      if (!parsed.profiles.any((p) => p.id == activeId)) {
+        activeId = parsed.profiles.first.id;
+      }
+      final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
+      if (!selected.credentials.isValid) {
+        for (final p in parsed.profiles) {
+          if (p.credentials.isValid) {
+            activeId = p.id;
+            break;
+          }
+        }
+      }
+      if (!mounted) return;
       await context.read<BookmarkProvider>().replaceProfiles(
             parsed.profiles,
-            activeId: parsed.activeProfileId,
+            activeId: activeId,
             triggerSync: false,
           );
       if (mounted) {

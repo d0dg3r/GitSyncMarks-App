@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +14,8 @@ import '../models/bookmark_node.dart';
 import '../providers/bookmark_provider.dart';
 import '../services/settings_crypto.dart';
 import '../services/settings_import_export.dart';
+import '../services/web_import_picker_stub.dart'
+    if (dart.library.html) '../services/web_import_picker_web.dart';
 import '../utils/favicon_utils.dart';
 import 'settings_screen.dart';
 
@@ -29,11 +33,36 @@ Future<void> _handleImport(BuildContext context) async {
   final l = AppLocalizations.of(context)!;
   final importExport = SettingsImportExportService();
   try {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
-    if (result == null || result.files.isEmpty) return;
-    final path = result.files.single.path;
-    if (path == null) return;
-    var content = await File(path).readAsString();
+    final result = kIsWeb
+        ? null
+        : await FilePicker.platform.pickFiles(
+            type: FileType.any,
+            allowMultiple: false,
+            withData: false,
+          );
+    WebPickedFile? webFallback;
+    if (kIsWeb && (result == null || result.files.isEmpty)) {
+      webFallback = await pickFileBytesWithWebFallback();
+    }
+    if ((result == null || result.files.isEmpty) && webFallback == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No file selected.')),
+        );
+      }
+      return;
+    }
+    final picked = result?.files.isNotEmpty == true ? result!.files.single : null;
+    String content;
+    if (kIsWeb) {
+      final bytes = picked?.bytes ?? webFallback?.bytes;
+      if (bytes == null) return;
+      content = utf8.decode(bytes);
+    } else {
+      final path = picked?.path;
+      if (path == null) return;
+      content = await File(path).readAsString();
+    }
 
     if (SettingsImportExportService.isEncrypted(content)) {
       if (!context.mounted) return;
@@ -97,9 +126,23 @@ Future<void> _handleImport(BuildContext context) async {
       ),
     );
     if (confirmed != true || !context.mounted) return;
+    var activeId = parsed.activeProfileId;
+    if (!parsed.profiles.any((p) => p.id == activeId)) {
+      activeId = parsed.profiles.first.id;
+    }
+    final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
+    if (!selected.credentials.isValid) {
+      for (final p in parsed.profiles) {
+        if (p.credentials.isValid) {
+          activeId = p.id;
+          break;
+        }
+      }
+    }
+    if (!context.mounted) return;
     await context.read<BookmarkProvider>().replaceProfiles(
           parsed.profiles,
-          activeId: parsed.activeProfileId,
+          activeId: activeId,
           triggerSync: false,
         );
     if (context.mounted) {

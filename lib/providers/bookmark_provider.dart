@@ -305,6 +305,10 @@ class BookmarkProvider extends ChangeNotifier {
   }) async {
     _profiles = profiles;
     await _storage.saveProfiles(_profiles);
+    // Prevent _saveCurrentProfileLocally() in switchProfile() from overwriting
+    // freshly imported profiles with stale in-memory credentials.
+    _activeProfileId = null;
+    _credentials = null;
     await switchProfile(activeId);
     if (triggerSync && _credentials != null && _credentials!.isValid) {
       await syncBookmarks();
