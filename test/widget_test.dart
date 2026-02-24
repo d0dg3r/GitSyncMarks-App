@@ -14,6 +14,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byIcon(Icons.settings_outlined), findsWidgets);
+    expect(find.byIcon(Icons.settings), findsWidgets);
   });
 }

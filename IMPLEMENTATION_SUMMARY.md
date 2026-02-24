@@ -11,7 +11,7 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - **Share link as bookmark**: receive_sharing_intent for URLs from browser
 - **Recursive folder display**: Subfolders and nested bookmarks
 
-## Post-v0.3.0 Additions
+## v0.3.0-beta.2 Additions
 
 - **Password-protected export/import**: Settings export encrypted with AES-256-GCM; import detects encrypted files and prompts for password
 - **Configurable root folder**: Select any folder as "root" for tab navigation; subfolders become tabs
@@ -110,14 +110,12 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 
 ## 🧪 Testing
 
-### Unit Tests
-- ✅ Bookmark model serialization/deserialization
-- ✅ Repository and cache operations
-
 ### Widget Tests
-- ✅ App starts successfully
-- ✅ Shows title
-- ✅ Shows loading indicator
+- ✅ `widget_test.dart`: App smoke test (starts, title, loading)
+- ✅ `screenshot_test.dart`: Golden screenshots for Flatpak metainfo
+
+### Unit Tests
+- (Future) Model serialization, repository/cache operations
 
 ### Code Quality
 - ✅ Passes Flutter analyzer

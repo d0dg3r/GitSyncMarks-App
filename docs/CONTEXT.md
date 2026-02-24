@@ -77,8 +77,8 @@ Token: GitHub PAT with `repo` scope.
 
 ## Platforms
 
-- **Android, iOS:** Full support (Share-Intent on mobile only)
-- **Windows, macOS, Linux:** Same codebase; Share-Intent bypassed on desktop; direct HomeScreen
+- **Android:** Stable; primary platform; F-Droid metadata in `fdroid/`
+- **iOS, Windows, macOS, Linux:** Alpha; same codebase; Share-Intent only on mobile; desktop uses HomeScreen directly
 - **Linux distribution:** Flatpak (recommended) + ZIP fallback; CI builds both on tag push
 
 ## Conversation Notes

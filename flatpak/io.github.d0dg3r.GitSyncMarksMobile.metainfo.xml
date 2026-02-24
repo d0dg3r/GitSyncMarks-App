@@ -53,6 +53,13 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.3.0-beta.2" date="2026-02-21">
+      <description>
+        <p>Password-protected export/import, configurable root folder, auto-lock edit mode,
+           delete bookmarks (long-press), post-import auto-sync, reset all data,
+           import on empty state, CI screenshot generation.</p>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-02-21">
       <description>
         <p>Major feature release: encrypted settings sync, drag-and-drop

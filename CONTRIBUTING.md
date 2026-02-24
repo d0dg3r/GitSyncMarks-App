@@ -4,7 +4,7 @@ Thank you for considering contributing to GitSyncMarks-Mobile!
 
 ## Development Setup
 
-1. Install Flutter SDK (3.41.0 or higher)
+1. Install Flutter SDK (3.41.0 or higher; 3.41.1 recommended for CI parity)
 2. Clone the repository:
    ```bash
    git clone git@github.com:d0dg3r/GitSyncMarks-Mobile.git
@@ -48,7 +48,7 @@ flutter run -d macos
 flutter test test/screenshot_test.dart --update-goldens
 ```
 
-Screenshots are generated as golden files in `test/goldens/` and copied to `flatpak/screenshots/`.
+Screenshots are generated as golden files in `test/goldens/` and copied to `flatpak/screenshots/`. Run `mkdir -p flatpak/screenshots` before copy if the directory does not exist.
 
 ## Testing
 
@@ -92,6 +92,16 @@ test/                # Unit and widget tests
 android/             # Android-specific files
 ios/                 # iOS-specific files
 ```
+
+## F-Droid Metadata
+
+When changing app metadata, release notes, or screenshots, update F-Droid metadata in `fdroid/`:
+
+- `fdroid/metadata/com.d0dg3r.gitsyncmarks.yml` — version, build config
+- `fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/{versionCode}.txt` — changelog per release
+- `fdroid/README.md` — submission instructions
+
+See [fdroid/README.md](fdroid/README.md) for submission workflow.
 
 ## Flatpak Test Workflow
 

@@ -156,11 +156,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Generate golden screenshots
-        run: flutter test test/screenshot_test.dart --update-goldens
+      - name: Validate golden screenshots
+        run: flutter test test/screenshot_test.dart
 
-      - name: Copy screenshots to flatpak dir
-        run: cp test/goldens/*.png flatpak/screenshots/
+      - name: Copy screenshots to flatpak dir (for artifact)
+        run: |
+          mkdir -p flatpak/screenshots
+          cp test/goldens/*.png flatpak/screenshots/
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
@@ -211,7 +213,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [build-android-linux, build-windows, build-macos, build-flatpak]
+    needs: [build-android-linux, build-windows, build-macos, build-flatpak, generate-screenshots]
     steps:
       - name: Get version
         id: version

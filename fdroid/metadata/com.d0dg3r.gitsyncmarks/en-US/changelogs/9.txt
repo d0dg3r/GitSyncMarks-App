@@ -1,0 +1,1 @@
+Version 0.3.0-beta.2: Password-protected export/import of settings (AES-256-GCM). Configurable root folder for tab navigation. Auto-lock edit mode (60s inactivity). Delete bookmarks via long-press (available when locked). Post-import auto-sync. Reset all data button. Import on empty state. Default profile creation. CI screenshot generation. Pre-release tag support.

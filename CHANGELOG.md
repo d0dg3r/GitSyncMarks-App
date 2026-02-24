@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+**Release types:** Tags without suffix (e.g. `v0.3.0`) create stable releases marked as "latest". Tags with suffix (e.g. `v0.3.0-beta.1`, `v0.3.0-rc.1`, `v0.3.0-test.1`) create pre-releases; all platforms are built in both cases.
+
 ## [Unreleased]
+
+- (none)
+
+---
+
+## [0.3.0-beta.2] - 2026-02-21
 
 ### Added
 

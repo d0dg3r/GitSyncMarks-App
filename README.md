@@ -30,7 +30,7 @@
   <img src="flatpak/screenshots/settings-github.png" alt="Settings" width="200">
 </p>
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+See [CHANGELOG.md](CHANGELOG.md) for version history and [ROADMAP.md](ROADMAP.md) for milestones and future plans.
 
 ## Features
 
@@ -187,6 +187,7 @@ Android is the main focus. All other platforms share the same Flutter codebase a
 - **[docs/BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md)** — Bookmark JSON structure
 - **[store/README.md](store/README.md)** — App store submission (descriptions, screenshots)
 - **[CHANGELOG.md](CHANGELOG.md)** — Version history
+- **[ROADMAP.md](ROADMAP.md)** — Milestones and future plans
 
 ## License
 

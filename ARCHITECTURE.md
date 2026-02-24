@@ -197,20 +197,17 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 
 ## Testing Strategy
 
-### Unit Tests
-- Model serialization/deserialization
-- Service method behavior
-- Error handling logic
-
 ### Widget Tests
-- UI component rendering
-- User interaction handling
-- Loading states
+- `test/widget_test.dart`: Basic app smoke test
+- `test/screenshot_test.dart`: Golden screenshots for Flatpak metainfo (`test/goldens/` → `flatpak/screenshots/`)
+
+### Unit Tests
+- (Future) Model serialization, service behavior, error handling
 
 ### Integration Tests
 - (Future) End-to-end user flows
 
-## Features (v0.3.x)
+## Features (v0.3.0-beta.2)
 
 - Settings Sync to Git (extension-compatible, Global/Individual)
 - Move bookmarks to folder (hierarchical picker)

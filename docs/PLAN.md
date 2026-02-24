@@ -156,6 +156,7 @@ lib/
 
 - [ ] iOS build & distribution (TestFlight / IPA)
 - [ ] Flathub submission
+- [ ] F-Droid store: keep metadata and changelogs in sync with each release (see `fdroid/`)
 
 ## Development Quick Start
 
