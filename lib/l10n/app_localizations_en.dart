@@ -574,6 +574,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importSettingsAction => 'Import Settings';
 
   @override
+  String get importingSettings => 'Importing settings…';
+
+  @override
   String get orImportExisting => 'or import existing settings';
 
   @override

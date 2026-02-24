@@ -585,6 +585,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get importSettingsAction => 'Importer les paramètres';
 
   @override
+  String get importingSettings => 'Importation des paramètres…';
+
+  @override
   String get orImportExisting => 'ou importer des paramètres existants';
 
   @override

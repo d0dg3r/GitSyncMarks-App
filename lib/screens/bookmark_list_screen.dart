@@ -29,7 +29,12 @@ class _AppIcon extends StatelessWidget {
   }
 }
 
-Future<void> _handleImport(BuildContext context) async {
+Future<void> _handleImport(
+  BuildContext context, {
+  bool isImporting = false,
+  void Function(bool)? onImporting,
+}) async {
+  if (isImporting) return;
   final l = AppLocalizations.of(context)!;
   final importExport = SettingsImportExportService();
   try {
@@ -106,53 +111,59 @@ Future<void> _handleImport(BuildContext context) async {
       }
     }
 
-    final parsed = importExport.parseSettingsJson(content);
     if (!context.mounted) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.importSettings),
-        content: Text(l.importConfirm(parsed.profiles.length)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.replace),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-    var activeId = parsed.activeProfileId;
-    if (!parsed.profiles.any((p) => p.id == activeId)) {
-      activeId = parsed.profiles.first.id;
-    }
-    final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
-    if (!selected.credentials.isValid) {
-      for (final p in parsed.profiles) {
-        if (p.credentials.isValid) {
-          activeId = p.id;
-          break;
+    onImporting?.call(true);
+    try {
+      final parsed = importExport.parseSettingsJson(content);
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.importSettings),
+          content: Text(l.importConfirm(parsed.profiles.length)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.replace),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+      var activeId = parsed.activeProfileId;
+      if (!parsed.profiles.any((p) => p.id == activeId)) {
+        activeId = parsed.profiles.first.id;
+      }
+      final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
+      if (!selected.credentials.isValid) {
+        for (final p in parsed.profiles) {
+          if (p.credentials.isValid) {
+            activeId = p.id;
+            break;
+          }
         }
       }
-    }
-    if (!context.mounted) return;
-    await context.read<BookmarkProvider>().replaceProfiles(
-          parsed.profiles,
-          activeId: activeId,
-          triggerSync: false,
+      if (!context.mounted) return;
+      await context.read<BookmarkProvider>().replaceProfiles(
+            parsed.profiles,
+            activeId: activeId,
+            triggerSync: false,
+          );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.importSuccess(parsed.profiles.length))),
         );
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.importSuccess(parsed.profiles.length))),
-      );
-      final provider = context.read<BookmarkProvider>();
-      if (provider.hasCredentials) {
-        provider.syncBookmarks();
+        final provider = context.read<BookmarkProvider>();
+        if (provider.hasCredentials) {
+          provider.syncBookmarks();
+        }
       }
+    } finally {
+      onImporting?.call(false);
     }
   } catch (e) {
     if (context.mounted) {
@@ -166,71 +177,101 @@ Future<void> _handleImport(BuildContext context) async {
   }
 }
 
-class BookmarkListScreen extends StatelessWidget {
+class BookmarkListScreen extends StatefulWidget {
   const BookmarkListScreen({super.key});
 
   @override
+  State<BookmarkListScreen> createState() => _BookmarkListScreenState();
+}
+
+class _BookmarkListScreenState extends State<BookmarkListScreen> {
+  bool _isImporting = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<BookmarkProvider>(
-      builder: (context, provider, _) {
-        if (provider.error != null) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: _ErrorView(
-              message: provider.error!,
-              onRetry: () {
-                provider.clearError();
-                provider.syncBookmarks();
-              },
+    return Stack(
+      children: [
+        Consumer<BookmarkProvider>(
+          builder: (context, provider, _) {
+            if (provider.error != null) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _ErrorView(
+                  message: provider.error!,
+                  onRetry: () {
+                    provider.clearError();
+                    provider.syncBookmarks();
+                  },
+                ),
+              );
+            }
+
+            if (!provider.hasCredentials) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _EmptyState(
+                  onOpenSettings: null,
+                  onImport: () => _handleImport(
+                    context,
+                    isImporting: _isImporting,
+                    onImporting: (v) => setState(() => _isImporting = v),
+                  ),
+                ),
+              );
+            }
+
+            if (provider.isLoading && !provider.hasBookmarks) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: const Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (!provider.hasBookmarks) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _EmptyState(
+                  hasCredentials: true,
+                  onSync: () => provider.syncBookmarks(),
+                  onOpenSettings: null,
+                ),
+              );
+            }
+
+            final folders = provider.filteredDisplayedRootFolders;
+            final hasSearch = provider.searchQuery.trim().isNotEmpty;
+            if (hasSearch && folders.isEmpty) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _SearchNoResultsView(
+                  query: provider.searchQuery,
+                  onClearSearch: () => provider.setSearchQuery(''),
+                ),
+              );
+            }
+
+            return _TabbedBookmarkView(
+              folders: folders,
+              provider: provider,
+            );
+          },
+        ),
+        if (_isImporting)
+          Positioned.fill(
+            child: ModalBarrier(dismissible: false),
+          ),
+        if (_isImporting)
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(AppLocalizations.of(context)!.importingSettings),
+              ],
             ),
-          );
-        }
-
-        if (!provider.hasCredentials) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: _EmptyState(
-              onOpenSettings: null,
-              onImport: () => _handleImport(context),
-            ),
-          );
-        }
-
-        if (provider.isLoading && !provider.hasBookmarks) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!provider.hasBookmarks) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: _EmptyState(
-              hasCredentials: true,
-              onSync: () => provider.syncBookmarks(),
-              onOpenSettings: null,
-            ),
-          );
-        }
-
-        final folders = provider.filteredDisplayedRootFolders;
-        final hasSearch = provider.searchQuery.trim().isNotEmpty;
-        if (hasSearch && folders.isEmpty) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: _SearchNoResultsView(
-              query: provider.searchQuery,
-              onClearSearch: () => provider.setSearchQuery(''),
-            ),
-          );
-        }
-
-        return _TabbedBookmarkView(
-          folders: folders,
-          provider: provider,
-        );
-      },
+          ),
+      ],
     );
   }
 

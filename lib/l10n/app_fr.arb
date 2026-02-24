@@ -231,6 +231,7 @@
   "importPasswordTitle": "Fichier chiffré",
   "importPasswordHint": "Entrez le mot de passe de chiffrement",
   "importSettingsAction": "Importer les paramètres",
+  "importingSettings": "Importation des paramètres…",
   "orImportExisting": "ou importer des paramètres existants",
   "wrongPassword": "Mot de passe incorrect. Veuillez réessayer.",
   "export_": "Exporter",

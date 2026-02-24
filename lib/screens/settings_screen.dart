@@ -47,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   final _importExport = SettingsImportExportService();
   final _bookmarkExport = BookmarkExportService();
   String? _loadedProfileId;
+  bool _isImporting = false;
 
   @override
   void initState() {
@@ -202,6 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _onImport() async {
+    if (_isImporting) return;
     final l = AppLocalizations.of(context)!;
     try {
       final result = kIsWeb
@@ -251,52 +253,58 @@ class _SettingsScreenState extends State<SettingsScreen>
         }
       }
 
-      final parsed = _importExport.parseSettingsJson(content);
       if (!mounted) return;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l.importSettings),
-          content: Text(l.importConfirm(parsed.profiles.length)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.replace),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true || !mounted) return;
-      var activeId = parsed.activeProfileId;
-      if (!parsed.profiles.any((p) => p.id == activeId)) {
-        activeId = parsed.profiles.first.id;
-      }
-      final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
-      if (!selected.credentials.isValid) {
-        for (final p in parsed.profiles) {
-          if (p.credentials.isValid) {
-            activeId = p.id;
-            break;
+      setState(() => _isImporting = true);
+      try {
+        final parsed = _importExport.parseSettingsJson(content);
+        if (!mounted) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l.importSettings),
+            content: Text(l.importConfirm(parsed.profiles.length)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l.replace),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true || !mounted) return;
+        var activeId = parsed.activeProfileId;
+        if (!parsed.profiles.any((p) => p.id == activeId)) {
+          activeId = parsed.profiles.first.id;
+        }
+        final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
+        if (!selected.credentials.isValid) {
+          for (final p in parsed.profiles) {
+            if (p.credentials.isValid) {
+              activeId = p.id;
+              break;
+            }
           }
         }
-      }
-      if (!mounted) return;
-      await context.read<BookmarkProvider>().replaceProfiles(
-            parsed.profiles,
-            activeId: activeId,
-            triggerSync: false,
-          );
-      if (mounted) {
-        _loadFromProvider();
-        _showSnackBar(l.importSuccess(parsed.profiles.length));
-        final provider = context.read<BookmarkProvider>();
-        if (provider.hasCredentials) {
-          provider.syncBookmarks();
+        if (!mounted) return;
+        await context.read<BookmarkProvider>().replaceProfiles(
+              parsed.profiles,
+              activeId: activeId,
+              triggerSync: false,
+            );
+        if (mounted) {
+          _loadFromProvider();
+          _showSnackBar(l.importSuccess(parsed.profiles.length));
+          final provider = context.read<BookmarkProvider>();
+          if (provider.hasCredentials) {
+            provider.syncBookmarks();
+          }
         }
+      } finally {
+        if (mounted) setState(() => _isImporting = false);
       }
     } catch (e) {
       if (mounted) _showSnackBar(l.importFailed(e.toString()), isError: true);
@@ -439,7 +447,9 @@ class _SettingsScreenState extends State<SettingsScreen>
               .addPostFrameCallback((_) => _loadFromProvider());
         }
 
-        return Scaffold(
+        return Stack(
+          children: [
+            Scaffold(
           appBar: AppBar(
             title: Text(l.settings),
             bottom: TabBar(
@@ -473,6 +483,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               _SyncTab(provider: provider),
               _FilesTab(
                 provider: provider,
+                isImporting: _isImporting,
                 onImport: _onImport,
                 onExport: _onExport,
                 onExportBookmarks: _onExportBookmarks,
@@ -483,6 +494,23 @@ class _SettingsScreenState extends State<SettingsScreen>
               _AboutTab(launchUrl: _launchUrl, onReset: _onReset),
             ],
           ),
+        ),
+            if (_isImporting)
+              Positioned.fill(
+                child: ModalBarrier(dismissible: false),
+              ),
+            if (_isImporting)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(l.importingSettings),
+                  ],
+                ),
+              ),
+          ],
         );
       },
     );
@@ -1074,6 +1102,7 @@ class _SyncTab extends StatelessWidget {
 class _FilesTab extends StatelessWidget {
   const _FilesTab({
     required this.provider,
+    required this.isImporting,
     required this.onImport,
     required this.onExport,
     required this.onExportBookmarks,
@@ -1082,6 +1111,7 @@ class _FilesTab extends StatelessWidget {
   });
 
   final BookmarkProvider provider;
+  final bool isImporting;
   final VoidCallback onImport;
   final VoidCallback onExport;
   final VoidCallback onExportBookmarks;
@@ -1115,6 +1145,7 @@ class _FilesTab extends StatelessWidget {
             controller: subTabController,
             children: [
               _ExportImportSubTab(
+                isImporting: isImporting,
                 onImport: onImport,
                 onExport: onExport,
                 onExportBookmarks: onExportBookmarks,
@@ -1131,12 +1162,14 @@ class _FilesTab extends StatelessWidget {
 
 class _ExportImportSubTab extends StatelessWidget {
   const _ExportImportSubTab({
+    required this.isImporting,
     required this.onImport,
     required this.onExport,
     required this.onExportBookmarks,
     required this.onClearCache,
   });
 
+  final bool isImporting;
   final VoidCallback onImport;
   final VoidCallback onExport;
   final VoidCallback onExportBookmarks;
@@ -1171,7 +1204,7 @@ class _ExportImportSubTab extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: onImport,
+                        onPressed: isImporting ? null : onImport,
                         icon: const Icon(Icons.file_download, size: 18),
                         label: Text(l.importSettings),
                       ),

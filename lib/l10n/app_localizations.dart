@@ -1134,6 +1134,12 @@ abstract class AppLocalizations {
   /// **'Import Settings'**
   String get importSettingsAction;
 
+  /// No description provided for @importingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing settings…'**
+  String get importingSettings;
+
   /// No description provided for @orImportExisting.
   ///
   /// In en, this message translates to:

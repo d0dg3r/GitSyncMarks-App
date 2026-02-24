@@ -231,6 +231,7 @@
   "importPasswordTitle": "Verschlüsselte Datei",
   "importPasswordHint": "Verschlüsselungs-Passwort eingeben",
   "importSettingsAction": "Einstellungen importieren",
+  "importingSettings": "Einstellungen werden importiert…",
   "orImportExisting": "oder vorhandene Einstellungen importieren",
   "wrongPassword": "Falsches Passwort. Bitte erneut versuchen.",
   "export_": "Exportieren",

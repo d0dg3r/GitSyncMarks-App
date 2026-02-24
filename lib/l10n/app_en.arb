@@ -231,6 +231,7 @@
   "importPasswordTitle": "Encrypted File",
   "importPasswordHint": "Enter the encryption password",
   "importSettingsAction": "Import Settings",
+  "importingSettings": "Importing settings…",
   "orImportExisting": "or import existing settings",
   "wrongPassword": "Wrong password. Please try again.",
   "export_": "Export",

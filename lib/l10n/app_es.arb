@@ -231,6 +231,7 @@
   "importPasswordTitle": "Archivo cifrado",
   "importPasswordHint": "Introduce la contraseña de cifrado",
   "importSettingsAction": "Importar ajustes",
+  "importingSettings": "Importando ajustes…",
   "orImportExisting": "o importar ajustes existentes",
   "wrongPassword": "Contraseña incorrecta. Inténtalo de nuevo.",
   "export_": "Exportar",

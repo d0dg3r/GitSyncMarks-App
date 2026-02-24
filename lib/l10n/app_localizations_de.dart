@@ -584,6 +584,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get importSettingsAction => 'Einstellungen importieren';
 
   @override
+  String get importingSettings => 'Einstellungen werden importiert…';
+
+  @override
   String get orImportExisting => 'oder vorhandene Einstellungen importieren';
 
   @override
