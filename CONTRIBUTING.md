@@ -47,14 +47,14 @@ flutter run -d macos
 Screenshots werden lokal generiert (CI-Job ist deaktiviert). Vor jedem Release:
 
 ```bash
-flutter test test/screenshot_test.dart --update-goldens
-mkdir -p flatpak/screenshots
-cp test/goldens/*.png flatpak/screenshots/
+./scripts/generate-screenshots.sh
 git add test/goldens/ flatpak/screenshots/
 git commit -m "chore: update screenshots"
 ```
 
-Dann Tag pushen. Die Screenshots in `flatpak/screenshots/` werden von README und Flatpak-Metainfo verwendet.
+Oder manuell: `flutter test test/screenshot_test.dart --update-goldens` → `cp test/goldens/*.png flatpak/screenshots/`
+
+Erzeugt: `bookmark-list.png` (Light), `bookmark-list-dark.png` (Dark), `settings-github.png` – für README und Flatpak-Metainfo.
 
 ## Testing
 

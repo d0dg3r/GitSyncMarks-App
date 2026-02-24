@@ -136,9 +136,9 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
    flutter build macos     # → build/macos/Build/Products/Release/ (macOS host only)
    ```
 
-5. **Regenerate screenshots** (optional):
+5. **Regenerate screenshots** (optional, vor Release):
    ```bash
-   flutter test --update-goldens test/screenshot_test.dart
+   ./scripts/generate-screenshots.sh
    ```
 
 ## Releases
