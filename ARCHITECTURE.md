@@ -180,10 +180,10 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 
 ### Release Workflow (`.github/workflows/release.yml`)
 - **Trigger:** Tag push `v*` (all tags build; `-beta`/`-rc`/`-test` → pre-release; clean versions → latest)
-- **Jobs:** `generate-screenshots`, `build-android-linux`, `build-windows`, `build-macos`, `build-flatpak`, `release`
+- **Jobs:** `build-android-linux`, `build-windows`, `build-macos`, `build-flatpak`, `release` (Screenshots lokal, CI deaktiviert)
 - **Artifacts:** APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS), screenshots
 - **Linux bundle:** Flutter Linux build packed as tar.gz with `--owner=root --group=root`
-- **Screenshots:** Golden tests generate PNGs, uploaded as artifacts
+- **Screenshots:** Lokal mit `flutter test test/screenshot_test.dart --update-goldens`, dann `flatpak/screenshots/` committen
 
 ### Flatpak Test Workflow (`.github/workflows/flatpak-test.yml`)
 - **Trigger:** `workflow_dispatch` or tag `v*-flatpak-test*`

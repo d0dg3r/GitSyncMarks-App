@@ -163,7 +163,7 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - **Settings Sync**: Extension-compatible encryption
 - **Password-Protected Export/Import**: Secure settings sharing between devices
 - **Auto-Lock Edit Mode**: Prevents accidental edits
-- **CI Screenshots**: Auto-generated via golden tests
+- **Screenshots**: Lokal via golden tests (`--update-goldens`), CI deaktiviert
 - **Production Ready**: Error handling, caching, offline support
 
 ## Conclusion
