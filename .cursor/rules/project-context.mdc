@@ -1,0 +1,16 @@
+---
+description: Project context and onboarding - read when resuming work in GitSyncMarks-Mobile
+alwaysApply: true
+---
+
+# GitSyncMarks-Mobile – Project Context
+
+When starting or resuming work on this project, especially in a new IDE session:
+
+1. **Read [docs/CONTEXT.md](docs/CONTEXT.md)** – Origin, decisions, POC status
+2. **Read [docs/PLAN.md](docs/PLAN.md)** – Implementation phases, next steps
+3. **Read [docs/BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md)** – Bookmark JSON structure, GitHub API
+
+This is a Flutter app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from a GitHub repo (GitSyncMarks format), opens URLs in the user's browser, and supports move/reorder/delete/add (synced to repo). Android stable; other platforms alpha.
+
+**Parent project:** https://github.com/d0dg3r/GitSyncMarks (browser extension)

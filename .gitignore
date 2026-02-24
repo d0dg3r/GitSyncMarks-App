@@ -491,7 +491,7 @@ FodyWeavers.xsd
 !.vscode/extensions.json
 
 # Cursor
-.cursor/
+# .cursor/
 
 # OS
 .DS_Store

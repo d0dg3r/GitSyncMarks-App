@@ -1,0 +1,22 @@
+---
+description: Enforce release checklist hygiene for user-visible changes
+alwaysApply: true
+---
+
+# Release Checklist Hygiene
+
+For user-visible changes or release preparation:
+
+1. **Update [CHANGELOG.md](CHANGELOG.md)** — add to `[Unreleased]` before finishing; move to version section when releasing
+
+2. **Keep release docs aligned** — [README.md](README.md), [docs/README.md](docs/README.md), [ROADMAP.md](ROADMAP.md) when scope/status changes
+
+3. **Store-facing text** — features, platforms, limits must reflect current behavior (F-Droid, Flatpak metainfo, README)
+
+4. **CI/release workflow** — if tags, artifacts, or workflow change, update [ARCHITECTURE.md](ARCHITECTURE.md) and [.github/workflows/](.github/workflows/) references
+
+5. **Screenshots** — lokal: `./scripts/generate-screenshots.sh` → committen vor Tag (Light + Dark für README, Flatpak, F-Droid)
+
+6. **F-Droid** — update [fdroid/](fdroid/) metadata and changelogs with each release. Submit file [com.d0dg3r.gitsyncmarks-fdroid-submit.yml](fdroid/metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml) only with stable versions (see fdroid-maintenance rule)
+
+Prefer small, complete checklist updates over deferred documentation.

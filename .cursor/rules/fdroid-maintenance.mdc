@@ -1,0 +1,32 @@
+---
+description: Keep F-Droid metadata and submission in sync with releases
+alwaysApply: false
+globs: fdroid/**/*, pubspec.yaml, CHANGELOG.md
+---
+
+# F-Droid Store Maintenance
+
+When changing app metadata, release notes, screenshots, package IDs, or submission flow:
+
+1. **Submit metadata (for F-Droid MRs)** — [fdroid/metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml](fdroid/metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml) must contain **only stable versions** (no -beta, -alpha, -rc). CI fails if pre-releases are present. Use [com.d0dg3r.gitsyncmarks.yml](fdroid/metadata/com.d0dg3r.gitsyncmarks.yml) for development (may include pre-releases).
+
+   **Flutter build config (do not change):** F-Droid reviewer (linsui) requires pinning the version in the repo and extracting it. Use `srclibs: flutter@stable` plus prebuild steps that extract from `.github/workflows/release.yml`:
+   `flutterVersion=$(sed -n -E "s/.*flutter-version:\ '(.*)'/\1/p" .github/workflows/release.yml | head -1)` and `git -C $$flutter$$ checkout -f $flutterVersion`. Do **not** hardcode `flutter@3.41.1` in the metadata.
+
+2. **Update F-Droid metadata** in the same session:
+   - [fdroid/metadata/com.d0dg3r.gitsyncmarks.yml](fdroid/metadata/com.d0dg3r.gitsyncmarks.yml) — versionName, versionCode, commit, build config (development)
+   - [fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/{versionCode}.txt](fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/) — changelog per release
+   - [fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/short_description.txt](fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/short_description.txt)
+   - [fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/full_description.txt](fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/full_description.txt)
+
+3. **Ensure changelog file exists** for each release: `fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/{versionCode}.txt`
+
+4. **Keep version aligned** with `pubspec.yaml` and `CHANGELOG.md`
+
+5. **Verify screenshot/icon paths** if referenced in metadata (`metadata/en-US/images/`)
+
+6. **Update [fdroid/README.md](fdroid/README.md)** if submission steps or paths change
+
+7. **Before submit:** Run `./fdroid/submit-to-gitlab.sh` — it validates and copies the submit file
+
+Do not leave F-Droid-facing metadata partially updated.

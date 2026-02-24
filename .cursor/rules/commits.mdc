@@ -1,0 +1,8 @@
+---
+description: Commit-Verhalten – keine AI-Attribution
+alwaysApply: true
+---
+
+# Commits
+
+Bei Commits niemals `Co-authored-by: Cursor` oder ähnliche AI-Attribution hinzufügen.

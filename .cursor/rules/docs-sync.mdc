@@ -1,0 +1,30 @@
+---
+description: Keep documentation in sync when making code or feature changes
+alwaysApply: true
+---
+
+# Documentation Sync
+
+When making changes to the project (features, fixes, architecture, setup), **always update the relevant documentation** in the same session.
+
+## Documents to Consider
+
+| Document | Update when |
+|----------|-------------|
+| [README.md](README.md) | New features, installation changes, platform support |
+| [CHANGELOG.md](CHANGELOG.md) | Any user-visible change (add to Unreleased) |
+| [docs/CONTEXT.md](docs/CONTEXT.md) | Decisions, scope, platform status, tech stack |
+| [docs/PLAN.md](docs/PLAN.md) | Phases, future work, project structure |
+| [docs/README.md](docs/README.md) | Doc structure, quick links, current status |
+| [ROADMAP.md](ROADMAP.md) | Milestones, near-term goals, vision |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture, CI, services |
+| [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) | Implementation overview |
+| [SETUP.md](SETUP.md) | Setup steps, dependencies |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution workflow changes |
+| [fdroid/](fdroid/) | App metadata, changelogs, store submission (see fdroid-maintenance rule) |
+
+## Workflow
+
+1. After implementing a change, identify which docs are affected.
+2. Update them in the same session before finishing.
+3. Do not leave documentation outdated.
