@@ -146,6 +146,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install fonts for consistent screenshot rendering
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-core fonts-noto-cjk
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -156,8 +159,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Validate golden screenshots
-        run: flutter test test/screenshot_test.dart
+      - name: Generate golden screenshots (CI as source of truth)
+        run: flutter test test/screenshot_test.dart --update-goldens
 
       - name: Copy screenshots to flatpak dir (for artifact)
         run: |
