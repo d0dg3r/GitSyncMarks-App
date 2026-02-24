@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0-beta.7] - 2026-02-21
+
+### Changed
+
+- Cursor rules: F-Droid maintenance, release checklist hygiene
+- Documentation: full alignment (CONTEXT, PLAN, ARCHITECTURE, IMPLEMENTATION_SUMMARY, etc.)
+- F-Droid metadata: versionCode 9, changelog 9.txt
+- Screenshot pipeline: mkdir before copy, validation in CI
+
+---
+
 ## [0.3.0-beta.2] - 2026-02-21
 
 ### Added

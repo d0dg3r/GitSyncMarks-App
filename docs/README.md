@@ -15,7 +15,7 @@ When opening this project fresh: read CONTEXT.md and PLAN.md first so you have f
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Technical architecture, CI/Release |
 | [CHANGELOG.md](../CHANGELOG.md) | Version history |
 
-## Current Status (v0.3.0-beta.2)
+## Current Status (v0.3.0-beta.7)
 
 - Bookmark sync, move, reorder, delete, add via share
 - Settings Sync to Git (extension-compatible, Global/Individual mode)

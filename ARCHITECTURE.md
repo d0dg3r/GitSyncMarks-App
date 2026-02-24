@@ -207,7 +207,7 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 ### Integration Tests
 - (Future) End-to-end user flows
 
-## Features (v0.3.0-beta.2)
+## Features (v0.3.0-beta.7)
 
 - Settings Sync to Git (extension-compatible, Global/Individual)
 - Move bookmarks to folder (hierarchical picker)

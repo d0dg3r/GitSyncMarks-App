@@ -11,7 +11,7 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - **Share link as bookmark**: receive_sharing_intent for URLs from browser
 - **Recursive folder display**: Subfolders and nested bookmarks
 
-## v0.3.0-beta.2 Additions
+## v0.3.0-beta.7 Additions
 
 - **Password-protected export/import**: Settings export encrypted with AES-256-GCM; import detects encrypted files and prompts for password
 - **Configurable root folder**: Select any folder as "root" for tab navigation; subfolders become tabs

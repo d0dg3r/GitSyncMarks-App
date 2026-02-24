@@ -1,0 +1,1 @@
+Version 0.3.0-beta.7: Cursor rules for F-Droid and release checklist. Full documentation alignment. F-Droid metadata versionCode 10. Screenshot pipeline improvements (mkdir, CI validation).
