@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  Mobile app (iOS + Android) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.<br>
-  Companion to the <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> browser extension. Supports move, reorder, add via share, and encrypted settings sync.
+  Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.<br>
+  Companion to the <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> browser extension. Supports move, reorder, add via share (mobile), and encrypted settings sync.
 </p>
 
 <p align="center">
@@ -25,12 +25,12 @@
 </p>
 
 <p align="center">
-  <img src="metadata/en-US/images/combinedScreenshots/1_bookmarks_combined.png" alt="Bookmark list – Light &amp; Dark" width="240">
-  <img src="metadata/en-US/images/combinedScreenshots/2_empty_state_combined.png" alt="Empty state – Light &amp; Dark" width="240">
-  <img src="metadata/en-US/images/combinedScreenshots/3_settings_combined.png" alt="Settings – Light &amp; Dark" width="240">
+  <img src="flatpak/screenshots/bookmark-list.png" alt="Bookmark list" width="200">
+  <img src="flatpak/screenshots/bookmark-list-dark.png" alt="Bookmark list (Dark)" width="200">
+  <img src="flatpak/screenshots/settings-github.png" alt="Settings" width="200">
 </p>
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+See [CHANGELOG.md](CHANGELOG.md) for version history and [ROADMAP.md](ROADMAP.md) for milestones and future plans.
 
 ## Features
 
@@ -38,7 +38,12 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 - **Settings Sync to Git**: Encrypted sync (extension-compatible), Global/Individual mode, Import from other device
 - **Move bookmarks**: Long-press to move bookmarks to any folder (including subfolders)
 - **Reorder bookmarks**: Drag-and-drop to reorder; changes persisted to repo
-- **Share link as bookmark**: Add shared URLs from browser or other apps as bookmarks
+- **Delete bookmarks**: Long-press to delete (available even when edit mode is locked)
+- **Share link as bookmark** (Android/iOS): Add shared URLs from browser or other apps as bookmarks; on desktop use "Add bookmark" dialog
+- **Password-protected export/import**: Export settings with AES-256-GCM encryption; import detects encrypted files and prompts for password
+- **Configurable root folder**: Select any folder as "root" for tab navigation
+- **Auto-lock edit mode**: Edit mode auto-locks after 60 seconds of inactivity
+- **Reset all data**: Clear all profiles, settings, and cached data from the About tab
 - **Local cache**: Bookmarks saved after sync, loaded from cache on app start (offline-capable)
 - **GitHub Personal Access Token**: Secure authentication with `repo` scope
 - **Folder selection**: Choose which root folders to display (toolbar, menu, mobile, other)
@@ -50,10 +55,38 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ## Installation
 
+### Android
+
 1. Go to the [Releases page](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
 2. Download `GitSyncMarks-Mobile-X.X.X.apk` (or a pre-release build for testing)
 3. Open the file on your Android device (allow from unknown sources if prompted)
 4. Install the app
+
+### Linux (Flatpak, recommended)
+
+1. Download `GitSyncMarks-Mobile-vX.X.X.flatpak` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
+2. Install:
+   ```bash
+   flatpak install --user ./GitSyncMarks-Mobile-vX.X.X.flatpak
+   ```
+3. Run:
+   ```bash
+   flatpak run io.github.d0dg3r.GitSyncMarksMobile
+   ```
+
+### Linux (ZIP fallback)
+
+1. Download `GitSyncMarks-Mobile-X.X.X-linux-x64.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
+2. Extract and run:
+   ```bash
+   unzip GitSyncMarks-Mobile-X.X.X-linux-x64.zip -d GitSyncMarks-Mobile
+   cd GitSyncMarks-Mobile
+   ./gitsyncmarks_app
+   ```
+
+### Windows / macOS
+
+Download the respective `.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases), extract, and run the executable.
 
 ### Configure the app
 
@@ -71,7 +104,7 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
 
 ## Prerequisites (Development)
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.2.0 or later)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.41.0 or later)
 
 ## Setup (Development)
 
@@ -91,27 +124,61 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
 3. **Run on device/emulator**:
    ```bash
    flutter run -d android
+   flutter run -d linux      # Linux desktop
+   flutter run -d windows    # Windows (on Windows host)
+   flutter run -d macos     # macOS (on macOS host)
    ```
 
-4. **Regenerate screenshots** (optional):
+4. **Build standalone executable** (no Flutter runtime needed):
+   ```bash
+   flutter build linux      # → build/linux/x64/release/bundle/
+   flutter build windows    # → build/windows/x64/runner/Release/ (Windows host only)
+   flutter build macos     # → build/macos/Build/Products/Release/ (macOS host only)
+   ```
+
+5. **Regenerate screenshots** (optional):
    ```bash
    flutter test --update-goldens test/screenshot_test.dart
    ```
 
 ## Releases
 
-Releases are built automatically on tag push (`v*`). Example:
+Releases are built automatically on tag push (`v*`). All tags trigger builds for all platforms.
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+# Stable release (marked as "latest")
+git tag v0.3.0 && git push origin v0.3.0
+
+# Pre-release (visible under Releases, but not marked as "latest")
+git tag v0.3.0-beta.1 && git push origin v0.3.0-beta.1
 ```
 
-The APK appears under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases).
+**Tag convention:**
+- `v1.2.3` — stable release, marked as "latest"
+- `v1.2.3-beta.1`, `v1.2.3-rc.1`, `v1.2.3-test.1` — pre-release (any tag with `-` suffix)
 
-## Roadmap
+Artifacts appear under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases): APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS).
 
-- [ ] iOS app (planned for a future release)
+### Flatpak-only test
+
+To test the Flatpak build without running the full release workflow (Windows, macOS, release job):
+
+- **Manual**: Go to Actions → "Flatpak test" → Run workflow
+- **Tag**: Push `v0.3.0-flatpak-test.1` (or any `v*-flatpak-test*` tag)
+
+This runs only `build-android-linux` and `build-flatpak`. The `.flatpak` artifact can be downloaded from the workflow run.
+
+## Platform Status
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| Android  | **Stable** | Primary platform, actively developed |
+| Windows  | Alpha | Built from same codebase, developed as time permits |
+| Linux    | Alpha | Flatpak + ZIP; developed as time permits |
+| macOS    | Alpha | Built from same codebase, developed as time permits |
+| iOS      | Alpha | Built from same codebase; no CI build yet (requires macOS runner) |
+
+Android is the main focus. All other platforms share the same Flutter codebase and are maintained on a best-effort basis -- contributions welcome!
 
 ## Documentation
 
@@ -120,6 +187,7 @@ The APK appears under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/r
 - **[docs/BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md)** — Bookmark JSON structure
 - **[store/README.md](store/README.md)** — App store submission (descriptions, screenshots)
 - **[CHANGELOG.md](CHANGELOG.md)** — Version history
+- **[ROADMAP.md](ROADMAP.md)** — Milestones and future plans
 
 ## License
 

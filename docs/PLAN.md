@@ -8,8 +8,11 @@
 | 2 – GitHub API | Done | 1 week |
 | 3 – Local Cache | Done | 3–4 days |
 | 4 – Bookmark UI | Done | 1 week |
-| 5 – Browser Selection | Pending | 2–3 days |
+| 5 – Browser Selection | Done | 2–3 days |
 | 6 – Polish | Done | 3–5 days |
+| 7 – Flatpak/CI | Done | 1 week |
+| 8 – Edit Features | Done | 1 week |
+| 9 – Export/Import & UX | Done | 3–4 days |
 
 ---
 
@@ -18,7 +21,7 @@
 - [x] Flutter project structure
 - [x] Navigation (Settings, Bookmark List)
 - [x] Settings UI: Token, Owner, Repo, Branch, Base Path
-- [ ] Run `flutter create . --org com.gitsyncmarks` (adds android/, ios/)
+- [x] Run `flutter create . --org com.gitsyncmarks` (adds android/, ios/)
 - [x] Add `flutter_secure_storage` for token
 
 ---
@@ -52,11 +55,11 @@
 
 ---
 
-## Phase 5: Browser Selection
+## Phase 5: Browser Selection – Done
 
-- [ ] Android: detect installed browsers
-- [ ] Settings: pick preferred browser
-- [ ] Use `url_launcher` with `LaunchMode.externalApplication`
+- [x] Android: detect installed browsers
+- [x] Settings: pick preferred browser
+- [x] Use `url_launcher` with `LaunchMode.externalApplication`
 
 ---
 
@@ -69,34 +72,94 @@
 
 ---
 
-## Project Structure (Target)
+## Project Structure
 
 ```
 lib/
   main.dart
   app.dart
   config/
+    github_credentials.dart
   models/
     bookmark_node.dart
+    profile.dart
   services/
     github_api.dart
-    sync_service.dart
     storage_service.dart
+    bookmark_cache.dart
+    bookmark_export.dart
+    settings_sync_service.dart
+    settings_crypto.dart
+    settings_import_export.dart
   repositories/
     bookmark_repository.dart
+  providers/
+    bookmark_provider.dart
   screens/
+    home_screen.dart
     bookmark_list_screen.dart
     settings_screen.dart
+  utils/
+    favicon_url.dart
+    filename_helper.dart
   widgets/
-    bookmark_tile.dart
-    folder_tile.dart
+    add_bookmark_dialog.dart
+  l10n/
+    app_en.arb, app_de.arb, app_fr.arb, app_es.arb
 ```
 
 ---
 
-## Next Steps (Immediate)
+## Desktop Support (Done)
 
-1. Install Flutter (if not done): `paru -S flutter` or https://docs.flutter.dev/get-started/install
-2. Run: `flutter create . --org com.gitsyncmarks` (if android/ and ios/ missing)
-3. Run: `flutter pub get` and `flutter run`
-4. Phase 3: Add `hive` or `sqflite` for local cache (when ready)
+- [x] Windows, macOS, Linux builds from same codebase
+- [x] `app.dart`: Share-Intent only on Android/iOS; desktop uses `HomeScreen` directly
+- [x] Builds: `flutter build linux`, `flutter build windows` (Windows host), `flutter build macos` (macOS host)
+
+---
+
+## Phase 7: Flatpak/CI – Done
+
+- [x] Linux bundle as tar.gz + separate artifact in release workflow
+- [x] Flatpak manifest (io.github.d0dg3r.GitSyncMarksMobile)
+- [x] `flatpak/build-flatpak.sh`: build script with tar `--no-same-owner`, icon fallback, error handling
+- [x] CI job `build-flatpak` in release workflow
+- [x] Release job: APK, Flatpak, ZIP (Linux, Windows, macOS) on tag push `v*`
+- [x] Workflow "Flatpak test": `workflow_dispatch` or tag `v*-flatpak-test*` for isolated Flatpak build
+
+---
+
+## Phase 8: Edit Features – Done
+
+- [x] Configurable root folder: select any folder as "root" for tab navigation
+- [x] Auto-lock edit mode: 60-second inactivity timer, reset on edit action
+- [x] Delete bookmarks: long-press to delete (available even in locked mode)
+- [x] Default profile creation on first launch
+- [x] Pre-release CI tags: `-beta`, `-rc`, `-test` etc. build all platforms, marked as pre-release
+
+---
+
+## Phase 9: Export/Import & UX – Done
+
+- [x] Password-protected settings export (AES-256-GCM)
+- [x] Import detects encrypted files and prompts for password
+- [x] Post-import auto-sync (sync triggered after successful import)
+- [x] Import button on empty state (no credentials configured)
+- [x] Reset all data button (About tab, confirmation dialog)
+- [x] Desktop export via `FilePicker.saveFile()` (Linux/Windows/macOS)
+- [x] CI screenshot generation via golden tests (`matchesGoldenFile`)
+- [x] Flatpak metainfo with auto-generated screenshots
+
+---
+
+## Future Work
+
+- [ ] iOS build & distribution (TestFlight / IPA)
+- [ ] Flathub submission
+- [ ] F-Droid store: keep metadata and changelogs in sync with each release (see `fdroid/`)
+
+## Development Quick Start
+
+1. Install Flutter (3.41+): `paru -S flutter` or https://docs.flutter.dev/get-started/install
+2. Run: `flutter pub get && flutter run`
+3. Generate screenshots: `flutter test test/screenshot_test.dart --update-goldens`

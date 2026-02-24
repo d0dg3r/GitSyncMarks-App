@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/profile.dart';
+import 'settings_crypto.dart';
+import 'web_download_stub.dart'
+    if (dart.library.html) 'web_download_web.dart';
 
 /// Result of parsing a GitSyncMarks settings JSON file.
 class ImportResult {
@@ -108,23 +113,69 @@ class SettingsImportExportService {
 
   /// Writes the export JSON to a temporary file and opens the system share
   /// sheet so the user can save or send it.
+  ///
+  /// When [password] is provided the JSON is encrypted using the
+  /// extension-compatible format and saved as `.enc`.
   Future<void> exportAndShare(
     List<Profile> profiles,
-    String activeProfileId,
-  ) async {
+    String activeProfileId, {
+    String? password,
+  }) async {
     final jsonString = buildExportJson(profiles, activeProfileId);
 
-    final dir = await getTemporaryDirectory();
     final now = DateTime.now();
     final datePart =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final file = File('${dir.path}/gitsyncmarks-settings-$datePart.json');
-    await file.writeAsString(jsonString);
 
-    // ignore: deprecated_member_use
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'GitSyncMarks Settings',
-    );
+    final String content;
+    final String ext;
+    if (password != null && password.isNotEmpty) {
+      content = await SettingsCrypto.encryptWithPassword(jsonString, password);
+      ext = 'enc';
+    } else {
+      content = jsonString;
+      ext = 'json';
+    }
+    final fileName = 'gitsyncmarks-settings-$datePart.$ext';
+
+    if (kIsWeb) {
+      final webBytes = Uint8List.fromList(utf8.encode(content));
+      await downloadBytesForWeb(webBytes, fileName, 'application/octet-stream');
+      return;
+    }
+
+    late final Directory dir;
+    try {
+      dir = await getTemporaryDirectory();
+    } catch (e) {
+      rethrow;
+    }
+    final file = File('${dir.path}/$fileName');
+    await file.writeAsString(content);
+
+    late final bool isDesktop;
+    try {
+      isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+    } catch (e) {
+      rethrow;
+    }
+    if (isDesktop) {
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Settings',
+        fileName: fileName,
+      );
+      if (savePath == null) return;
+      await file.copy(savePath);
+    } else {
+      // ignore: deprecated_member_use
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'GitSyncMarks Settings',
+      );
+    }
   }
+
+  /// Returns `true` if [content] looks like an encrypted settings file.
+  static bool isEncrypted(String content) =>
+      content.trimLeft().startsWith('gitsyncmarks-enc:v1');
 }

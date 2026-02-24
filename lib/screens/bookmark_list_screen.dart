@@ -1,4 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -6,6 +12,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../models/bookmark_node.dart';
 import '../providers/bookmark_provider.dart';
+import '../services/settings_crypto.dart';
+import '../services/settings_import_export.dart';
+import '../services/web_import_picker_stub.dart'
+    if (dart.library.html) '../services/web_import_picker_web.dart';
 import '../utils/favicon_utils.dart';
 import 'settings_screen.dart';
 
@@ -19,68 +29,249 @@ class _AppIcon extends StatelessWidget {
   }
 }
 
-class BookmarkListScreen extends StatelessWidget {
+Future<void> _handleImport(
+  BuildContext context, {
+  bool isImporting = false,
+  void Function(bool)? onImporting,
+}) async {
+  if (isImporting) return;
+  final l = AppLocalizations.of(context)!;
+  final importExport = SettingsImportExportService();
+  try {
+    final result = kIsWeb
+        ? null
+        : await FilePicker.platform.pickFiles(
+            type: FileType.any,
+            allowMultiple: false,
+            withData: false,
+          );
+    WebPickedFile? webFallback;
+    if (kIsWeb && (result == null || result.files.isEmpty)) {
+      webFallback = await pickFileBytesWithWebFallback();
+    }
+    if ((result == null || result.files.isEmpty) && webFallback == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No file selected.')),
+        );
+      }
+      return;
+    }
+    final picked = result?.files.isNotEmpty == true ? result!.files.single : null;
+    String content;
+    if (kIsWeb) {
+      final bytes = picked?.bytes ?? webFallback?.bytes;
+      if (bytes == null) return;
+      content = utf8.decode(bytes);
+    } else {
+      final path = picked?.path;
+      if (path == null) return;
+      content = await File(path).readAsString();
+    }
+
+    if (SettingsImportExportService.isEncrypted(content)) {
+      if (!context.mounted) return;
+      final controller = TextEditingController();
+      final password = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.importPasswordTitle),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            decoration: InputDecoration(hintText: l.importPasswordHint),
+            autofocus: true,
+            onSubmitted: (v) => Navigator.pop(ctx, v),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, controller.text),
+              child: Text(l.import_),
+            ),
+          ],
+        ),
+      );
+      if (password == null || password.isEmpty) return;
+      try {
+        content = await SettingsCrypto.decryptWithPassword(content, password);
+      } on FormatException {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l.wrongPassword),
+              backgroundColor: Theme.of(context).colorScheme.errorContainer,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (!context.mounted) return;
+    onImporting?.call(true);
+    try {
+      final parsed = importExport.parseSettingsJson(content);
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.importSettings),
+          content: Text(l.importConfirm(parsed.profiles.length)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.replace),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+      var activeId = parsed.activeProfileId;
+      if (!parsed.profiles.any((p) => p.id == activeId)) {
+        activeId = parsed.profiles.first.id;
+      }
+      final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
+      if (!selected.credentials.isValid) {
+        for (final p in parsed.profiles) {
+          if (p.credentials.isValid) {
+            activeId = p.id;
+            break;
+          }
+        }
+      }
+      if (!context.mounted) return;
+      await context.read<BookmarkProvider>().replaceProfiles(
+            parsed.profiles,
+            activeId: activeId,
+            triggerSync: false,
+          );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.importSuccess(parsed.profiles.length))),
+        );
+        final provider = context.read<BookmarkProvider>();
+        if (provider.hasCredentials) {
+          provider.syncBookmarks();
+        }
+      }
+    } finally {
+      onImporting?.call(false);
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l.importFailed(e.toString())),
+          backgroundColor: Theme.of(context).colorScheme.errorContainer,
+        ),
+      );
+    }
+  }
+}
+
+class BookmarkListScreen extends StatefulWidget {
   const BookmarkListScreen({super.key});
 
   @override
+  State<BookmarkListScreen> createState() => _BookmarkListScreenState();
+}
+
+class _BookmarkListScreenState extends State<BookmarkListScreen> {
+  bool _isImporting = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<BookmarkProvider>(
-      builder: (context, provider, _) {
-        if (provider.error != null) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: _ErrorView(
-              message: provider.error!,
-              onRetry: () {
-                provider.clearError();
-                provider.syncBookmarks();
-              },
+    return Stack(
+      children: [
+        Consumer<BookmarkProvider>(
+          builder: (context, provider, _) {
+            if (provider.error != null) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _ErrorView(
+                  message: provider.error!,
+                  onRetry: () {
+                    provider.clearError();
+                    provider.syncBookmarks();
+                  },
+                ),
+              );
+            }
+
+            if (!provider.hasCredentials) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _EmptyState(
+                  onOpenSettings: null,
+                  onImport: () => _handleImport(
+                    context,
+                    isImporting: _isImporting,
+                    onImporting: (v) => setState(() => _isImporting = v),
+                  ),
+                ),
+              );
+            }
+
+            if (provider.isLoading && !provider.hasBookmarks) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: const Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (!provider.hasBookmarks) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _EmptyState(
+                  hasCredentials: true,
+                  onSync: () => provider.syncBookmarks(),
+                  onOpenSettings: null,
+                ),
+              );
+            }
+
+            final folders = provider.filteredDisplayedRootFolders;
+            final hasSearch = provider.searchQuery.trim().isNotEmpty;
+            if (hasSearch && folders.isEmpty) {
+              return Scaffold(
+                appBar: _buildAppBar(context, provider),
+                body: _SearchNoResultsView(
+                  query: provider.searchQuery,
+                  onClearSearch: () => provider.setSearchQuery(''),
+                ),
+              );
+            }
+
+            return _TabbedBookmarkView(
+              folders: folders,
+              provider: provider,
+            );
+          },
+        ),
+        if (_isImporting)
+          Positioned.fill(
+            child: ModalBarrier(dismissible: false),
+          ),
+        if (_isImporting)
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(AppLocalizations.of(context)!.importingSettings),
+              ],
             ),
-          );
-        }
-
-        if (!provider.hasCredentials) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: const _EmptyState(onOpenSettings: null),
-          );
-        }
-
-        if (provider.isLoading && !provider.hasBookmarks) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!provider.hasBookmarks) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: _EmptyState(
-              hasCredentials: true,
-              onSync: () => provider.syncBookmarks(),
-              onOpenSettings: null,
-            ),
-          );
-        }
-
-        final folders = provider.filteredDisplayedRootFolders;
-        final hasSearch = provider.searchQuery.trim().isNotEmpty;
-        if (hasSearch && folders.isEmpty) {
-          return Scaffold(
-            appBar: _buildAppBar(context, provider),
-            body: _SearchNoResultsView(
-              query: provider.searchQuery,
-              onClearSearch: () => provider.setSearchQuery(''),
-            ),
-          );
-        }
-
-        return _TabbedBookmarkView(
-          folders: folders,
-          provider: provider,
-        );
-      },
+          ),
+      ],
     );
   }
 
@@ -135,8 +326,11 @@ class _TabbedBookmarkView extends StatefulWidget {
 }
 
 class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
+  static const _editLockDuration = Duration(seconds: 60);
+
   late TextEditingController _searchController;
   bool _searchExpanded = false;
+  Timer? _editLockTimer;
 
   @override
   void initState() {
@@ -155,8 +349,29 @@ class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
 
   @override
   void dispose() {
+    _editLockTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _startEditLockTimer() {
+    _editLockTimer?.cancel();
+    _editLockTimer = Timer(_editLockDuration, () {
+      if (mounted) {
+        widget.provider.updateSyncSettings(allowMoveReorder: false);
+      }
+    });
+  }
+
+  void _cancelEditLockTimer() {
+    _editLockTimer?.cancel();
+    _editLockTimer = null;
+  }
+
+  void _onEditAction() {
+    if (widget.provider.activeProfile?.allowMoveReorder ?? false) {
+      _startEditLockTimer();
+    }
   }
 
   @override
@@ -190,20 +405,23 @@ class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
             if (provider.hasCredentials)
               IconButton(
                 icon: Icon(
-                  (activeProfile?.allowMoveReorder ?? true)
+                  (activeProfile?.allowMoveReorder ?? false)
                       ? Icons.reorder
                       : Icons.lock_outline,
-                  color: (activeProfile?.allowMoveReorder ?? true)
+                  color: (activeProfile?.allowMoveReorder ?? false)
                       ? null
                       : scheme.outline,
                 ),
                 onPressed: () {
-                  provider.updateSyncSettings(
-                    allowMoveReorder:
-                        !(activeProfile?.allowMoveReorder ?? true),
-                  );
+                  final unlocking = !(activeProfile?.allowMoveReorder ?? false);
+                  provider.updateSyncSettings(allowMoveReorder: unlocking);
+                  if (unlocking) {
+                    _startEditLockTimer();
+                  } else {
+                    _cancelEditLockTimer();
+                  }
                 },
-                tooltip: (activeProfile?.allowMoveReorder ?? true)
+                tooltip: (activeProfile?.allowMoveReorder ?? false)
                     ? l.allowMoveReorderDisable
                     : l.allowMoveReorderEnable,
               ),
@@ -273,7 +491,8 @@ class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
                             folder: folder,
                             provider: provider,
                             canReorder: provider.searchQuery.trim().isEmpty &&
-                                (provider.activeProfile?.allowMoveReorder ?? true),
+                                (provider.activeProfile?.allowMoveReorder ?? false),
+                            onEditAction: _onEditAction,
                           ),
                         );
                       }).toList(),
@@ -425,7 +644,12 @@ class _ProfileDropdown extends StatelessWidget {
         children: [
           appIcon,
           const SizedBox(width: 8),
-          Text(AppLocalizations.of(context)!.appTitle),
+          Flexible(
+            child: Text(
+              AppLocalizations.of(context)!.appTitle,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       );
     }
@@ -495,11 +719,13 @@ class _FolderContentList extends StatelessWidget {
     required this.folder,
     required this.provider,
     this.canReorder = true,
+    this.onEditAction,
   });
 
   final BookmarkFolder folder;
   final BookmarkProvider provider;
   final bool canReorder;
+  final VoidCallback? onEditAction;
 
   @override
   Widget build(BuildContext context) {
@@ -527,11 +753,13 @@ class _FolderContentList extends StatelessWidget {
                 level: 0,
                 initiallyExpanded: index == 0,
                 provider: provider,
+                onEditAction: onEditAction,
               ),
             Bookmark() => _BookmarkTile(
                 bookmark: node,
                 sourceFolder: folder,
                 provider: provider,
+                onEditAction: onEditAction,
               ),
           };
         },
@@ -547,6 +775,7 @@ class _FolderContentList extends StatelessWidget {
         final adj = oldIndex < newIndex ? newIndex - 1 : newIndex;
         final folderPath = provider.getFolderPath(folder);
         if (folderPath != null) {
+          onEditAction?.call();
           provider.reorderInFolder(folder, folderPath, oldIndex, adj).then((ok) {
             if (context.mounted) {
               final l = AppLocalizations.of(context)!;
@@ -579,6 +808,7 @@ class _FolderContentList extends StatelessWidget {
               provider: provider,
               folderPath: provider.getFolderPath(node),
               canReorder: canReorder,
+              onEditAction: onEditAction,
             ),
           Bookmark() => _ReorderableBookmarkTile(
               key: key,
@@ -586,6 +816,7 @@ class _FolderContentList extends StatelessWidget {
               index: index,
               sourceFolder: folder,
               provider: provider,
+              onEditAction: onEditAction,
             ),
         };
       },
@@ -602,11 +833,13 @@ class _EmptyState extends StatelessWidget {
     this.hasCredentials = false,
     this.onSync,
     this.onOpenSettings,
+    this.onImport,
   });
 
   final bool hasCredentials;
   final VoidCallback? onSync;
   final VoidCallback? onOpenSettings;
+  final VoidCallback? onImport;
 
   @override
   Widget build(BuildContext context) {
@@ -648,6 +881,21 @@ class _EmptyState extends StatelessWidget {
                 icon: const Icon(Icons.sync, size: 18),
                 label: Text(l.sync),
               ),
+            if (!hasCredentials && onImport != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                l.orImportExisting,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.outline,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onImport,
+                icon: const Icon(Icons.file_download, size: 18),
+                label: Text(l.importSettingsAction),
+              ),
+            ],
           ],
         ),
       ),
@@ -839,6 +1087,7 @@ class _FolderTile extends StatelessWidget {
     this.provider,
     this.folderPath,
     this.canReorder = false,
+    this.onEditAction,
   });
 
   final BookmarkFolder folder;
@@ -848,6 +1097,7 @@ class _FolderTile extends StatelessWidget {
   final BookmarkProvider? provider;
   final String? folderPath;
   final bool canReorder;
+  final VoidCallback? onEditAction;
 
   @override
   Widget build(BuildContext context) {
@@ -919,11 +1169,13 @@ class _FolderTile extends StatelessWidget {
               folder: entry.value as BookmarkFolder,
               level: level + 1,
               provider: p,
+              onEditAction: onEditAction,
             ),
           Bookmark() => _BookmarkTile(
               bookmark: entry.value as Bookmark,
               sourceFolder: folder,
               provider: p,
+              onEditAction: onEditAction,
             ),
         };
       }).toList();
@@ -939,6 +1191,7 @@ class _FolderTile extends StatelessWidget {
         itemCount: folder.children.length,
         onReorder: (oldIndex, newIndex) {
           final adj = oldIndex < newIndex ? newIndex - 1 : newIndex;
+          onEditAction?.call();
           prov.reorderInFolder(folder, c, oldIndex, adj).then((ok) {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -968,6 +1221,7 @@ class _FolderTile extends StatelessWidget {
                 folderPath: '$c/${node.dirName ?? node.title}',
                 canReorder: true,
                 reorderIndex: index,
+                onEditAction: onEditAction,
               ),
             Bookmark() => _ReorderableBookmarkTile(
                 key: key,
@@ -975,6 +1229,7 @@ class _FolderTile extends StatelessWidget {
                 index: index,
                 sourceFolder: folder,
                 provider: prov,
+                onEditAction: onEditAction,
               ),
           };
         },
@@ -994,12 +1249,14 @@ class _ReorderableBookmarkTile extends StatelessWidget {
     required this.index,
     required this.sourceFolder,
     required this.provider,
+    this.onEditAction,
   });
 
   final Bookmark bookmark;
   final int index;
   final BookmarkFolder sourceFolder;
   final BookmarkProvider provider;
+  final VoidCallback? onEditAction;
 
   @override
   Widget build(BuildContext context) {
@@ -1025,6 +1282,7 @@ class _ReorderableBookmarkTile extends StatelessWidget {
               bookmark: bookmark,
               sourceFolder: sourceFolder,
               provider: provider,
+              onEditAction: onEditAction,
             ),
           ),
         ],
@@ -1039,11 +1297,13 @@ class _BookmarkTile extends StatelessWidget {
     required this.bookmark,
     this.sourceFolder,
     this.provider,
+    this.onEditAction,
   });
 
   final Bookmark bookmark;
   final BookmarkFolder? sourceFolder;
   final BookmarkProvider? provider;
+  final VoidCallback? onEditAction;
 
   Widget _buildLeading(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -1072,10 +1332,11 @@ class _BookmarkTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final l = AppLocalizations.of(context)!;
-    final canMove = sourceFolder != null &&
+    final hasCredentials = sourceFolder != null &&
         provider != null &&
-        provider!.hasCredentials &&
-        (provider!.activeProfile?.allowMoveReorder ?? true);
+        provider!.hasCredentials;
+    final canMove = hasCredentials &&
+        (provider!.activeProfile?.allowMoveReorder ?? false);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
@@ -1101,28 +1362,86 @@ class _BookmarkTile extends StatelessWidget {
               ),
         ),
         onTap: () => _openUrl(context, bookmark.url),
-        onLongPress: canMove
+        onLongPress: hasCredentials
             ? () => showModalBottomSheet<void>(
                   context: context,
-                  builder: (context) => SafeArea(
-                    child: ListTile(
-                      leading: const Icon(Icons.drive_file_move),
-                      title: Text(l.moveToFolder),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _showMoveToFolderDialog(
-                          context,
-                          bookmark,
-                          sourceFolder!,
-                          provider!,
-                        );
-                      },
+                  builder: (ctx) => SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (canMove)
+                          ListTile(
+                            leading: const Icon(Icons.drive_file_move),
+                            title: Text(l.moveToFolder),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              onEditAction?.call();
+                              _showMoveToFolderDialog(
+                                context,
+                                bookmark,
+                                sourceFolder!,
+                                provider!,
+                              );
+                            },
+                          ),
+                        ListTile(
+                          leading: Icon(Icons.delete_outline,
+                              color: scheme.error),
+                          title: Text(l.deleteBookmark,
+                              style: TextStyle(color: scheme.error)),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            onEditAction?.call();
+                            _confirmDeleteBookmark(
+                              context,
+                              bookmark,
+                              sourceFolder!,
+                              provider!,
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 )
             : null,
       ),
     );
+  }
+
+  Future<void> _confirmDeleteBookmark(
+    BuildContext context,
+    Bookmark bookmark,
+    BookmarkFolder sourceFolder,
+    BookmarkProvider provider,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.deleteBookmark),
+        content: Text(l.deleteBookmarkConfirm(bookmark.title)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.delete,
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      final ok = await provider.deleteBookmark(bookmark, sourceFolder);
+      if (ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.bookmarkDeleted)),
+        );
+      }
+    }
   }
 
   Future<void> _openUrl(BuildContext context, String url) async {

@@ -34,6 +34,7 @@ class BookmarkProvider extends ChangeNotifier {
   List<BookmarkFolder> _rootFolders = [];
   List<String> _discoveredRootFolderNames = [];
   List<String> _selectedRootFolders = [];
+  String? _viewRootFolder;
   bool _isLoading = false;
   String? _error;
   String? _lastSuccessMessage;
@@ -61,16 +62,52 @@ class BookmarkProvider extends ChangeNotifier {
 
   List<BookmarkFolder> get rootFolders => _rootFolders;
 
+  String? get viewRootFolder => _viewRootFolder;
+
+  /// The root folders currently in effect, considering [viewRootFolder].
+  /// When a view root is set, its subfolder children become the effective
+  /// roots and any loose bookmarks are wrapped in an extra tab.
+  List<BookmarkFolder> get _effectiveRootFolders {
+    if (_viewRootFolder == null || _viewRootFolder!.isEmpty) {
+      return _rootFolders;
+    }
+    final target = _findFolderByPath(_rootFolders, _viewRootFolder!);
+    if (target == null) return _rootFolders;
+
+    final subfolders = target.children.whereType<BookmarkFolder>().toList();
+    final looseBookmarks = target.children.whereType<Bookmark>().toList();
+
+    if (subfolders.isEmpty) {
+      return [target];
+    }
+    if (looseBookmarks.isNotEmpty) {
+      return [
+        BookmarkFolder(
+          title: target.title,
+          children: looseBookmarks,
+          dirName: target.dirName,
+        ),
+        ...subfolders,
+      ];
+    }
+    return subfolders;
+  }
+
   List<BookmarkFolder> get displayedRootFolders {
-    if (_selectedRootFolders.isEmpty) return _rootFolders;
+    final effective = _effectiveRootFolders;
+    if (_selectedRootFolders.isEmpty) return effective;
     final names = _selectedRootFolders.toSet();
-    return _rootFolders.where((f) => names.contains(f.title)).toList();
+    final filtered = effective.where((f) => names.contains(f.title)).toList();
+    return filtered.isEmpty ? effective : filtered;
   }
 
   List<String> get availableRootFolderNames =>
-      _rootFolders.isNotEmpty
-          ? _rootFolders.map((f) => f.title).toList()
+      _effectiveRootFolders.isNotEmpty
+          ? _effectiveRootFolders.map((f) => f.title).toList()
           : _discoveredRootFolderNames;
+
+  /// Full folder tree (ignoring viewRootFolder) for the settings picker.
+  List<BookmarkFolder> get fullRootFolders => _rootFolders;
 
   List<String> get selectedRootFolders => List.unmodifiable(_selectedRootFolders);
 
@@ -112,35 +149,60 @@ class BookmarkProvider extends ChangeNotifier {
   /// Loads saved profiles, migrates legacy credentials if needed, and loads
   /// cached bookmarks for the active profile.
   Future<void> loadCredentials() async {
-    _profiles = await _storage.loadProfiles();
+    try {
+      _profiles = await _storage.loadProfiles();
 
-    if (_profiles.isEmpty) {
-      final migrated = await _storage.migrateLegacyCredentials();
-      if (migrated != null) {
-        _profiles = [migrated];
+      if (_profiles.isEmpty) {
+        final migrated = await _storage.migrateLegacyCredentials();
+        if (migrated != null) {
+          _profiles = [migrated];
+        }
       }
-    }
 
-    _activeProfileId = await _storage.loadActiveProfileId();
+      if (_profiles.isEmpty) {
+        final defaultProfile = Profile(
+          id: 'default',
+          name: 'Default',
+          credentials: GithubCredentials(
+            token: '',
+            owner: '',
+            repo: '',
+            branch: 'main',
+            basePath: 'bookmarks',
+          ),
+        );
+        _profiles = [defaultProfile];
+        _activeProfileId = 'default';
+        await _storage.saveProfiles(_profiles);
+        await _storage.saveActiveProfileId('default');
+      }
 
-    final active = activeProfile;
-    if (active != null) {
-      _credentials = active.credentials;
-      _selectedRootFolders = active.selectedRootFolders;
-    } else {
-      _credentials = null;
-      _selectedRootFolders = [];
-    }
+      _activeProfileId = await _storage.loadActiveProfileId();
 
-    _error = null;
-    if (_credentials != null && _credentials!.isValid) {
-      await loadFromCache();
       final active = activeProfile;
-      if (active != null && active.syncOnStart) {
-        await syncBookmarks();
+      if (active != null) {
+        _credentials = active.credentials;
+        _selectedRootFolders = active.selectedRootFolders;
+        _viewRootFolder = active.viewRootFolder;
+      } else {
+        _credentials = null;
+        _selectedRootFolders = [];
+        _viewRootFolder = null;
       }
-      _startOrStopAutoSync();
-    } else {
+
+      _error = null;
+      if (_credentials != null && _credentials!.isValid) {
+        await loadFromCache();
+        final active = activeProfile;
+        if (active != null && active.syncOnStart) {
+          await syncBookmarks();
+        }
+        _startOrStopAutoSync();
+      } else {
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = e.toString();
       notifyListeners();
     }
   }
@@ -213,9 +275,11 @@ class BookmarkProvider extends ChangeNotifier {
     if (active != null) {
       _credentials = active.credentials;
       _selectedRootFolders = active.selectedRootFolders;
+      _viewRootFolder = active.viewRootFolder;
     } else {
       _credentials = null;
       _selectedRootFolders = [];
+      _viewRootFolder = null;
     }
 
     _rootFolders = [];
@@ -237,10 +301,18 @@ class BookmarkProvider extends ChangeNotifier {
   Future<void> replaceProfiles(
     List<Profile> profiles, {
     required String activeId,
+    bool triggerSync = true,
   }) async {
     _profiles = profiles;
     await _storage.saveProfiles(_profiles);
+    // Prevent _saveCurrentProfileLocally() in switchProfile() from overwriting
+    // freshly imported profiles with stale in-memory credentials.
+    _activeProfileId = null;
+    _credentials = null;
     await switchProfile(activeId);
+    if (triggerSync && _credentials != null && _credentials!.isValid) {
+      await syncBookmarks();
+    }
   }
 
   /// Persists current form state back into the in-memory profile list
@@ -294,6 +366,25 @@ class BookmarkProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setViewRootFolder(String? path, {bool save = false}) async {
+    _viewRootFolder = (path != null && path.isEmpty) ? null : path;
+    _selectedRootFolders = [];
+    if (save) {
+      _profiles = _profiles.map((p) {
+        if (p.id == _activeProfileId) {
+          return p.copyWith(
+            viewRootFolder: _viewRootFolder,
+            clearViewRootFolder: _viewRootFolder == null,
+            selectedRootFolders: const [],
+          );
+        }
+        return p;
+      }).toList();
+      await _storage.saveProfiles(_profiles);
+    }
+    notifyListeners();
+  }
+
   Future<void> setSelectedRootFolders(List<String> names, {bool save = false}) async {
     _selectedRootFolders = names.toList();
     if (save) {
@@ -319,10 +410,16 @@ class BookmarkProvider extends ChangeNotifier {
   Future<void> updateCredentials(GithubCredentials creds, {bool save = false}) async {
     _credentials = creds;
     if (save) {
-      _profiles = _profiles.map((p) {
-        if (p.id == _activeProfileId) return p.copyWith(credentials: creds);
-        return p;
-      }).toList();
+      if (_profiles.isEmpty) {
+        final p = Profile(id: 'default', name: 'Default', credentials: creds);
+        _profiles = [p];
+        _activeProfileId = 'default';
+      } else {
+        _profiles = _profiles.map((p) {
+          if (p.id == _activeProfileId) return p.copyWith(credentials: creds);
+          return p;
+        }).toList();
+      }
       await _storage.saveProfiles(_profiles);
     }
     _error = null;
@@ -455,25 +552,27 @@ class BookmarkProvider extends ChangeNotifier {
               if (result.settingsSyncMode != null) {
                 await _storage.saveSettingsSyncMode(result.settingsSyncMode!);
               }
-              await replaceProfiles(result.profiles, activeId: result.activeProfileId);
+              await replaceProfiles(result.profiles, activeId: result.activeProfileId, triggerSync: false);
             } catch (_) {
               // settings.enc may not exist yet; ignore
             }
           }
-          try {
-            final activeId = _activeProfileId ?? _profiles.first.id;
-            await _settingsSync.push(
-              c,
-              _profiles,
-              activeId,
-              password,
-              mode: mode,
-              deviceId: deviceId,
-              syncSettingsToGit: syncSettingsToGit,
-              settingsSyncMode: mode,
-            );
-          } catch (_) {
-            // Push failure does not fail bookmark sync
+          if (_profiles.isNotEmpty) {
+            try {
+              final activeId = _activeProfileId ?? _profiles.first.id;
+              await _settingsSync.push(
+                c,
+                _profiles,
+                activeId,
+                password,
+                mode: mode,
+                deviceId: deviceId,
+                syncSettingsToGit: syncSettingsToGit,
+                settingsSyncMode: mode,
+              );
+            } catch (_) {
+              // Push failure does not fail bookmark sync
+            }
           }
         }
       }
@@ -500,6 +599,26 @@ class BookmarkProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
   // Misc
   // ---------------------------------------------------------------------------
+
+  /// Resets all data (profiles, credentials, cache) to factory state.
+  Future<void> resetAll() async {
+    _stopAutoSync();
+    await _storage.resetAll();
+    await _cache.clearCache();
+    _profiles = [];
+    _activeProfileId = null;
+    _credentials = null;
+    _rootFolders = [];
+    _discoveredRootFolderNames = [];
+    _selectedRootFolders = [];
+    _viewRootFolder = null;
+    _error = null;
+    _lastSuccessMessage = null;
+    _searchQuery = '';
+    _lastSyncTime = null;
+    _nextAutoSyncAt = null;
+    notifyListeners();
+  }
 
   void clearError() {
     _error = null;
@@ -612,6 +731,25 @@ class BookmarkProvider extends ChangeNotifier {
     );
   }
 
+  /// Navigates the folder tree by a `/`-separated path using [dirName].
+  BookmarkFolder? _findFolderByPath(List<BookmarkFolder> folders, String path) {
+    final parts = path.split('/');
+    List<BookmarkFolder> searchIn = folders;
+    BookmarkFolder? current;
+    for (final part in parts) {
+      current = null;
+      for (final f in searchIn) {
+        if ((f.dirName ?? f.title) == part) {
+          current = f;
+          break;
+        }
+      }
+      if (current == null) return null;
+      searchIn = current.children.whereType<BookmarkFolder>().toList();
+    }
+    return current;
+  }
+
   /// Returns the full repo path for a folder (e.g. "bookmarks/toolbar/development").
   String? getFolderPath(BookmarkFolder folder) {
     final c = _credentials;
@@ -662,6 +800,53 @@ class BookmarkProvider extends ChangeNotifier {
         _rootFolders = _applyMove(bookmark, sourceFolder, targetFolder, _rootFolders);
         await _cache.saveCache(c.cacheKey, _rootFolders);
         _lastSuccessMessage = 'Bookmark moved';
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } on GithubApiException catch (e) {
+      _error = e.statusCode != null ? 'Error ${e.statusCode}: ${e.message}' : e.message;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Deletes a bookmark from its folder. Persists to GitHub.
+  Future<bool> deleteBookmark(
+    Bookmark bookmark,
+    BookmarkFolder sourceFolder,
+  ) async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      _error = 'Configure GitHub connection in Settings';
+      notifyListeners();
+      return false;
+    }
+
+    final folderPath = getFolderPath(sourceFolder);
+    if (folderPath == null) return false;
+
+    _isLoading = true;
+    _error = null;
+    _lastSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final ok = await _repository.deleteBookmarkFromFolder(c, folderPath, bookmark);
+      if (ok) {
+        final newChildren = sourceFolder.children
+            .where((c) => !identical(c, bookmark))
+            .toList();
+        _rootFolders = _replaceFolderInTree(_rootFolders, sourceFolder, newChildren);
+        await _cache.saveCache(c.cacheKey, _rootFolders);
+        _lastSuccessMessage = 'Bookmark deleted';
         notifyListeners();
         return true;
       }

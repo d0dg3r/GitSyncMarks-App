@@ -542,5 +542,69 @@ class AppLocalizationsDe extends AppLocalizations {
   String get moveToFolderFailed => 'Lesezeichen konnte nicht verschoben werden';
 
   @override
+  String get deleteBookmark => 'Lesezeichen entfernen';
+
+  @override
+  String deleteBookmarkConfirm(String title) {
+    return 'Lesezeichen \"$title\" entfernen?';
+  }
+
+  @override
+  String get bookmarkDeleted => 'Lesezeichen entfernt';
+
+  @override
   String get orderUpdated => 'Sortierung aktualisiert';
+
+  @override
+  String get rootFolder => 'Stammordner';
+
+  @override
+  String get rootFolderHelp =>
+      'Wähle einen Ordner, dessen Unterordner als Tabs angezeigt werden. Standard zeigt alle Ordner der obersten Ebene.';
+
+  @override
+  String get allFolders => 'Alle Ordner';
+
+  @override
+  String get selectRootFolder => 'Stammordner wählen';
+
+  @override
+  String get exportPasswordTitle => 'Export-Passwort';
+
+  @override
+  String get exportPasswordHint => 'Leer lassen für unverschlüsselten Export';
+
+  @override
+  String get importPasswordTitle => 'Verschlüsselte Datei';
+
+  @override
+  String get importPasswordHint => 'Verschlüsselungs-Passwort eingeben';
+
+  @override
+  String get importSettingsAction => 'Einstellungen importieren';
+
+  @override
+  String get importingSettings => 'Einstellungen werden importiert…';
+
+  @override
+  String get orImportExisting => 'oder vorhandene Einstellungen importieren';
+
+  @override
+  String get wrongPassword => 'Falsches Passwort. Bitte erneut versuchen.';
+
+  @override
+  String get export_ => 'Exportieren';
+
+  @override
+  String get resetAll => 'Alle Daten zurücksetzen';
+
+  @override
+  String get resetConfirmTitle => 'App zurücksetzen?';
+
+  @override
+  String get resetConfirmMessage =>
+      'Alle Profile, Einstellungen und gecachte Lesezeichen werden gelöscht. Die App startet im Ausgangszustand.';
+
+  @override
+  String get resetSuccess => 'Alle Daten wurden zurückgesetzt';
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,17 @@ import 'providers/bookmark_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/settings_import_export.dart';
 import 'widgets/add_bookmark_dialog.dart';
+
+bool _isMobileShareTarget() {
+  if (kIsWeb) {
+    return false;
+  }
+  try {
+    return Platform.isAndroid || Platform.isIOS;
+  } catch (e) {
+    rethrow;
+  }
+}
 
 /// GitSyncMarks brand colors (from extension options.css / popup.css).
 class _AppColors {
@@ -47,7 +59,9 @@ class GitSyncMarksApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: _ShareIntentWrapper(bookmarkProvider: bookmarkProvider),
+        home: _isMobileShareTarget()
+            ? _ShareIntentWrapper(bookmarkProvider: bookmarkProvider)
+            : const HomeScreen(),
       ),
     );
   }

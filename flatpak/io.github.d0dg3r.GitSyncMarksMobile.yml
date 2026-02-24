@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/flatpak/flatpak-builder/main/data/flatpak-manifest.schema.json
+
+---
+app-id: io.github.d0dg3r.GitSyncMarksMobile
+runtime: org.gnome.Platform
+runtime-version: "47"
+sdk: org.gnome.Sdk
+command: gitsyncmarks_app
+separate-locales: false
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+  - --socket=pulseaudio
+  - --share=network
+  - --talk-name=org.freedesktop.secrets
+modules:
+  - name: GitSyncMarksMobile
+    buildsystem: simple
+    only-arches:
+      - x86_64
+    build-commands:
+      - "./build-flatpak.sh"
+    sources:
+      - type: file
+        path: GitSyncMarks-Mobile-Linux-Portable.tar.gz
+      - type: file
+        path: build-flatpak.sh
+      - type: file
+        path: io.github.d0dg3r.GitSyncMarksMobile.desktop
+      - type: file
+        path: io.github.d0dg3r.GitSyncMarksMobile.metainfo.xml
+      - type: file
+        path: ../assets/images/app_icon.png

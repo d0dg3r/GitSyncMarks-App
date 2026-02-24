@@ -162,6 +162,53 @@ class BookmarkRepository {
     }
   }
 
+  /// Deletes a bookmark from a folder in the repo.
+  /// Removes the JSON file and updates _order.json.
+  Future<bool> deleteBookmarkFromFolder(
+    GithubCredentials creds,
+    String folderPath,
+    Bookmark bookmark,
+  ) async {
+    final api = GithubApi(
+      token: creds.token,
+      owner: creds.owner,
+      repo: creds.repo,
+      branch: creds.branch,
+      basePath: creds.basePath,
+    );
+    try {
+      final filename = bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
+      final filePath = '$folderPath/$filename';
+
+      final fileMeta = await api.getFileMeta(filePath);
+      if (fileMeta == null || fileMeta.sha == null) return false;
+
+      await api.deleteFile(filePath, fileMeta.sha!, 'Delete bookmark: ${bookmark.title}');
+
+      final orderPath = '$folderPath/_order.json';
+      String? orderJson;
+      String? orderSha;
+      try {
+        orderJson = await api.getFileContent(orderPath);
+        final meta = await api.getFileMeta(orderPath);
+        orderSha = meta?.sha;
+      } catch (_) {}
+
+      final orderList = _orderListFromJson(orderJson);
+      orderList.remove(filename);
+      await api.createOrUpdateFile(
+        orderPath,
+        const JsonEncoder.withIndent('  ').convert(orderList),
+        'Update order: remove $filename',
+        sha: orderSha,
+      );
+
+      return true;
+    } finally {
+      api.close();
+    }
+  }
+
   List<dynamic> _orderListFromJson(String? jsonStr) {
     if (jsonStr == null || jsonStr.trim().isEmpty) return [];
     try {

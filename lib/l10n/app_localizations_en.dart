@@ -532,5 +532,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveToFolderFailed => 'Failed to move bookmark';
 
   @override
+  String get deleteBookmark => 'Delete Bookmark';
+
+  @override
+  String deleteBookmarkConfirm(String title) {
+    return 'Delete bookmark \"$title\"?';
+  }
+
+  @override
+  String get bookmarkDeleted => 'Bookmark deleted';
+
+  @override
   String get orderUpdated => 'Order updated';
+
+  @override
+  String get rootFolder => 'Root Folder';
+
+  @override
+  String get rootFolderHelp =>
+      'Select a folder whose subfolders become the tabs. Default shows all top-level folders.';
+
+  @override
+  String get allFolders => 'All Folders';
+
+  @override
+  String get selectRootFolder => 'Select Root Folder';
+
+  @override
+  String get exportPasswordTitle => 'Export Password';
+
+  @override
+  String get exportPasswordHint => 'Leave empty for unencrypted export';
+
+  @override
+  String get importPasswordTitle => 'Encrypted File';
+
+  @override
+  String get importPasswordHint => 'Enter the encryption password';
+
+  @override
+  String get importSettingsAction => 'Import Settings';
+
+  @override
+  String get importingSettings => 'Importing settings…';
+
+  @override
+  String get orImportExisting => 'or import existing settings';
+
+  @override
+  String get wrongPassword => 'Wrong password. Please try again.';
+
+  @override
+  String get export_ => 'Export';
+
+  @override
+  String get resetAll => 'Reset all data';
+
+  @override
+  String get resetConfirmTitle => 'Reset App?';
+
+  @override
+  String get resetConfirmMessage =>
+      'This will delete all profiles, settings and cached bookmarks. The app will return to its initial state.';
+
+  @override
+  String get resetSuccess => 'All data has been reset';
 }

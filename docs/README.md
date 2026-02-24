@@ -10,16 +10,26 @@ When opening this project fresh: read CONTEXT.md and PLAN.md first so you have f
 |----------|---------|
 | [CONTEXT.md](CONTEXT.md) | Full project context, decisions, origin – read first |
 | [PLAN.md](PLAN.md) | Implementation plan, phases, next steps |
+| [ROADMAP.md](../ROADMAP.md) | Milestones, current status, future vision |
 | [BOOKMARK-FORMAT.md](BOOKMARK-FORMAT.md) | GitSyncMarks repo structure (JSON format, API) |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | Technical architecture, CI/Release |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history |
 
-## Current Status (v0.3.0)
+## Current Status (v0.3.0-beta.7)
 
-- Bookmark sync, move, reorder, add via share
+- Bookmark sync, move, reorder, delete, add via share
 - Settings Sync to Git (extension-compatible, Global/Individual mode)
+- Password-protected export/import of settings
+- Configurable root folder for tab-based navigation
+- Auto-lock edit mode (60s inactivity timer)
+- Post-import auto-sync, reset all data
 - Local cache (Hive), Profiles, multi-root-folder selection
 - i18n (DE/EN/ES/FR), Dark Mode, Favicons
-- Release workflow: APK build on tag push (v*)
-- Android + iOS
+- **Platforms:** Android (stable), iOS, Windows, macOS, Linux (all alpha)
+- **Release workflow:** Tag `v*` → APK, Flatpak + ZIP (Linux), ZIP (Windows, macOS); pre-release tags supported
+- **Flatpak test workflow:** `workflow_dispatch` or tag `v*-flatpak-test*` for isolated Flatpak build
+- **CI screenshots:** Golden tests auto-generate screenshots; `flatpak/screenshots/` is source of truth
+- **F-Droid:** Metadata in `fdroid/`; update changelogs and metadata with each release
 
 ## Related Repos
 

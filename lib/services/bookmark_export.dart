@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/bookmark_node.dart';
+import 'web_download_stub.dart'
+    if (dart.library.html) 'web_download_web.dart';
 
 /// Exports the bookmark tree as GitSyncMarks-compatible JSON and shares it.
 class BookmarkExportService {
@@ -34,18 +39,40 @@ class BookmarkExportService {
   /// Writes the export JSON to a temp file and opens the share sheet.
   Future<void> exportAndShare(List<BookmarkFolder> rootFolders) async {
     final jsonString = buildExportJson(rootFolders);
-
-    final dir = await getTemporaryDirectory();
     final now = DateTime.now();
     final datePart =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final file = File('${dir.path}/gitsyncmarks-bookmarks-$datePart.json');
+    final fileName = 'gitsyncmarks-bookmarks-$datePart.json';
+
+    if (kIsWeb) {
+      final webBytes = Uint8List.fromList(utf8.encode(jsonString));
+      await downloadBytesForWeb(webBytes, fileName, 'application/json');
+      return;
+    }
+
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/$fileName');
     await file.writeAsString(jsonString);
 
-    // ignore: deprecated_member_use
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'GitSyncMarks Bookmarks',
-    );
+    late final bool isDesktop;
+    try {
+      isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+    } catch (e) {
+      rethrow;
+    }
+    if (isDesktop) {
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Bookmarks',
+        fileName: fileName,
+      );
+      if (savePath == null) return;
+      await file.copy(savePath);
+    } else {
+      // ignore: deprecated_member_use
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'GitSyncMarks Bookmarks',
+      );
+    }
   }
 }

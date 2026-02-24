@@ -8,7 +8,7 @@ This document captures the context and decisions from when the project was creat
 
 **Parent project:** [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) – a browser extension that syncs bookmarks with a GitHub repo. Each bookmark is stored as a JSON file; directory structure mirrors the bookmark tree.
 
-**This app:** Companion mobile app (iOS + Android) for users who want to:
+**This app:** Cross-platform companion app (Android, iOS, Windows, macOS, Linux) for users who want to:
 1. View their synced bookmarks on mobile
 2. Open links in their preferred browser
 3. Move, reorder, add bookmarks (synced to repo)
@@ -18,26 +18,27 @@ This document captures the context and decisions from when the project was creat
 
 | Topic | Decision |
 |-------|----------|
-| **Platform** | Flutter (iOS + Android from one codebase) |
-| **Scope** | Sync, display tree, open in browser; move/reorder/add bookmarks; settings sync |
+| **Platform** | Flutter (Android, iOS, Windows, macOS, Linux from one codebase) |
+| **Scope** | Sync, display tree, open in browser; move/reorder/delete/add bookmarks; settings sync; encrypted export/import; configurable root folder; auto-lock edit mode; reset all data |
 | **Storage** | GitHub repo (same format as extension); local cache for offline |
 | **Browser** | User selects preferred browser; URLs open via `url_launcher` |
 
 ## POC Scope (Completed)
 
-- Flutter project in this repo
-- Main screen: Bookmark list (empty state with "Configure in Settings")
-- Settings screen: Form with Token, Owner, Repo, Branch, Base Path
-- Navigation between screens
-- No persistence yet, no API calls
+- [x] Flutter project in this repo
+- [x] Main screen: Bookmark list (empty state with "Configure in Settings")
+- [x] Settings screen: Form with Token, Owner, Repo, Branch, Base Path
+- [x] Navigation between screens
+- [x] `flutter create . --org com.gitsyncmarks` (android/, ios/ generated)
 
-## Tech Stack (Planned)
+## Tech Stack (Implemented)
 
-- **HTTP:** `http` or `dio`
+- **HTTP:** `http`
 - **Token storage:** `flutter_secure_storage`
-- **Local cache:** `hive` or `sqflite`
+- **Local cache:** `hive` (BookmarkCacheService)
 - **URLs:** `url_launcher` with `LaunchMode.externalApplication`
-- **State:** `provider` or `riverpod`
+- **State:** `provider` (BookmarkProvider)
+- **Settings sync:** `pointycastle` (PBKDF2, AES-256-GCM, extension-compatible)
 
 ## Bookmark Format (from GitSyncMarks)
 
@@ -67,13 +68,24 @@ Token: GitHub PAT with `repo` scope.
 
 ## UI Decisions
 
-- **Bookmark list:** Expandable tree (folders + bookmarks)
-- **Folder picker:** N/A (we read from repo; no folder selection)
-- **Settings:** Token, Owner, Repo, Branch, Base Path, Browser choice (Phase 5)
+- **Bookmark list:** Expandable tree (folders + bookmarks), ReorderableListView, move-to-folder (long-press), delete (long-press)
+- **Folder picker:** Hierarchical picker for move; root folder tabs (toolbar, menu, other, mobile); configurable root folder
+- **Settings:** Token, Owner, Repo, Branch, Base Path, Browser choice; 5 tabs (GitHub, Sync, Files, Help, About)
+- **Edit mode:** Lock/unlock icon in AppBar; auto-locks after 60s inactivity; defaults to locked
+- **Export/Import:** Password-protected (AES-256-GCM); desktop uses FilePicker, mobile uses Share
+- **Empty state:** Import Settings button when no credentials configured
+
+## Platforms
+
+- **Android:** Stable; primary platform; F-Droid metadata in `fdroid/`
+- **iOS, Windows, macOS, Linux:** Alpha; same codebase; Share-Intent only on mobile; desktop uses HomeScreen directly
+- **Linux distribution:** Flatpak (recommended) + ZIP fallback; CI builds both on tag push
 
 ## Conversation Notes
 
 - User wanted to start with a POC
 - Flutter was not installed on dev machine; project structure created manually
-- `flutter create .` still needed to generate android/ and ios/ folders
+- `flutter create .` done to generate android/ and ios/ folders
 - Related idea (Tab-Profiles) documented in GitSyncMarks repo – separate feature
+- Android is the primary platform; all others (iOS, Windows, macOS, Linux) are alpha
+- Pre-release CI tags (`-beta`, `-rc`, `-test`) build all platforms but mark as pre-release

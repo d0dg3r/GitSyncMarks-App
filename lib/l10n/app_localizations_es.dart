@@ -537,5 +537,69 @@ class AppLocalizationsEs extends AppLocalizations {
   String get moveToFolderFailed => 'Error al mover el marcador';
 
   @override
+  String get deleteBookmark => 'Eliminar marcador';
+
+  @override
+  String deleteBookmarkConfirm(String title) {
+    return '¿Eliminar marcador \"$title\"?';
+  }
+
+  @override
+  String get bookmarkDeleted => 'Marcador eliminado';
+
+  @override
   String get orderUpdated => 'Orden actualizado';
+
+  @override
+  String get rootFolder => 'Carpeta raíz';
+
+  @override
+  String get rootFolderHelp =>
+      'Selecciona una carpeta cuyos subcarpetas se muestran como pestañas. Por defecto muestra todas las carpetas de nivel superior.';
+
+  @override
+  String get allFolders => 'Todas las carpetas';
+
+  @override
+  String get selectRootFolder => 'Seleccionar carpeta raíz';
+
+  @override
+  String get exportPasswordTitle => 'Contraseña de exportación';
+
+  @override
+  String get exportPasswordHint => 'Dejar vacío para exportación sin cifrar';
+
+  @override
+  String get importPasswordTitle => 'Archivo cifrado';
+
+  @override
+  String get importPasswordHint => 'Introduce la contraseña de cifrado';
+
+  @override
+  String get importSettingsAction => 'Importar ajustes';
+
+  @override
+  String get importingSettings => 'Importando ajustes…';
+
+  @override
+  String get orImportExisting => 'o importar ajustes existentes';
+
+  @override
+  String get wrongPassword => 'Contraseña incorrecta. Inténtalo de nuevo.';
+
+  @override
+  String get export_ => 'Exportar';
+
+  @override
+  String get resetAll => 'Restablecer todos los datos';
+
+  @override
+  String get resetConfirmTitle => '¿Restablecer la aplicación?';
+
+  @override
+  String get resetConfirmMessage =>
+      'Se eliminarán todos los perfiles, ajustes y marcadores en caché. La aplicación volverá a su estado inicial.';
+
+  @override
+  String get resetSuccess => 'Todos los datos han sido restablecidos';
 }

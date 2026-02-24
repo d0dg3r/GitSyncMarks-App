@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=GitSyncMarks-Mobile
+Comment=View and sync bookmarks from your GitSyncMarks GitHub repo
+Categories=Utility;Network;
+
+Icon=io.github.d0dg3r.GitSyncMarksMobile
+Exec=gitsyncmarks_app
+Terminal=false
+StartupWMClass=gitsyncmarks_app

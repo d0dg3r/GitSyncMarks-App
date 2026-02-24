@@ -22,7 +22,8 @@ class Profile {
     this.syncProfile = 'normal',
     this.customIntervalMinutes = 15,
     this.syncOnStart = false,
-    this.allowMoveReorder = true,
+    this.allowMoveReorder = false,
+    this.viewRootFolder,
   }) : selectedRootFolders = selectedRootFolders ?? [];
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -38,7 +39,8 @@ class Profile {
       syncProfile: json['syncProfile'] as String? ?? 'normal',
       customIntervalMinutes: (json['customIntervalMinutes'] as num?)?.toInt() ?? 15,
       syncOnStart: json['syncOnStart'] == true,
-      allowMoveReorder: json['allowMoveReorder'] != false,
+      allowMoveReorder: false,
+      viewRootFolder: json['viewRootFolder'] as String?,
     );
   }
 
@@ -51,6 +53,10 @@ class Profile {
   final int customIntervalMinutes;
   final bool syncOnStart;
   final bool allowMoveReorder;
+
+  /// When set, this folder's children become the tab-bar tabs instead of
+  /// the top-level root folders.  Supports nested paths ("toolbar/dev-tools").
+  final String? viewRootFolder;
 
   /// Sync interval in minutes for this profile.
   int get syncIntervalMinutes {
@@ -68,6 +74,8 @@ class Profile {
     int? customIntervalMinutes,
     bool? syncOnStart,
     bool? allowMoveReorder,
+    String? viewRootFolder,
+    bool clearViewRootFolder = false,
   }) {
     return Profile(
       id: id ?? this.id,
@@ -79,6 +87,7 @@ class Profile {
       customIntervalMinutes: customIntervalMinutes ?? this.customIntervalMinutes,
       syncOnStart: syncOnStart ?? this.syncOnStart,
       allowMoveReorder: allowMoveReorder ?? this.allowMoveReorder,
+      viewRootFolder: clearViewRootFolder ? null : (viewRootFolder ?? this.viewRootFolder),
     );
   }
 
@@ -91,6 +100,6 @@ class Profile {
         'syncProfile': syncProfile,
         'customIntervalMinutes': customIntervalMinutes,
         'syncOnStart': syncOnStart,
-        'allowMoveReorder': allowMoveReorder,
+        if (viewRootFolder != null) 'viewRootFolder': viewRootFolder,
       };
 }

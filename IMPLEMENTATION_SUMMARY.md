@@ -1,7 +1,7 @@
 # Implementation Summary
 
 ## Overview
-Successfully implemented a cross-platform Flutter application for iOS and Android that syncs and displays bookmarks from the GitSyncMarks GitHub repository. As of v0.3.0, the app supports move, reorder, add-via-share, and encrypted settings sync (extension-compatible).
+Successfully implemented a cross-platform Flutter application (Android, iOS, Windows, macOS, Linux) that syncs and displays bookmarks from the GitSyncMarks GitHub repository. The app supports move, reorder, delete, add-via-share, encrypted settings sync (extension-compatible), password-protected export/import, configurable root folder navigation, and Flatpak distribution for Linux.
 
 ## v0.3.0 Additions
 
@@ -11,18 +11,33 @@ Successfully implemented a cross-platform Flutter application for iOS and Androi
 - **Share link as bookmark**: receive_sharing_intent for URLs from browser
 - **Recursive folder display**: Subfolders and nested bookmarks
 
+## v0.3.0-beta.7 Additions
+
+- **Password-protected export/import**: Settings export encrypted with AES-256-GCM; import detects encrypted files and prompts for password
+- **Configurable root folder**: Select any folder as "root" for tab navigation; subfolders become tabs
+- **Auto-lock edit mode**: Edit mode auto-locks after 60 seconds of inactivity; edit actions reset the timer
+- **Delete bookmarks**: Long-press on any bookmark to delete (available even when edit mode is locked)
+- **Post-import auto-sync**: After importing settings, bookmarks sync automatically if credentials are valid
+- **Reset all data**: Button in About tab to clear all profiles, settings, and cached data
+- **Import on empty state**: "Import Settings" button shown when no credentials configured
+- **Default profile creation**: Default profile automatically created on first launch
+- **Pre-release CI tags**: Tags with `-beta`, `-rc`, `-test` build all platforms as pre-releases
+- **CI screenshot generation**: Golden tests auto-generate screenshots on each release
+- **Desktop export**: `FilePicker.saveFile()` on Linux/Windows/macOS (replaces `Share.shareXFiles`)
+
 ## ✅ Requirements Met
 
-### 1. Cross-platform Support (iOS + Android)
-- ✅ Flutter framework provides native compilation for both platforms
-- ✅ Android configuration complete (Gradle, Manifest, MainActivity)
-- ✅ iOS configuration complete (Info.plist, AppDelegate)
+### 1. Cross-platform Support (Android, iOS, Windows, macOS, Linux)
+- ✅ Flutter framework provides native compilation for all platforms
+- ✅ Android, iOS configuration complete
+- ✅ Desktop: Windows, macOS, Linux from same codebase
+- ✅ Linux: Flatpak (recommended) + ZIP fallback; CI builds both on tag push
 
 ### 2. Bookmark Syncing from GitHub
-- ✅ Fetches bookmarks from GitSyncMarks repository
-- ✅ Read-only access via HTTP GET
-- ✅ Supports multiple JSON formats (Chrome, Firefox, custom)
-- ✅ Parses hierarchical bookmark structure
+- ✅ Fetches bookmarks from GitSyncMarks repository via Contents API
+- ✅ GitSyncMarks per-file format (see [BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md))
+- ✅ Move, reorder, add bookmarks; changes persisted to repo
+- ✅ Parses hierarchical bookmark structure with `_order.json`
 
 ### 3. Bookmark Tree Display
 - ✅ Displays folders and subfolders
@@ -38,23 +53,20 @@ Successfully implemented a cross-platform Flutter application for iOS and Androi
 - ✅ Error handling for invalid URLs
 
 ### 5. Local Caching
-- ✅ Caches bookmarks with SharedPreferences
+- ✅ Caches bookmarks with Hive (BookmarkCacheService)
 - ✅ Offline-first strategy
 - ✅ Fallback to cache on network errors
 - ✅ Stores last sync timestamp
-
-### 6. Read-Only Operation
-- ✅ No write operations to GitHub
-- ✅ No tab saving functionality
-- ✅ Pure sync and display
 
 ## 📁 Files Created
 
 ### Core Application Files
 - `lib/main.dart` - App entry point
-- `lib/models/bookmark.dart` - Bookmark data model
-- `lib/services/bookmark_service.dart` - Fetching and caching logic
-- `lib/screens/bookmarks_screen.dart` - Main UI screen
+- `lib/models/bookmark_node.dart` - BookmarkNode, BookmarkFolder, Bookmark (GitSyncMarks per-file format)
+- `lib/repositories/bookmark_repository.dart` - Orchestrates sync, move, reorder, add
+- `lib/services/github_api.dart` - GitHub Contents API client
+- `lib/services/bookmark_cache.dart` - Hive-based offline cache
+- `lib/screens/bookmark_list_screen.dart` - Main UI with folder tabs, ReorderableListView
 
 ### Configuration Files
 - `pubspec.yaml` - Dependencies and metadata
@@ -75,9 +87,7 @@ Successfully implemented a cross-platform Flutter application for iOS and Androi
 - `ios/Runner/AppDelegate.swift` - App delegate
 
 ### Testing
-- `test/bookmark_test.dart` - Model unit tests
-- `test/bookmark_service_test.dart` - Service unit tests
-- `test/widget_test.dart` - Widget tests
+- `test/` - Unit and widget tests
 
 ### Documentation
 - `README.md` - User documentation
@@ -86,33 +96,26 @@ Successfully implemented a cross-platform Flutter application for iOS and Androi
 - `ARCHITECTURE.md` - Technical architecture
 - `CHANGELOG.md` - Version history
 
-## �� Security
+## Security
 
-### Dependencies Checked
-All dependencies scanned for vulnerabilities:
-- `http`: ✅ No vulnerabilities
-- `path_provider`: ✅ No vulnerabilities
-- `shared_preferences`: ✅ No vulnerabilities
-- `url_launcher`: ✅ No vulnerabilities
+### Dependencies
+- Credentials stored via `flutter_secure_storage`
+- Settings sync encrypted with `pointycastle` (PBKDF2, AES-256-GCM, extension-compatible)
 
 ### Security Practices
 - No hardcoded credentials
-- No sensitive data storage
-- Read-only repository access
+- GitHub PAT stored securely
 - Proper permission declarations
 - HTTPS for all network requests
 
 ## 🧪 Testing
 
-### Unit Tests
-- ✅ Bookmark model serialization/deserialization
-- ✅ Bookmark service instantiation
-- ✅ Cache operations
-
 ### Widget Tests
-- ✅ App starts successfully
-- ✅ Shows title
-- ✅ Shows loading indicator
+- ✅ `widget_test.dart`: App smoke test (starts, title, loading)
+- ✅ `screenshot_test.dart`: Golden screenshots for Flatpak metainfo
+
+### Unit Tests
+- (Future) Model serialization, repository/cache operations
 
 ### Code Quality
 - ✅ Passes Flutter analyzer
@@ -122,46 +125,47 @@ All dependencies scanned for vulnerabilities:
 
 ## 📊 Statistics
 
-- **Lines of Dart code**: ~350
-- **Test coverage**: Basic unit and widget tests
-- **Files created**: 24
-- **Commits**: 7
-- **Dependencies**: 4 runtime + 2 dev
+- **Platforms**: Android, iOS, Windows, macOS, Linux
+- **Dependencies**: http, hive, provider, url_launcher, flutter_secure_storage, pointycastle, receive_sharing_intent, and more
 
-## 🎯 Key Features
+## Key Features
 
 1. **Offline-First**: Works without internet after initial sync
 2. **Error Resilient**: Graceful fallback to cached data
 3. **User-Friendly**: Clear error messages and loading states
-4. **Expandable UI**: Collapsible folder tree
-5. **Last Sync Display**: Shows when data was last updated
-6. **Manual Refresh**: Force sync with refresh button
+4. **Expandable UI**: Collapsible folder tree, move, reorder, delete
+5. **Settings Sync**: Encrypted sync to Git (extension-compatible)
+6. **Share as Bookmark**: Add URLs from browser (mobile) or Add dialog (desktop)
+7. **Password-Protected Export/Import**: AES-256-GCM encrypted settings files
+8. **Configurable Root Folder**: Any folder can be the tab root
+9. **Auto-Lock Edit Mode**: 60-second inactivity timer
+10. **Reset All Data**: Full app reset from About tab
 
 ## 🚀 Next Steps for Users
 
-1. **Setup Repository**: Create bookmarks.json in GitSyncMarks repo
-2. **Export Bookmarks**: Export from browser and convert to JSON
+1. **Setup Repository**: Use GitSyncMarks per-file format (see [BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md))
+2. **Configure App**: Owner, Repo, Branch, Base Path in Settings
 3. **Install Flutter**: Set up development environment
-4. **Build App**: Run `flutter build apk` or `flutter build ios`
-5. **Deploy**: Install on devices
+4. **Build App**: `flutter build apk`, `flutter build linux`, etc.
+5. **Deploy**: APK, Flatpak, or ZIP from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
 
 ## 📝 Notes
 
-- The GitHub repository URL is configurable in `bookmark_service.dart`
-- Supports Chrome/Firefox bookmark formats
+- Repository config (Owner, Repo, Branch, Base Path) is set in app Settings
+- Bookmark format: [BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md)
 - Material Design 3 provides modern, consistent UI
-- No authentication required (public repository)
-- Cached data persists between app sessions
 
-## ✨ Highlights
+## Highlights
 
-- **Minimal Dependencies**: Only essential packages used
-- **Clean Architecture**: Separation of concerns maintained
-- **Comprehensive Docs**: Multiple documentation files
-- **Well Tested**: Unit and widget tests included
-- **Platform Ready**: Both iOS and Android configured
+- **Clean Architecture**: Repositories, providers, services, models
+- **Desktop + Mobile**: Same codebase for all platforms
+- **Flatpak**: Linux distribution via CI
+- **Settings Sync**: Extension-compatible encryption
+- **Password-Protected Export/Import**: Secure settings sharing between devices
+- **Auto-Lock Edit Mode**: Prevents accidental edits
+- **CI Screenshots**: Auto-generated via golden tests
 - **Production Ready**: Error handling, caching, offline support
 
-## 🎉 Conclusion
+## Conclusion
 
-The implementation successfully meets all requirements specified in the problem statement. The app is a complete, production-ready solution for syncing and viewing bookmarks from GitHub with support for both iOS and Android platforms.
+The app is a complete, production-ready solution for syncing and managing bookmarks from GitHub with support for Android (stable), iOS, Windows, macOS, and Linux (all alpha). All platforms are built from the same codebase via CI on tag push.

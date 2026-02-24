@@ -543,5 +543,69 @@ class AppLocalizationsFr extends AppLocalizations {
   String get moveToFolderFailed => 'Échec du déplacement du favori';
 
   @override
+  String get deleteBookmark => 'Supprimer le favori';
+
+  @override
+  String deleteBookmarkConfirm(String title) {
+    return 'Supprimer le favori \"$title\" ?';
+  }
+
+  @override
+  String get bookmarkDeleted => 'Favori supprimé';
+
+  @override
   String get orderUpdated => 'Ordre mis à jour';
+
+  @override
+  String get rootFolder => 'Dossier racine';
+
+  @override
+  String get rootFolderHelp =>
+      'Sélectionnez un dossier dont les sous-dossiers deviennent les onglets. Par défaut, tous les dossiers de premier niveau sont affichés.';
+
+  @override
+  String get allFolders => 'Tous les dossiers';
+
+  @override
+  String get selectRootFolder => 'Sélectionner le dossier racine';
+
+  @override
+  String get exportPasswordTitle => 'Mot de passe d\'export';
+
+  @override
+  String get exportPasswordHint => 'Laisser vide pour un export non chiffré';
+
+  @override
+  String get importPasswordTitle => 'Fichier chiffré';
+
+  @override
+  String get importPasswordHint => 'Entrez le mot de passe de chiffrement';
+
+  @override
+  String get importSettingsAction => 'Importer les paramètres';
+
+  @override
+  String get importingSettings => 'Importation des paramètres…';
+
+  @override
+  String get orImportExisting => 'ou importer des paramètres existants';
+
+  @override
+  String get wrongPassword => 'Mot de passe incorrect. Veuillez réessayer.';
+
+  @override
+  String get export_ => 'Exporter';
+
+  @override
+  String get resetAll => 'Réinitialiser toutes les données';
+
+  @override
+  String get resetConfirmTitle => 'Réinitialiser l\'application ?';
+
+  @override
+  String get resetConfirmMessage =>
+      'Tous les profils, paramètres et favoris en cache seront supprimés. L\'application reviendra à son état initial.';
+
+  @override
+  String get resetSuccess => 'Toutes les données ont été réinitialisées';
 }

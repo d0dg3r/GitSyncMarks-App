@@ -1,19 +1,25 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/github_credentials.dart';
+import '../models/bookmark_node.dart';
 import '../services/settings_sync_service.dart';
 import '../services/storage_service.dart';
 import '../l10n/app_localizations.dart';
 import '../models/profile.dart';
 import '../providers/bookmark_provider.dart';
 import '../services/bookmark_export.dart';
+import '../services/settings_crypto.dart';
 import '../services/settings_import_export.dart';
+import '../services/web_import_picker_stub.dart'
+    if (dart.library.html) '../services/web_import_picker_web.dart';
 
 const String _gitSyncMarksUrl = 'https://github.com/d0dg3r/GitSyncMarks';
 const String _gitSyncMarksMobileUrl = 'https://github.com/d0dg3r/GitSyncMarks-Mobile';
@@ -41,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   final _importExport = SettingsImportExportService();
   final _bookmarkExport = BookmarkExportService();
   String? _loadedProfileId;
+  bool _isImporting = false;
 
   @override
   void initState() {
@@ -196,38 +203,109 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _onImport() async {
+    if (_isImporting) return;
     final l = AppLocalizations.of(context)!;
     try {
-      final result = await FilePicker.platform.pickFiles(type: FileType.any);
-      if (result == null || result.files.isEmpty) return;
-      final path = result.files.single.path;
-      if (path == null) return;
-      final content = await File(path).readAsString();
-      final parsed = _importExport.parseSettingsJson(content);
+      final result = kIsWeb
+          ? null
+          : await FilePicker.platform.pickFiles(
+              type: FileType.any,
+              allowMultiple: false,
+              withData: false,
+            );
+      WebPickedFile? webFallback;
+      if (kIsWeb && (result == null || result.files.isEmpty)) {
+        webFallback = await pickFileBytesWithWebFallback();
+      }
+      if ((result == null || result.files.isEmpty) && webFallback == null) {
+        if (mounted) {
+          _showSnackBar('No file selected.', isError: true);
+        }
+        return;
+      }
+      final picked = result?.files.isNotEmpty == true ? result!.files.single : null;
+      String content;
+      if (kIsWeb) {
+        final bytes = picked?.bytes ?? webFallback?.bytes;
+        if (bytes == null) return;
+        content = utf8.decode(bytes);
+      } else {
+        final path = picked?.path;
+        if (path == null) return;
+        content = await File(path).readAsString();
+      }
+
+      if (SettingsImportExportService.isEncrypted(content)) {
+        if (!mounted) return;
+        final password = await _showPasswordDialog(
+          context,
+          title: l.importPasswordTitle,
+          hint: l.importPasswordHint,
+          action: l.import_,
+          allowEmpty: false,
+        );
+        if (password == null || password.isEmpty) return;
+        try {
+          content = await SettingsCrypto.decryptWithPassword(content, password);
+        } on FormatException {
+          if (mounted) _showSnackBar(l.wrongPassword, isError: true);
+          return;
+        }
+      }
+
       if (!mounted) return;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l.importSettings),
-          content: Text(l.importConfirm(parsed.profiles.length)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.replace),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true || !mounted) return;
-      await context.read<BookmarkProvider>().replaceProfiles(
-            parsed.profiles,
-            activeId: parsed.activeProfileId,
-          );
-      if (mounted) _showSnackBar(l.importSuccess(parsed.profiles.length));
+      setState(() => _isImporting = true);
+      try {
+        final parsed = _importExport.parseSettingsJson(content);
+        if (!mounted) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l.importSettings),
+            content: Text(l.importConfirm(parsed.profiles.length)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l.replace),
+              ),
+            ],
+          ),
+        );
+        if (confirmed != true || !mounted) return;
+        var activeId = parsed.activeProfileId;
+        if (!parsed.profiles.any((p) => p.id == activeId)) {
+          activeId = parsed.profiles.first.id;
+        }
+        final selected = parsed.profiles.firstWhere((p) => p.id == activeId);
+        if (!selected.credentials.isValid) {
+          for (final p in parsed.profiles) {
+            if (p.credentials.isValid) {
+              activeId = p.id;
+              break;
+            }
+          }
+        }
+        if (!mounted) return;
+        await context.read<BookmarkProvider>().replaceProfiles(
+              parsed.profiles,
+              activeId: activeId,
+              triggerSync: false,
+            );
+        if (mounted) {
+          _loadFromProvider();
+          _showSnackBar(l.importSuccess(parsed.profiles.length));
+          final provider = context.read<BookmarkProvider>();
+          if (provider.hasCredentials) {
+            provider.syncBookmarks();
+          }
+        }
+      } finally {
+        if (mounted) setState(() => _isImporting = false);
+      }
     } catch (e) {
       if (mounted) _showSnackBar(l.importFailed(e.toString()), isError: true);
     }
@@ -237,14 +315,62 @@ class _SettingsScreenState extends State<SettingsScreen>
     final l = AppLocalizations.of(context)!;
     try {
       final provider = context.read<BookmarkProvider>();
+      if (provider.profiles.isEmpty) {
+        _showSnackBar(l.noBookmarksYet, isError: true);
+        return;
+      }
+
+      final password = await _showPasswordDialog(
+        context,
+        title: l.exportPasswordTitle,
+        hint: l.exportPasswordHint,
+        action: l.export_,
+      );
+      if (password == null) return;
+
       await _importExport.exportAndShare(
         provider.profiles,
         provider.activeProfileId ?? provider.profiles.first.id,
+        password: password.isEmpty ? null : password,
       );
       if (mounted) _showSnackBar(l.exportSuccess);
     } catch (e) {
       if (mounted) _showSnackBar(e.toString(), isError: true);
     }
+  }
+
+  Future<String?> _showPasswordDialog(
+    BuildContext context, {
+    required String title,
+    required String hint,
+    required String action,
+    bool allowEmpty = true,
+  }) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: InputDecoration(hintText: hint),
+          autofocus: true,
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: Text(action),
+          ),
+        ],
+      ),
+    );
+    return result;
   }
 
   Future<void> _onExportBookmarks() async {
@@ -272,6 +398,37 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  Future<void> _onReset() async {
+    final l = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.resetConfirmTitle),
+        content: Text(l.resetConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.resetAll),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await context.read<BookmarkProvider>().resetAll();
+    if (mounted) {
+      _loadFromProvider();
+      _showSnackBar(l.resetSuccess);
+      Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     try {
@@ -290,7 +447,9 @@ class _SettingsScreenState extends State<SettingsScreen>
               .addPostFrameCallback((_) => _loadFromProvider());
         }
 
-        return Scaffold(
+        return Stack(
+          children: [
+            Scaffold(
           appBar: AppBar(
             title: Text(l.settings),
             bottom: TabBar(
@@ -324,6 +483,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               _SyncTab(provider: provider),
               _FilesTab(
                 provider: provider,
+                isImporting: _isImporting,
                 onImport: _onImport,
                 onExport: _onExport,
                 onExportBookmarks: _onExportBookmarks,
@@ -331,9 +491,26 @@ class _SettingsScreenState extends State<SettingsScreen>
                 subTabController: _filesSubTabController,
               ),
               _HelpTab(),
-              _AboutTab(launchUrl: _launchUrl),
+              _AboutTab(launchUrl: _launchUrl, onReset: _onReset),
             ],
           ),
+        ),
+            if (_isImporting)
+              Positioned.fill(
+                child: ModalBarrier(dismissible: false),
+              ),
+            if (_isImporting)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(l.importingSettings),
+                  ],
+                ),
+              ),
+          ],
         );
       },
     );
@@ -650,6 +827,39 @@ class _ConnectionSubTab extends StatelessWidget {
             ),
           ),
         ),
+        if (provider.fullRootFolders.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          _SectionHeader(title: l.rootFolder),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.rootFolderHelp,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .outline),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    leading: const Icon(Icons.folder_open),
+                    title: Text(
+                      provider.viewRootFolder ?? l.allFolders,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showRootFolderPicker(context, provider, l),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         if (provider.availableRootFolderNames.isNotEmpty) ...[
           const SizedBox(height: 24),
           _SectionHeader(title: l.displayedFolders),
@@ -703,6 +913,102 @@ class _ConnectionSubTab extends StatelessWidget {
         const SizedBox(height: 32),
       ],
     );
+  }
+
+  void _showRootFolderPicker(
+    BuildContext context,
+    BookmarkProvider provider,
+    AppLocalizations l,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.85,
+          builder: (_, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    l.selectRootFolder,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.folder_copy),
+                        title: Text(l.allFolders),
+                        selected: provider.viewRootFolder == null,
+                        onTap: () {
+                          provider.setViewRootFolder(null, save: true);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                      const Divider(),
+                      ..._buildFolderTree(
+                        ctx,
+                        provider,
+                        provider.fullRootFolders,
+                        '',
+                        0,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildFolderTree(
+    BuildContext context,
+    BookmarkProvider provider,
+    List<BookmarkFolder> folders,
+    String parentPath,
+    int depth,
+  ) {
+    final widgets = <Widget>[];
+    for (final folder in folders) {
+      final dirName = folder.dirName ?? folder.title;
+      final path = parentPath.isEmpty ? dirName : '$parentPath/$dirName';
+      final subfolders =
+          folder.children.whereType<BookmarkFolder>().toList();
+      final isSelected = provider.viewRootFolder == path;
+
+      widgets.add(
+        ListTile(
+          contentPadding: EdgeInsets.only(left: 16.0 + depth * 24.0, right: 16),
+          leading: Icon(
+            subfolders.isNotEmpty ? Icons.folder : Icons.folder_outlined,
+          ),
+          title: Text(folder.title),
+          selected: isSelected,
+          onTap: () {
+            provider.setViewRootFolder(path, save: true);
+            Navigator.pop(context);
+          },
+        ),
+      );
+
+      if (subfolders.isNotEmpty) {
+        widgets.addAll(
+          _buildFolderTree(context, provider, subfolders, path, depth + 1),
+        );
+      }
+    }
+    return widgets;
   }
 }
 
@@ -779,14 +1085,6 @@ class _SyncTab extends StatelessWidget {
                     provider.updateSyncSettings(syncOnStart: v);
                   },
                 ),
-                SwitchListTile(
-                  title: Text(l.allowMoveReorder),
-                  subtitle: Text(l.allowMoveReorderDesc),
-                  value: active?.allowMoveReorder ?? true,
-                  onChanged: (v) {
-                    provider.updateSyncSettings(allowMoveReorder: v);
-                  },
-                ),
               ],
             ),
           ),
@@ -804,6 +1102,7 @@ class _SyncTab extends StatelessWidget {
 class _FilesTab extends StatelessWidget {
   const _FilesTab({
     required this.provider,
+    required this.isImporting,
     required this.onImport,
     required this.onExport,
     required this.onExportBookmarks,
@@ -812,6 +1111,7 @@ class _FilesTab extends StatelessWidget {
   });
 
   final BookmarkProvider provider;
+  final bool isImporting;
   final VoidCallback onImport;
   final VoidCallback onExport;
   final VoidCallback onExportBookmarks;
@@ -845,6 +1145,7 @@ class _FilesTab extends StatelessWidget {
             controller: subTabController,
             children: [
               _ExportImportSubTab(
+                isImporting: isImporting,
                 onImport: onImport,
                 onExport: onExport,
                 onExportBookmarks: onExportBookmarks,
@@ -861,12 +1162,14 @@ class _FilesTab extends StatelessWidget {
 
 class _ExportImportSubTab extends StatelessWidget {
   const _ExportImportSubTab({
+    required this.isImporting,
     required this.onImport,
     required this.onExport,
     required this.onExportBookmarks,
     required this.onClearCache,
   });
 
+  final bool isImporting;
   final VoidCallback onImport;
   final VoidCallback onExport;
   final VoidCallback onExportBookmarks;
@@ -901,7 +1204,7 @@ class _ExportImportSubTab extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: onImport,
+                        onPressed: isImporting ? null : onImport,
                         icon: const Icon(Icons.file_download, size: 18),
                         label: Text(l.importSettings),
                       ),
@@ -1568,9 +1871,10 @@ class _HelpLink extends StatelessWidget {
 // =============================================================================
 
 class _AboutTab extends StatelessWidget {
-  const _AboutTab({required this.launchUrl});
+  const _AboutTab({required this.launchUrl, required this.onReset});
 
   final Future<void> Function(String) launchUrl;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -1700,6 +2004,28 @@ class _AboutTab extends StatelessWidget {
                             size: 18, color: scheme.outline),
                       ],
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onReset,
+                  icon: Icon(Icons.delete_forever, size: 18, color: scheme.error),
+                  label: Text(
+                    l.resetAll,
+                    style: TextStyle(color: scheme.error),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: scheme.error.withValues(alpha: 0.5)),
                   ),
                 ),
               ],

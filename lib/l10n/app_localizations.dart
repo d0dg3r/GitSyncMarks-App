@@ -1056,11 +1056,131 @@ abstract class AppLocalizations {
   /// **'Failed to move bookmark'**
   String get moveToFolderFailed;
 
+  /// No description provided for @deleteBookmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Bookmark'**
+  String get deleteBookmark;
+
+  /// No description provided for @deleteBookmarkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete bookmark \"{title}\"?'**
+  String deleteBookmarkConfirm(String title);
+
+  /// No description provided for @bookmarkDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark deleted'**
+  String get bookmarkDeleted;
+
   /// No description provided for @orderUpdated.
   ///
   /// In en, this message translates to:
   /// **'Order updated'**
   String get orderUpdated;
+
+  /// No description provided for @rootFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Root Folder'**
+  String get rootFolder;
+
+  /// No description provided for @rootFolderHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a folder whose subfolders become the tabs. Default shows all top-level folders.'**
+  String get rootFolderHelp;
+
+  /// No description provided for @allFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'All Folders'**
+  String get allFolders;
+
+  /// No description provided for @selectRootFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Root Folder'**
+  String get selectRootFolder;
+
+  /// No description provided for @exportPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Password'**
+  String get exportPasswordTitle;
+
+  /// No description provided for @exportPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for unencrypted export'**
+  String get exportPasswordHint;
+
+  /// No description provided for @importPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted File'**
+  String get importPasswordTitle;
+
+  /// No description provided for @importPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the encryption password'**
+  String get importPasswordHint;
+
+  /// No description provided for @importSettingsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Settings'**
+  String get importSettingsAction;
+
+  /// No description provided for @importingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing settings…'**
+  String get importingSettings;
+
+  /// No description provided for @orImportExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'or import existing settings'**
+  String get orImportExisting;
+
+  /// No description provided for @wrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password. Please try again.'**
+  String get wrongPassword;
+
+  /// No description provided for @export_.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export_;
+
+  /// No description provided for @resetAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all data'**
+  String get resetAll;
+
+  /// No description provided for @resetConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset App?'**
+  String get resetConfirmTitle;
+
+  /// No description provided for @resetConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will delete all profiles, settings and cached bookmarks. The app will return to its initial state.'**
+  String get resetConfirmMessage;
+
+  /// No description provided for @resetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'All data has been reset'**
+  String get resetSuccess;
 }
 
 class _AppLocalizationsDelegate
