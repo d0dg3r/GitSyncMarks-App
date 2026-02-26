@@ -1,34 +1,17 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/d0dg3r/GitSyncMarks/main/icons/icon128.png" alt="GitSyncMarks Logo" width="128" height="128">
-</p>
 
-<h1 align="center">GitSyncMarks-App</h1>
 
-<p align="center">
-  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-App" alt="Release"></a>
-  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases?q=pre"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-App?include_prereleases&label=pre-release&logo=github&style=flat-square" alt="Pre-release"></a>
-</p>
+# GitSyncMarks-App
 
-<p align="center">
-  Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.<br>
-  Companion to the <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> browser extension. Supports move, reorder, add via share (mobile), and encrypted settings sync.
-</p>
 
-<p align="center">
-  <a href="https://f-droid.org/packages/com.d0dg3r.gitsyncmarks"><img src="assets/badges/badge_fdroid.png" alt="Get it on F-Droid" height="50"></a>
-  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="assets/badges/badge_github.png" alt="Get it on GitHub" height="50"></a>
-  <a href="http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="assets/badges/badge_obtainium.png" alt="Get it on Obtainium" height="50"></a>
-</p>
 
-<p align="center">
-  <strong>Why GitSyncMarks-App?</strong> View your <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> bookmarks on mobile. Uses the same per-file format — bookmarks live in <em>your</em> Git repo. Sync once, browse offline. Works with the browser extension's bookmark structure (toolbar, menu, other, mobile).
-</p>
+Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.  
+Companion to the [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension. Supports move, reorder, add via share (mobile), and encrypted settings sync.
 
-<p align="center">
-  <img src="flatpak/screenshots/bookmark-list.png" alt="Bookmark list" width="200">
-  <img src="flatpak/screenshots/bookmark-list-dark.png" alt="Bookmark list (Dark)" width="200">
-  <img src="flatpak/screenshots/settings-github.png" alt="Settings" width="200">
-</p>
+
+
+**Why GitSyncMarks-App?** View your [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) bookmarks on mobile. Uses the same per-file format — bookmarks live in *your* Git repo. Sync once, browse offline. Works with the browser extension's bookmark structure (toolbar, menu, other, mobile).
+
+
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and [ROADMAP.md](ROADMAP.md) for milestones and future plans.
 
@@ -57,7 +40,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and [ROADMAP.md](ROADMAP.md
 
 We're looking for beta testers before the public Google Play Store launch.
 
-<a href="BETA_JOIN.md"><img src="assets/images/join_beta_app.png" alt="Join the Beta" width="450"></a>
+
 
 ## Installation
 
@@ -72,23 +55,23 @@ We're looking for beta testers before the public Google Play Store launch.
 
 1. Download `GitSyncMarks-App-vX.X.X.flatpak` from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases)
 2. Install:
-   ```bash
+  ```bash
    flatpak install --user ./GitSyncMarks-App-vX.X.X.flatpak
-   ```
+  ```
 3. Run:
-   ```bash
+  ```bash
    flatpak run io.github.d0dg3r.GitSyncMarksMobile
-   ```
+  ```
 
 ### Linux (ZIP fallback)
 
 1. Download `GitSyncMarks-App-X.X.X-linux-x64.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases)
 2. Extract and run:
-   ```bash
+  ```bash
    unzip GitSyncMarks-App-X.X.X-linux-x64.zip -d GitSyncMarks-App
    cd GitSyncMarks-App
    ./gitsyncmarks_app
-   ```
+  ```
 
 ### Windows / macOS
 
@@ -115,37 +98,33 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
 ## Setup (Development)
 
 1. **Install Flutter**:
-   ```bash
+  ```bash
    # Arch Linux / CachyOS
    paru -S flutter
    # or: https://docs.flutter.dev/get-started/install
-   ```
-
+  ```
 2. **Get dependencies**:
-   ```bash
+  ```bash
    cd GitSyncMarks-App
    flutter pub get
-   ```
-
+  ```
 3. **Run on device/emulator**:
-   ```bash
+  ```bash
    flutter run -d android
    flutter run -d linux      # Linux desktop
    flutter run -d windows    # Windows (on Windows host)
    flutter run -d macos     # macOS (on macOS host)
-   ```
-
+  ```
 4. **Build standalone executable** (no Flutter runtime needed):
-   ```bash
+  ```bash
    flutter build linux      # → build/linux/x64/release/bundle/
    flutter build windows    # → build/windows/x64/runner/Release/ (Windows host only)
    flutter build macos     # → build/macos/Build/Products/Release/ (macOS host only)
-   ```
-
+  ```
 5. **Regenerate screenshots** (optional, vor Release):
-   ```bash
+  ```bash
    ./scripts/generate-screenshots.sh
-   ```
+  ```
 
 ## Releases
 
@@ -160,6 +139,7 @@ git tag v0.3.0-beta.1 && git push origin v0.3.0-beta.1
 ```
 
 **Tag convention:**
+
 - `v1.2.3` — stable release, marked as "latest"
 - `v1.2.3-beta.1`, `v1.2.3-rc.1`, `v1.2.3-test.1` — pre-release (any tag with `-` suffix)
 
@@ -170,19 +150,21 @@ Artifacts appear under [Releases](https://github.com/d0dg3r/GitSyncMarks-App/rel
 To test the Flatpak build without running the full release workflow (Windows, macOS, release job):
 
 - **Manual**: Go to Actions → "Flatpak test" → Run workflow
-- **Tag**: Push `v0.3.0-flatpak-test.1` (or any `v*-flatpak-test*` tag)
+- **Tag**: Push `v0.3.0-flatpak-test.1` (or any `v*-flatpak-test`* tag)
 
 This runs only `build-android-linux` and `build-flatpak`. The `.flatpak` artifact can be downloaded from the workflow run.
 
 ## Platform Status
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Android  | **Stable** | Primary platform, actively developed |
-| Windows  | Alpha | Built from same codebase, developed as time permits |
-| Linux    | Alpha | Flatpak + ZIP; developed as time permits |
-| macOS    | Alpha | Built from same codebase, developed as time permits |
-| iOS      | Alpha | Built from same codebase; no CI build yet (requires macOS runner) |
+
+| Platform | Status     | Notes                                                             |
+| -------- | ---------- | ----------------------------------------------------------------- |
+| Android  | **Stable** | Primary platform, actively developed                              |
+| Windows  | Alpha      | Built from same codebase, developed as time permits               |
+| Linux    | Alpha      | Flatpak + ZIP; developed as time permits                          |
+| macOS    | Alpha      | Built from same codebase, developed as time permits               |
+| iOS      | Alpha      | Built from same codebase; no CI build yet (requires macOS runner) |
+
 
 Android is the main focus. All other platforms share the same Flutter codebase and are maintained on a best-effort basis -- contributions welcome!
 
