@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **F-Droid:** 0.3.2 build commit in submit metadata now matches v0.3.2 tag (`715e5e2`); was `cecdde3` (wrong commit)
+
 ### Changed
 
 - **Flatpak app ID:** GitSyncMarksMobile → GitSyncMarksApp (`io.github.d0dg3r.GitSyncMarksApp`); existing Flatpak users must uninstall the old app and install the new one

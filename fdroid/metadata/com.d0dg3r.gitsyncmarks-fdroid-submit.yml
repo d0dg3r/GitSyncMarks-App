@@ -82,7 +82,7 @@ Builds:
 
   - versionName: 0.3.2
     versionCode: 9
-    commit: cecdde3d4f59a1606a0faa79334594cf8c263fcb
+    commit: 715e5e2a6fdd11f633ef58d7c1aeefe1e0b6f5c9
     output: build/app/outputs/flutter-apk/app-release.apk
     srclibs:
       - flutter@stable
