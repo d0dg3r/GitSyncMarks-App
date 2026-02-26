@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **F-Droid submit script:** Branch-Update mit Merge (erhält Remote-Änderungen); `--force` für Force-Push; README-Pfad und Build 0.3.1 korrigiert
 - **Release workflow:** Fix `secrets` context in `if` conditions (use run-step output instead)
+- **F-Droid:** Release workflow documented in fdroid/README.md; metadata uses tag names (v0.3.1, v0.3.0) instead of commit hashes
 
 ## [0.3.1] - 2026-02-26
 

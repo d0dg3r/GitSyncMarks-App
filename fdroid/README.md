@@ -2,6 +2,19 @@
 
 This folder contains metadata for submitting GitSyncMarks-App to [F-Droid](https://f-droid.org/).
 
+## Release workflow (correct order)
+
+1. **Release as usual:** Version bump in `pubspec.yaml`, update `CHANGELOG.md`, commit and push.
+2. **Tag:** `git tag vX.Y.Z && git push origin vX.Y.Z`
+3. **Update F-Droid metadata** (in a separate commit, before or after the tag):
+   - In [com.d0dg3r.gitsyncmarks-fdroid-submit.yml](metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml): add build block with `commit: vX.Y.Z` (or `git rev-parse vX.Y.Z` for hash), `versionName`, `versionCode`
+   - Create [metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/{versionCode}.txt](metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/)
+   - Update `CurrentVersion` and `CurrentVersionCode`
+4. **Verify:** `git rev-parse vX.Y.Z` must match `commit:` in the YAML (or use tag name directly).
+5. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
+
+The tag must exist before submitting. The `commit:` field can be either the tag name (e.g. `v0.3.1`) or the full commit hash.
+
 ## One-command submission (GitLab + SSH)
 
 1. Fork [fdroiddata](https://gitlab.com/fdroid/fdroiddata) on GitLab (once)

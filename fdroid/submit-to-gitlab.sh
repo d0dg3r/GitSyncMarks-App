@@ -61,7 +61,7 @@ if [[ "$FORCE" == "true" ]]; then
 elif [[ -n "$REMOTE_HAS_BRANCH" ]]; then
   echo "3. Updating existing branch $BRANCH from remote..."
   git fetch origin "$BRANCH"
-  git checkout -B "$BRANCH" "origin/$BRANCH"
+  git checkout -B "$BRANCH" FETCH_HEAD
 else
   echo "3. Creating new branch $BRANCH..."
   git checkout -B "$BRANCH"
