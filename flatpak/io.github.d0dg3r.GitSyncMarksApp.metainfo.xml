@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.d0dg3r.GitSyncMarksMobile</id>
-  <name>GitSyncMarks Mobile</name>
+  <id>io.github.d0dg3r.GitSyncMarksApp</id>
+  <name>GitSyncMarks-App</name>
   <summary>View and sync bookmarks from your GitSyncMarks GitHub repo</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
@@ -33,7 +33,7 @@
   <url type="bugtracker">https://github.com/d0dg3r/GitSyncMarks-App/issues</url>
   <url type="vcs-browser">https://github.com/d0dg3r/GitSyncMarks-App</url>
 
-  <launchable type="desktop-id">io.github.d0dg3r.GitSyncMarksMobile.desktop</launchable>
+  <launchable type="desktop-id">io.github.d0dg3r.GitSyncMarksApp.desktop</launchable>
 
   <screenshots>
     <screenshot type="default">

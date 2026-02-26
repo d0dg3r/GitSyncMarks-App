@@ -22,7 +22,7 @@ import '../services/web_import_picker_stub.dart'
     if (dart.library.html) '../services/web_import_picker_web.dart';
 
 const String _gitSyncMarksUrl = 'https://github.com/d0dg3r/GitSyncMarks';
-const String _gitSyncMarksMobileUrl = 'https://github.com/d0dg3r/GitSyncMarks-App';
+const String _gitSyncMarksAppUrl = 'https://github.com/d0dg3r/GitSyncMarks-App';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, this.initialTabIndex = 0});
@@ -1796,10 +1796,10 @@ class _HelpTab extends StatelessWidget {
                 _HelpLink(
                   icon: Icons.bug_report,
                   label: l.reportIssue,
-                  url: '$_gitSyncMarksMobileUrl/issues',
+                  url: '$_gitSyncMarksAppUrl/issues',
                   onLaunch: () async {
                     await launchUrl(
-                        Uri.parse('$_gitSyncMarksMobileUrl/issues'),
+                        Uri.parse('$_gitSyncMarksAppUrl/issues'),
                         mode: LaunchMode.externalApplication);
                   },
                 ),
@@ -1983,7 +1983,7 @@ class _AboutTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 InkWell(
-                  onTap: () => launchUrl(_gitSyncMarksMobileUrl),
+                  onTap: () => launchUrl(_gitSyncMarksAppUrl),
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(

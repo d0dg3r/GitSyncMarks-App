@@ -121,7 +121,7 @@ lib/
 ## Phase 7: Flatpak/CI – Done
 
 - [x] Linux bundle as tar.gz + separate artifact in release workflow
-- [x] Flatpak manifest (io.github.d0dg3r.GitSyncMarksMobile)
+- [x] Flatpak manifest (io.github.d0dg3r.GitSyncMarksApp)
 - [x] `flatpak/build-flatpak.sh`: build script with tar `--no-same-owner`, icon fallback, error handling
 - [x] CI job `build-flatpak` in release workflow
 - [x] Release job: APK, Flatpak, ZIP (Linux, Windows, macOS) on tag push `v*`

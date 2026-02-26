@@ -106,7 +106,7 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: GitSyncMarks-App-${{ github.ref_name }}.flatpak
-          manifest-path: flatpak/io.github.d0dg3r.GitSyncMarksMobile.yml
+          manifest-path: flatpak/io.github.d0dg3r.GitSyncMarksApp.yml
           cache-key: flatpak-${{ github.sha }}
           upload-artifact: false
 

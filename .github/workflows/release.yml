@@ -224,7 +224,7 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: GitSyncMarks-App-${{ github.ref_name }}.flatpak
-          manifest-path: flatpak/io.github.d0dg3r.GitSyncMarksMobile.yml
+          manifest-path: flatpak/io.github.d0dg3r.GitSyncMarksApp.yml
           cache-key: flatpak-${{ github.sha }}
           upload-artifact: false
 
@@ -283,7 +283,7 @@ jobs:
             - **Android**: Download APK, open on device (allow from unknown sources if prompted), install
             - **Windows**: Extract ZIP, run `gitsyncmarks.exe`
             - **macOS**: Extract ZIP, move `gitsyncmarks.app` to Applications (or run from Downloads)
-            - **Linux (Flatpak)**: `flatpak install --user ./GitSyncMarks-App-${{ github.ref_name }}.flatpak` then `flatpak run io.github.d0dg3r.GitSyncMarksMobile`
+            - **Linux (Flatpak)**: `flatpak install --user ./GitSyncMarks-App-${{ github.ref_name }}.flatpak` then `flatpak run io.github.d0dg3r.GitSyncMarksApp`
             - **Linux (ZIP)**: Extract ZIP, run `./gitsyncmarks_app`
 
             Configure GitHub token and repo in Settings. More info: [README](https://github.com/${{ github.repository }}/blob/main/README.md)

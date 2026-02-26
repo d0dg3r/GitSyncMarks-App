@@ -10,7 +10,7 @@ Known pitfalls and conventions when working on lib/ or flatpak/:
 
 ## Flatpak
 
-- **libsecret:** `flutter_secure_storage` requires D-Bus access. In [flatpak/io.github.d0dg3r.GitSyncMarksMobile.yml](flatpak/io.github.d0dg3r.GitSyncMarksMobile.yml) `finish-args` must include `--talk-name=org.freedesktop.secrets`.
+- **libsecret:** `flutter_secure_storage` requires D-Bus access. In [flatpak/io.github.d0dg3r.GitSyncMarksApp.yml](flatpak/io.github.d0dg3r.GitSyncMarksApp.yml) `finish-args` must include `--talk-name=org.freedesktop.secrets`.
 
 ## Export/Import
 

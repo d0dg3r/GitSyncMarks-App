@@ -60,7 +60,7 @@ We're looking for beta testers before the public Google Play Store launch.
   ```
 3. Run:
   ```bash
-   flatpak run io.github.d0dg3r.GitSyncMarksMobile
+   flatpak run io.github.d0dg3r.GitSyncMarksApp
   ```
 
 ### Linux (ZIP fallback)

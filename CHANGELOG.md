@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Flatpak app ID:** GitSyncMarksMobile → GitSyncMarksApp (`io.github.d0dg3r.GitSyncMarksApp`); existing Flatpak users must uninstall the old app and install the new one
 - **F-Droid submit script:** Branch-Update mit Merge (erhält Remote-Änderungen); `--force` für Force-Push; README-Pfad und Build 0.3.1 korrigiert
 - **Release workflow:** Fix `secrets` context in `if` conditions (use run-step output instead)
 - **F-Droid:** Release workflow documented in fdroid/README.md; metadata uses commit hashes (tags not fetched in F-Droid shallow clone); rewritemeta-compatible (no comments, chronological builds); UpdateCheckMode regex `^v[0-9.]+$` filters pre-releases

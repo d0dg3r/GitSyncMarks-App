@@ -4,8 +4,8 @@
 set -e
 set -x
 
-projectName=GitSyncMarksMobile
-projectId=io.github.d0dg3r.GitSyncMarksMobile
+projectName=GitSyncMarksApp
+projectId=io.github.d0dg3r.GitSyncMarksApp
 executableName=gitsyncmarks_app
 
 # Extract portable Flutter build
@@ -31,9 +31,9 @@ done
 # Install the desktop file
 desktopFileDir=/app/share/applications
 mkdir -p "$desktopFileDir"
-cp io.github.d0dg3r.GitSyncMarksMobile.desktop "$desktopFileDir/"
+cp io.github.d0dg3r.GitSyncMarksApp.desktop "$desktopFileDir/"
 
 # Install the AppStream metadata file
 metadataDir=/app/share/metainfo
 mkdir -p "$metadataDir"
-cp io.github.d0dg3r.GitSyncMarksMobile.metainfo.xml "$metadataDir/"
+cp io.github.d0dg3r.GitSyncMarksApp.metainfo.xml "$metadataDir/"

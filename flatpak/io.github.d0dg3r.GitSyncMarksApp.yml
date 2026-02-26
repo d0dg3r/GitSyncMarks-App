@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/flatpak/flatpak-builder/main/data/flatpak-manifest.schema.json
 
 ---
-app-id: io.github.d0dg3r.GitSyncMarksMobile
+app-id: io.github.d0dg3r.GitSyncMarksApp
 runtime: org.gnome.Platform
 runtime-version: "47"
 sdk: org.gnome.Sdk
@@ -16,7 +16,7 @@ finish-args:
   - --share=network
   - --talk-name=org.freedesktop.secrets
 modules:
-  - name: GitSyncMarksMobile
+  - name: GitSyncMarksApp
     buildsystem: simple
     only-arches:
       - x86_64
@@ -28,8 +28,8 @@ modules:
       - type: file
         path: build-flatpak.sh
       - type: file
-        path: io.github.d0dg3r.GitSyncMarksMobile.desktop
+        path: io.github.d0dg3r.GitSyncMarksApp.desktop
       - type: file
-        path: io.github.d0dg3r.GitSyncMarksMobile.metainfo.xml
+        path: io.github.d0dg3r.GitSyncMarksApp.metainfo.xml
       - type: file
         path: ../assets/images/app_icon.png
