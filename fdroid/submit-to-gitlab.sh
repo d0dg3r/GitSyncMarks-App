@@ -53,13 +53,14 @@ fi
 
 # Step 3: Create or checkout branch
 BRANCH="com.d0dg3r.gitsyncmarks"
-git fetch origin "$BRANCH" 2>/dev/null || true
+REMOTE_HAS_BRANCH=$(git ls-remote origin "refs/heads/$BRANCH" 2>/dev/null | head -1)
 
 if [[ "$FORCE" == "true" ]]; then
   echo "3. Resetting branch $BRANCH from master (--force)..."
   git checkout -B "$BRANCH"
-elif git rev-parse "origin/$BRANCH" >/dev/null 2>&1; then
+elif [[ -n "$REMOTE_HAS_BRANCH" ]]; then
   echo "3. Updating existing branch $BRANCH from remote..."
+  git fetch origin "$BRANCH"
   git checkout -B "$BRANCH" "origin/$BRANCH"
 else
   echo "3. Creating new branch $BRANCH..."
