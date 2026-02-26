@@ -29,10 +29,30 @@ Use `metadata/en-US/images/phoneScreenshots/` for Play Store and F-Droid.
 
 ## Play Store
 
+### Build (AAB)
+
+Google Play requires Android App Bundle (AAB). Sign with your upload key:
+
+1. Create upload keystore (one-time):
+   ```bash
+   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+2. Copy `android/key.properties.example` to `android/key.properties` and fill in passwords and path to keystore.
+3. Build: `flutter build appbundle --release`
+4. Output: `build/app/outputs/bundle/release/app-release.aab`
+
+**CI:** When GitHub secrets `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` are set, the release workflow builds a signed AAB and attaches it to the release.
+
+**Play App Signing:** On first upload, choose "Google manages the app signing key" in Play Console.
+
+### Store listing
+
 1. **Short description**: Copy from `short-description.txt` (80 chars max)
 2. **Full description**: Copy from `full-description.txt` (4000 chars max)
-3. **Screenshots**: Use `metadata/en-US/images/phoneScreenshots/*.png`
+3. **Screenshots**: Use `fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/images/phoneScreenshots/` or `flatpak/screenshots/` (run `./scripts/generate-screenshots.sh` first)
 4. **Category**: Productivity or Books & Reference
+5. **Privacy policy**: Required – provide URL
+6. **Data safety**: Complete form (GitHub token, bookmarks; encryption declared)
 
 ## F-Droid
 

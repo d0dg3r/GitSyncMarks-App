@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Play Store preparation:** AAB build, upload key signing (`android/key.properties`), CI support via GitHub secrets; see [store/README.md](store/README.md)
 - **Cursor MDC rules:** release-workflow, platform-gotchas; extended docs-sync, release-checklist, fdroid-maintenance, project-context
 - **AGENTS.md:** Central AI agent guidance for Cursor sessions
 
