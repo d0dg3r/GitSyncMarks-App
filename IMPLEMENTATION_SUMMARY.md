@@ -147,7 +147,7 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 2. **Configure App**: Owner, Repo, Branch, Base Path in Settings
 3. **Install Flutter**: Set up development environment
 4. **Build App**: `flutter build apk`, `flutter build linux`, etc.
-5. **Deploy**: APK, Flatpak, or ZIP from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
+5. **Deploy**: APK, Flatpak, or ZIP from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases)
 
 ## 📝 Notes
 

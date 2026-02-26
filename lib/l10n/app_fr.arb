@@ -68,7 +68,7 @@
   "repoFormatDescription": "Le dépôt doit suivre le format GitSyncMarks: Base Path (ex. \"bookmarks\") avec des sous-dossiers comme toolbar, menu, other, mobile. Chaque dossier a _order.json et des fichiers JSON par favori avec title et url.",
   "support": "Support",
   "supportText": "Questions ou messages d'erreur ? Ouvrez une issue dans le dépôt du projet.",
-  "gitSyncMarksAndroidIssues": "GitSyncMarks-Mobile (GitHub Issues)",
+  "gitSyncMarksAndroidIssues": "GitSyncMarks-App (GitHub Issues)",
 
   "profiles": "Profils",
   "profile": "Profil",

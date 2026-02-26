@@ -10,7 +10,7 @@ executableName=gitsyncmarks_app
 
 # Extract portable Flutter build
 mkdir -p "$projectName"
-tar -xf GitSyncMarks-Mobile-Linux-Portable.tar.gz -C "$projectName" --no-same-owner
+tar -xf GitSyncMarks-App-Linux-Portable.tar.gz -C "$projectName" --no-same-owner
 
 # Copy the portable app to the Flatpak location
 cp -r "$projectName" /app/

@@ -1,4 +1,4 @@
-# Join the Beta – GitSyncMarks-Mobile
+# Join the Beta – GitSyncMarks-App
 
 We're looking for beta testers before the public Google Play Store launch. Help us test the app on Android and share your feedback.
 
@@ -21,10 +21,10 @@ We're looking for beta testers before the public Google Play Store launch. Help 
 
 ## How to sign up
 
-**[→ Create issue (Beta signup)](https://github.com/d0dg3r/GitSyncMarks-Mobile/issues/new?template=beta-signup.md&labels=beta-signup)**
+**[→ Create issue (Beta signup)](https://github.com/d0dg3r/GitSyncMarks-App/issues/new?template=beta-signup.md&labels=beta-signup)**
 
 Fill out the template – we'll get back to you.
 
 ---
 
-*Alternative:* [GitHub Discussions](https://github.com/d0dg3r/GitSyncMarks-Mobile/discussions) (if enabled) – e.g. in the "Beta testing" category.
+*Alternative:* [GitHub Discussions](https://github.com/d0dg3r/GitSyncMarks-App/discussions) (if enabled) – e.g. in the "Beta testing" category.

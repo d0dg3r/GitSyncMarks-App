@@ -5,13 +5,13 @@ Categories:
   - Internet
 License: MIT
 AuthorName: Joe Mild
-SourceCode: https://github.com/d0dg3r/GitSyncMarks-Mobile
-IssueTracker: https://github.com/d0dg3r/GitSyncMarks-Mobile/issues
+SourceCode: https://github.com/d0dg3r/GitSyncMarks-App
+IssueTracker: https://github.com/d0dg3r/GitSyncMarks-App/issues
 
 AutoName: GitSyncMarks
 
 RepoType: git
-Repo: https://github.com/d0dg3r/GitSyncMarks-Mobile
+Repo: https://github.com/d0dg3r/GitSyncMarks-App
 
 Builds:
   - versionName: 0.3.0

@@ -29,24 +29,24 @@
     </ul>
   </description>
 
-  <url type="homepage">https://github.com/d0dg3r/GitSyncMarks-Mobile</url>
-  <url type="bugtracker">https://github.com/d0dg3r/GitSyncMarks-Mobile/issues</url>
-  <url type="vcs-browser">https://github.com/d0dg3r/GitSyncMarks-Mobile</url>
+  <url type="homepage">https://github.com/d0dg3r/GitSyncMarks-App</url>
+  <url type="bugtracker">https://github.com/d0dg3r/GitSyncMarks-App/issues</url>
+  <url type="vcs-browser">https://github.com/d0dg3r/GitSyncMarks-App</url>
 
   <launchable type="desktop-id">io.github.d0dg3r.GitSyncMarksMobile.desktop</launchable>
 
   <screenshots>
     <screenshot type="default">
       <caption>Bookmark list with expandable folder tree</caption>
-      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-Mobile/main/flatpak/screenshots/bookmark-list.png</image>
+      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-App/main/flatpak/screenshots/bookmark-list.png</image>
     </screenshot>
     <screenshot>
       <caption>Bookmark list in dark mode</caption>
-      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-Mobile/main/flatpak/screenshots/bookmark-list-dark.png</image>
+      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-App/main/flatpak/screenshots/bookmark-list-dark.png</image>
     </screenshot>
     <screenshot>
       <caption>GitHub settings configuration</caption>
-      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-Mobile/main/flatpak/screenshots/settings-github.png</image>
+      <image>https://raw.githubusercontent.com/d0dg3r/GitSyncMarks-App/main/flatpak/screenshots/settings-github.png</image>
     </screenshot>
   </screenshots>
 

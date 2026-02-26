@@ -68,7 +68,7 @@
   "repoFormatDescription": "The repo should follow the GitSyncMarks format: Base Path (e.g. \"bookmarks\") with subfolders like toolbar, menu, other, mobile. Each folder has _order.json and JSON files per bookmark with title and url.",
   "support": "Support",
   "supportText": "Questions or error messages? Open an issue in the project repository.",
-  "gitSyncMarksAndroidIssues": "GitSyncMarks-Mobile (GitHub Issues)",
+  "gitSyncMarksAndroidIssues": "GitSyncMarks-App (GitHub Issues)",
 
   "profiles": "Profiles",
   "profile": "Profile",

@@ -22,7 +22,7 @@ import '../services/web_import_picker_stub.dart'
     if (dart.library.html) '../services/web_import_picker_web.dart';
 
 const String _gitSyncMarksUrl = 'https://github.com/d0dg3r/GitSyncMarks';
-const String _gitSyncMarksMobileUrl = 'https://github.com/d0dg3r/GitSyncMarks-Mobile';
+const String _gitSyncMarksMobileUrl = 'https://github.com/d0dg3r/GitSyncMarks-App';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, this.initialTabIndex = 0});
@@ -1995,7 +1995,7 @@ class _AboutTab extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'GitSyncMarks-Mobile',
+                            'GitSyncMarks-App',
                             style: textTheme.titleSmall
                                 ?.copyWith(fontWeight: FontWeight.w500),
                           ),

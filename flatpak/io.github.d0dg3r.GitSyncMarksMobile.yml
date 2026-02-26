@@ -24,7 +24,7 @@ modules:
       - "./build-flatpak.sh"
     sources:
       - type: file
-        path: GitSyncMarks-Mobile-Linux-Portable.tar.gz
+        path: GitSyncMarks-App-Linux-Portable.tar.gz
       - type: file
         path: build-flatpak.sh
       - type: file

@@ -2,11 +2,11 @@
   <img src="https://raw.githubusercontent.com/d0dg3r/GitSyncMarks/main/icons/icon128.png" alt="GitSyncMarks Logo" width="128" height="128">
 </p>
 
-<h1 align="center">GitSyncMarks-Mobile</h1>
+<h1 align="center">GitSyncMarks-App</h1>
 
 <p align="center">
-  <a href="https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-Mobile" alt="Release"></a>
-  <a href="https://github.com/d0dg3r/GitSyncMarks-Mobile/releases?q=pre"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-Mobile?include_prereleases&label=pre-release&logo=github&style=flat-square" alt="Pre-release"></a>
+  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-App" alt="Release"></a>
+  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases?q=pre"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-App?include_prereleases&label=pre-release&logo=github&style=flat-square" alt="Pre-release"></a>
 </p>
 
 <p align="center">
@@ -16,12 +16,12 @@
 
 <p align="center">
   <a href="https://f-droid.org/packages/com.d0dg3r.gitsyncmarks"><img src="assets/badges/badge_fdroid.png" alt="Get it on F-Droid" height="50"></a>
-  <a href="https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="assets/badges/badge_github.png" alt="Get it on GitHub" height="50"></a>
-  <a href="http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/d0dg3r/GitSyncMarks-Mobile/releases"><img src="assets/badges/badge_obtainium.png" alt="Get it on Obtainium" height="50"></a>
+  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="assets/badges/badge_github.png" alt="Get it on GitHub" height="50"></a>
+  <a href="http://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="assets/badges/badge_obtainium.png" alt="Get it on Obtainium" height="50"></a>
 </p>
 
 <p align="center">
-  <strong>Why GitSyncMarks-Mobile?</strong> View your <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> bookmarks on mobile. Uses the same per-file format — bookmarks live in <em>your</em> Git repo. Sync once, browse offline. Works with the browser extension's bookmark structure (toolbar, menu, other, mobile).
+  <strong>Why GitSyncMarks-App?</strong> View your <a href="https://github.com/d0dg3r/GitSyncMarks">GitSyncMarks</a> bookmarks on mobile. Uses the same per-file format — bookmarks live in <em>your</em> Git repo. Sync once, browse offline. Works with the browser extension's bookmark structure (toolbar, menu, other, mobile).
 </p>
 
 <p align="center">
@@ -63,17 +63,17 @@ We're looking for beta testers before the public Google Play Store launch.
 
 ### Android
 
-1. Go to the [Releases page](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
-2. Download `GitSyncMarks-Mobile-X.X.X.apk` (or a pre-release build for testing)
+1. Go to the [Releases page](https://github.com/d0dg3r/GitSyncMarks-App/releases)
+2. Download `GitSyncMarks-App-X.X.X.apk` (or a pre-release build for testing)
 3. Open the file on your Android device (allow from unknown sources if prompted)
 4. Install the app
 
 ### Linux (Flatpak, recommended)
 
-1. Download `GitSyncMarks-Mobile-vX.X.X.flatpak` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
+1. Download `GitSyncMarks-App-vX.X.X.flatpak` from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases)
 2. Install:
    ```bash
-   flatpak install --user ./GitSyncMarks-Mobile-vX.X.X.flatpak
+   flatpak install --user ./GitSyncMarks-App-vX.X.X.flatpak
    ```
 3. Run:
    ```bash
@@ -82,17 +82,17 @@ We're looking for beta testers before the public Google Play Store launch.
 
 ### Linux (ZIP fallback)
 
-1. Download `GitSyncMarks-Mobile-X.X.X-linux-x64.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases)
+1. Download `GitSyncMarks-App-X.X.X-linux-x64.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases)
 2. Extract and run:
    ```bash
-   unzip GitSyncMarks-Mobile-X.X.X-linux-x64.zip -d GitSyncMarks-Mobile
-   cd GitSyncMarks-Mobile
+   unzip GitSyncMarks-App-X.X.X-linux-x64.zip -d GitSyncMarks-App
+   cd GitSyncMarks-App
    ./gitsyncmarks_app
    ```
 
 ### Windows / macOS
 
-Download the respective `.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases), extract, and run the executable.
+Download the respective `.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases), extract, and run the executable.
 
 ### Configure the app
 
@@ -123,7 +123,7 @@ The bookmark format comes from [GitSyncMarks](https://github.com/d0dg3r/GitSyncM
 
 2. **Get dependencies**:
    ```bash
-   cd GitSyncMarks-Mobile
+   cd GitSyncMarks-App
    flutter pub get
    ```
 
@@ -163,7 +163,7 @@ git tag v0.3.0-beta.1 && git push origin v0.3.0-beta.1
 - `v1.2.3` — stable release, marked as "latest"
 - `v1.2.3-beta.1`, `v1.2.3-rc.1`, `v1.2.3-test.1` — pre-release (any tag with `-` suffix)
 
-Artifacts appear under [Releases](https://github.com/d0dg3r/GitSyncMarks-Mobile/releases): APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS).
+Artifacts appear under [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases): APK (Android), Flatpak + ZIP (Linux), ZIP (Windows, macOS).
 
 ### Flatpak-only test
 

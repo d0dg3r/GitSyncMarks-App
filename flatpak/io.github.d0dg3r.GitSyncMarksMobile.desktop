@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 
-Name=GitSyncMarks-Mobile
+Name=GitSyncMarks-App
 Comment=View and sync bookmarks from your GitSyncMarks GitHub repo
 Categories=Utility;Network;
 

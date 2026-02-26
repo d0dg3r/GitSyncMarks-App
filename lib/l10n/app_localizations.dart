@@ -453,7 +453,7 @@ abstract class AppLocalizations {
   /// No description provided for @gitSyncMarksAndroidIssues.
   ///
   /// In en, this message translates to:
-  /// **'GitSyncMarks-Mobile (GitHub Issues)'**
+  /// **'GitSyncMarks-App (GitHub Issues)'**
   String get gitSyncMarksAndroidIssues;
 
   /// No description provided for @profiles.

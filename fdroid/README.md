@@ -1,6 +1,6 @@
 # F-Droid Submission
 
-This folder contains metadata for submitting GitSyncMarks-Mobile to [F-Droid](https://f-droid.org/).
+This folder contains metadata for submitting GitSyncMarks-App to [F-Droid](https://f-droid.org/).
 
 ## One-command submission (GitLab + SSH)
 
@@ -25,7 +25,7 @@ This folder contains metadata for submitting GitSyncMarks-Mobile to [F-Droid](ht
    cd ~/fdroiddata
    git checkout -b com.d0dg3r.gitsyncmarks
    ```
-3. Copy metadata: `cp /path/to/GitSyncMarks-Mobile/fdroid/metadata/com.d0dg3r.gitsyncmarks.yml metadata/`
+3. Copy metadata: `cp /path/to/GitSyncMarks-App/fdroid/metadata/com.d0dg3r.gitsyncmarks.yml metadata/`
 4. Commit and push: `git add metadata/com.d0dg3r.gitsyncmarks.yml && git commit -m "New App: com.d0dg3r.gitsyncmarks" && git push -u origin com.d0dg3r.gitsyncmarks`
 5. Open a [Merge Request](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/new)
 

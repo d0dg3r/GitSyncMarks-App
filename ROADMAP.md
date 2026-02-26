@@ -1,6 +1,6 @@
 # Roadmap
 
-This document shows where GitSyncMarks-Mobile stands and where it is headed. For implementation details, see [docs/PLAN.md](docs/PLAN.md). For version history, see [CHANGELOG.md](CHANGELOG.md).
+This document shows where GitSyncMarks-App stands and where it is headed. For implementation details, see [docs/PLAN.md](docs/PLAN.md). For version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

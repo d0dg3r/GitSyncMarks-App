@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cursor MDC rules:** release-workflow, platform-gotchas; extended docs-sync, release-checklist, fdroid-maintenance, project-context
 - **AGENTS.md:** Central AI agent guidance for Cursor sessions
 
+### Changed
+
+- **Repository rename:** GitSyncMarks-Mobile → GitSyncMarks-App (https://github.com/d0dg3r/GitSyncMarks-App)
+
 ---
 
 ## [0.3.0] - 2026-02-21

@@ -71,7 +71,7 @@ class SettingsSyncService {
       await api.createOrUpdateFile(
         path,
         encrypted,
-        'Sync settings (GitSyncMarks-Mobile)',
+        'Sync settings (GitSyncMarks-App)',
         sha: sha,
       );
     } finally {

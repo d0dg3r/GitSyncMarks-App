@@ -1,6 +1,6 @@
-GitSyncMarks-Mobile — sync your bookmarks from your GitHub repo on your phone or tablet.
+GitSyncMarks-App — sync your bookmarks from your GitHub repo on your phone or tablet.
 
-**Why GitSyncMarks-Mobile?**
+**Why GitSyncMarks-App?**
 Your bookmarks live in your Git repo. This app is the mobile companion to the GitSyncMarks browser extension (Chrome, Firefox). Uses the same per-file format — sync once, browse offline. Move, reorder, and add bookmarks; sync settings between devices.
 
 **Features:**

@@ -1,6 +1,6 @@
 # App Store Submission Materials
 
-This folder contains text and references for submitting GitSyncMarks-Mobile to app stores (Play Store, F-Droid, etc.).
+This folder contains text and references for submitting GitSyncMarks-App to app stores (Play Store, F-Droid, etc.).
 
 ## Contents
 

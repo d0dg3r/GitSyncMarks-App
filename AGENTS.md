@@ -1,4 +1,4 @@
-# AI Agent Guidance – GitSyncMarks-Mobile
+# AI Agent Guidance – GitSyncMarks-App
 
 Kurze Anleitung für AI-Agenten (Cursor, etc.) bei der Arbeit an diesem Projekt.
 

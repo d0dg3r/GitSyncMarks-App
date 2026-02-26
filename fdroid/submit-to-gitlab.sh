@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Submit GitSyncMarks-Mobile to F-Droid via GitLab merge request
+# Submit GitSyncMarks-App to F-Droid via GitLab merge request
 # Prerequisites: GitLab account, fdroiddata fork, SSH key configured
 #
 # Usage: ./submit-to-gitlab.sh [GITLAB_USER]
@@ -13,7 +13,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BUILD_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/gitsyncmarks-fdroiddata"
 REPO_URL="git@gitlab.com:${GITLAB_USER}/fdroiddata.git"
 
-echo "F-Droid submission for GitSyncMarks-Mobile"
+echo "F-Droid submission for GitSyncMarks-App"
 echo "GitLab user: $GITLAB_USER"
 echo ""
 
