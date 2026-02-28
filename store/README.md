@@ -2,6 +2,8 @@
 
 This folder contains text and references for submitting GitSyncMarks-App to app stores (Play Store, F-Droid, etc.).
 
+**Beta status:** Descriptions should mention that the app is in active development and considered beta before version 1.0.
+
 ## Contents
 
 | File | Purpose | Max length |

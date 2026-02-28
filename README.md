@@ -1,5 +1,7 @@
 ![GitSyncMarks](store/banner_logo.png)
 
+**Status:** In active development. Before version 1.0, the app is considered beta; all platforms are maintained on a best-effort basis.
+
 Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.  
 Companion to the [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension. Supports move, reorder, add via share (mobile), and encrypted settings sync.
 
@@ -155,7 +157,7 @@ This runs only `build-android-linux` and `build-flatpak`. The `.flatpak` artifac
 
 | Platform | Status     | Notes                                                             |
 | -------- | ---------- | ----------------------------------------------------------------- |
-| Android  | **Stable** | Primary platform, actively developed                              |
+| Android  | **Beta**   | Primary platform, actively developed                              |
 | Windows  | Alpha      | Built from same codebase, developed as time permits               |
 | Linux    | Alpha      | Flatpak + ZIP; developed as time permits                          |
 | macOS    | Alpha      | Built from same codebase, developed as time permits               |

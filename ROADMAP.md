@@ -2,6 +2,8 @@
 
 This document shows where GitSyncMarks-App stands and where it is headed. For implementation details, see [docs/PLAN.md](docs/PLAN.md). For version history, see [CHANGELOG.md](CHANGELOG.md).
 
+**Pre-1.0:** All releases are beta; stability and features may change.
+
 ---
 
 ## Completed
@@ -48,7 +50,7 @@ import on empty state, golden_toolkit for screenshots, F-Droid screenshots/icon
 ## Current (v0.3.1)
 
 - **Features:** Bookmark sync, move, reorder, delete, add via share; Settings Sync to Git; encrypted export/import; configurable root folder; auto-lock edit mode; reset all data; import on empty state
-- **Platforms:** Android (stable), iOS, Windows, macOS, Linux (alpha)
+- **Platforms:** Android (beta), iOS, Windows, macOS, Linux (alpha)
 - **Release:** Tag `v`* → APK, Flatpak + ZIP (Linux), ZIP (Windows, macOS); pre-release tags supported
 
 ---

@@ -77,9 +77,11 @@ Token: GitHub PAT with `repo` scope.
 
 ## Platforms
 
-- **Android:** Stable; primary platform; F-Droid metadata in `fdroid/`
+- **Android:** Beta; primary platform; F-Droid metadata in `fdroid/`
 - **iOS, Windows, macOS, Linux:** Alpha; same codebase; Share-Intent only on mobile; desktop uses HomeScreen directly
 - **Linux distribution:** Flatpak (recommended) + ZIP fallback; CI builds both on tag push
+
+Before version 1.0, all platforms are considered beta/alpha; stability and features may change.
 
 ## Conversation Notes
 

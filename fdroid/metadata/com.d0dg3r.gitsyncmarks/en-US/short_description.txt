@@ -1,1 +1,1 @@
-View your GitSyncMarks bookmarks on mobile. Sync from GitHub, browse offline.
+View your GitSyncMarks bookmarks on mobile. Sync from GitHub, browse offline. (Beta)

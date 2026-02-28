@@ -1,5 +1,7 @@
 GitSyncMarks-App — view your bookmarks from your GitHub repo on your phone or tablet.
 
+Development status: This app is in active development. Before version 1.0, all releases are considered beta. Features and stability may change.
+
 Why GitSyncMarks-App?
 Your bookmarks live in your Git repo. This app is the read-only mobile companion to the GitSyncMarks browser extension (Chrome, Firefox). Uses the same per-file format — sync once, browse offline. Works with the extension's folder structure (toolbar, menu, other, mobile).
 

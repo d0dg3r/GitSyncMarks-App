@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.d0dg3r.GitSyncMarksApp</id>
   <name>GitSyncMarks-App</name>
-  <summary>View and sync bookmarks from your GitSyncMarks GitHub repo</summary>
+  <summary>View and sync bookmarks from your GitSyncMarks GitHub repo (beta)</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
@@ -13,7 +13,7 @@
   <description>
     <p>Cross-platform companion app for the GitSyncMarks browser extension.
        Sync bookmarks stored in a GitHub repository, browse them offline,
-       and open URLs in your preferred browser.</p>
+       and open URLs in your preferred browser. In active development; before version 1.0, all releases are considered beta.</p>
     <p>Features:</p>
     <ul>
       <li>Sync bookmarks from GitHub (GitSyncMarks per-file format)</li>
@@ -55,7 +55,7 @@
   <releases>
     <release version="0.3.0" date="2026-02-21">
       <description>
-        <p>Stable release. Settings Sync to Git (extension-compatible), move/reorder bookmarks,
+        <p>Beta release. Settings Sync to Git (extension-compatible), move/reorder bookmarks,
            share link as bookmark, password-protected export/import, configurable root folder,
            auto-lock edit mode, delete bookmarks (long-press), post-import auto-sync,
            reset all data, import on empty state.</p>
