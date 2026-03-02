@@ -6,15 +6,16 @@ This folder contains metadata for submitting GitSyncMarks-App to [F-Droid](https
 
 1. **Release as usual:** Version bump in `pubspec.yaml`, update `CHANGELOG.md`, commit and push.
 2. **Tag:** `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. **Update F-Droid metadata** (in a separate commit, before or after the tag):
+3. **Wait for Build & Release to finish green** and verify the GitHub release APK exists for `vX.Y.Z`.
+4. **Update F-Droid metadata** (in a separate commit, after release is available):
    - In [com.d0dg3r.gitsyncmarks-fdroid-submit.yml](metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml): keep only the current stable build block (`versionName`, `versionCode`, `commit`)
    - For cross-channel updates, keep `AllowedAPKSigningKeys` at top-level and `binary:` in the current build block.
    - No comments in YAML (rewritemeta fails).
    - Create [metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/{versionCode}.txt](metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/)
    - Update `CurrentVersion` and `CurrentVersionCode`
-4. **Verify tag/commit:** `git rev-parse vX.Y.Z` must match `commit:` in the YAML (or use tag name directly).
-5. **Run reproducibility proof:** `bash scripts/fdroid-repro-proof.sh` must pass (`libapp.so` hash match).
-6. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
+5. **Verify tag/commit:** `git rev-parse vX.Y.Z` must match `commit:` in the YAML (or use tag name directly).
+6. **Run reproducibility proof:** `bash scripts/fdroid-repro-proof.sh` must pass (`libapp.so` hash match).
+7. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
 
 The tag must exist before submitting. Use the **full commit hash** in `commit:` (not the tag name) – F-Droid's shallow clone may not fetch tags. Get it with `git rev-parse vX.Y.Z`.
 
@@ -120,6 +121,12 @@ CI workflow `F-Droid Validate` performs a reproducibility preflight:
 - downloads upstream APK and verifies signer fingerprint against `AllowedAPKSigningKeys`
 - runs `scripts/fdroid-repro-proof.sh` to compare `lib/arm64-v8a/libapp.so` hash between a local `buildserver-trixie` container build and the upstream release APK
 - uploads verification logs as workflow artifacts
+
+Trigger behavior is serialized with release flow:
+
+- `F-Droid Validate` auto-runs only after a successful `Build & Release` workflow run (via `workflow_run`)
+- manual fallback remains available through `workflow_dispatch`
+- metadata-only pushes no longer auto-start `F-Droid Validate`
 
 `libapp.so` for Flutter contains absolute build paths. To avoid path-based drift, all release paths are aligned to `/tmp/build`:
 

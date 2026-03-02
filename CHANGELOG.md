@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Android-only manual CI mode:** `Build & Release` now supports `workflow_dispatch` with `build_scope=android-only`, so only `build-android` runs while desktop/flatpak/release jobs are skipped.
 - **Android container build workspace sync:** APK build now re-runs `flutter pub get` and `flutter gen-l10n` inside `/tmp/build` before `--no-pub` compile, preventing missing plugin directories after workspace copy.
+- **Serialized release validation flow:** `F-Droid Validate` no longer starts on metadata push/PR events and now runs automatically only after successful `Build & Release` completion (manual `workflow_dispatch` remains available).
 
 ## [0.3.4] - 2026-03-02
 

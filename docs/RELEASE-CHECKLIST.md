@@ -72,6 +72,12 @@ Both hashes must be identical before submitting to F-Droid.
 
 - Wait for GitHub `Build & Release` workflow to pass
   - includes Android signing checks and APK signer fingerprint verification
+  - this run must complete first; `F-Droid Validate` is chained after successful release completion
+
+- Wait for GitHub `F-Droid Validate` workflow to pass
+  - auto-triggered after successful `Build & Release` completion
+  - fails fast if the upstream release APK URL is not reachable yet
+  - manual fallback remains available via `workflow_dispatch`
 
 - Submit to F-Droid via script
 

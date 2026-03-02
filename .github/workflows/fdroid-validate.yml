@@ -2,17 +2,14 @@
 name: F-Droid Validate
 
 on:
-  push:
-    branches: [main, develop/v0.3.0, develop/0.3.0]
-    paths:
-      - 'fdroid/metadata/*-fdroid-submit.yml'
-  pull_request:
-    paths:
-      - 'fdroid/metadata/*-fdroid-submit.yml'
+  workflow_run:
+    workflows: ["Build & Release"]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
   validate-no-prereleases:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_branch) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,9 +27,50 @@ jobs:
           echo "OK: All submit metadata files contain only stable versions."
 
   verify-reproducible-upstream-signature:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_branch) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Precheck upstream APK availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import glob
+          import pathlib
+          import urllib.request
+          import yaml
+
+          files = sorted(glob.glob("fdroid/metadata/*-fdroid-submit.yml"))
+          if not files:
+              print("No submit metadata files found; skipping precheck.")
+              raise SystemExit(0)
+
+          for meta_path in files:
+              doc = yaml.safe_load(pathlib.Path(meta_path).read_text(encoding="utf-8"))
+              current_version = str(doc.get("CurrentVersion", "")).strip()
+              builds = doc.get("Builds", [])
+              matching = [b for b in builds if str(b.get("versionName", "")).strip() == current_version]
+              if len(matching) != 1:
+                  raise SystemExit(f"{meta_path}: expected one build for CurrentVersion={current_version}")
+              binary_tpl = matching[0].get("binary")
+              if not binary_tpl:
+                  raise SystemExit(f"{meta_path}: missing Builds.binary for CurrentVersion={current_version}")
+              binary_url = str(binary_tpl).replace("%v", current_version)
+              req = urllib.request.Request(binary_url, method="HEAD")
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as resp:
+                      code = getattr(resp, "status", 200)
+              except Exception as exc:
+                  raise SystemExit(
+                      f"{meta_path}: upstream APK not reachable yet ({binary_url}). "
+                      f"Run Build & Release first and retry F-Droid Validate. Error: {exc}"
+                  )
+              if code >= 400:
+                  raise SystemExit(f"{meta_path}: upstream APK returned HTTP {code}: {binary_url}")
+              print(f"OK: upstream APK is reachable: {binary_url}")
+          PY
 
       - name: Install verification tooling
         run: |
@@ -137,6 +175,7 @@ jobs:
           path: build/fdroid-verify/
 
   verify-libapp-reproducibility:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_branch) }}
     runs-on: ubuntu-latest
     needs: [validate-no-prereleases, verify-reproducible-upstream-signature]
     steps:
