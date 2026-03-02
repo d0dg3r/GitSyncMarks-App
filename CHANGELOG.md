@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-03-02
+
 ### Changed
 
 - **Android release signing policy:** `release` builds now require valid `android/key.properties` and no longer fall back to debug signing
@@ -17,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **F-Droid submit strategy:** Metadata now starts from current stable release only and uses upstream APK verification (`Builds.binary` + `AllowedAPKSigningKeys`) for channel-compatible updates
 - **Release SOP:** Added mandatory release order and hard stop gates (version/code/tag/hash checks) across GitHub and F-Droid flows
 - **F-Droid submit automation:** `submit-to-gitlab.sh` now supports `--validate-only` and writes proof logs under `fdroid/proofs/`
+- **Android APK deterministic build parity:** GitHub container APK build now runs `flutter gen-l10n` and builds with `--no-pub` after explicit dependency resolution to mirror F-Droid build sequencing
+- **F-Droid submit hard gate:** `fdroid/submit-to-gitlab.sh` now runs `scripts/fdroid-repro-proof.sh` before validation-only and submit flows to block MR updates on `libapp.so` mismatch
+- **Reproducible Flutter build path alignment:** GitHub Android container build, F-Droid metadata build steps, and the local proof script now build from `/tmp/build` to avoid absolute-path drift embedded in `libapp.so`
 
 ### Fixed
 
@@ -42,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Android deterministic timestamp fix:** Container prerequisites now include `git`, and `SOURCE_DATE_EPOCH` export now fails fast unless a valid commit timestamp is resolved (prevents empty-value Gradle/Java 21 crashes)
 - **Android container workspace ownership:** Release workflow now normalizes `$GITHUB_WORKSPACE` ownership immediately after checkout so git timestamp resolution works without `dubious ownership` failures
 - **Split Android release outputs by environment:** APK stays in the F-Droid-compatible container job for reproducibility alignment, while Play Store AAB now builds in a separate Ubuntu job to avoid container symbol-stripping/toolchain incompatibilities
+- **F-Droid libapp reproducibility gate in CI:** `F-Droid Validate` now executes `scripts/fdroid-repro-proof.sh` and uploads proof artifacts so `libapp.so` mismatches fail fast before submission
+- **F-Droid metadata build env parity:** submit metadata now exports locale and Gradle determinism variables and uses `flutter build ... --no-pub` to reduce native output drift
+- **libapp root-cause diagnostics:** Added explicit `diffoscope`-verified evidence of embedded build-path differences (`file:///.../.dart_tool/flutter_build/dart_plugin_registrant.dart`) and aligned workflows to a single deterministic build root
 
 ## [0.3.3] - 2026-03-01
 

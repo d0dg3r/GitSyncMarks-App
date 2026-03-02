@@ -1,0 +1,1 @@
+Version 0.3.4: Improved release and F-Droid reproducibility workflow with deterministic Android container settings, upstream signer verification, and a libapp.so reproducibility proof gate. Build paths are now aligned to /tmp/build across GitHub, local proof tooling, and F-Droid metadata to avoid absolute-path drift in Flutter native outputs.

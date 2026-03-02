@@ -27,10 +27,12 @@ jobs:
           set -euo pipefail
           echo "GRADLE_USER_HOME=/tmp/gradle-user-home" >> "$GITHUB_ENV"
           echo "GRADLE_OPTS=-Dorg.gradle.vfs.watch=false -Dorg.gradle.daemon=false" >> "$GITHUB_ENV"
+          echo "PUB_CACHE=/tmp/build/.pub-cache" >> "$GITHUB_ENV"
           echo "LANG=en_US.UTF-8" >> "$GITHUB_ENV"
           echo "LC_ALL=en_US.UTF-8" >> "$GITHUB_ENV"
           echo "LANGUAGE=en_US:en" >> "$GITHUB_ENV"
           mkdir -p /tmp/gradle-user-home
+          mkdir -p /tmp/build/.pub-cache
 
       - name: Install container prerequisites
         run: |
@@ -83,6 +85,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Log Android toolchain versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -version
+          flutter --version
+          "$ANDROID_HOME/platform-tools/adb" --version
+          BT_DIR="$(ls -1d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+          "$BT_DIR/apksigner" version
+          "$BT_DIR/aapt2" version || true
+
       - name: Check release signing secrets
         id: signing
         run: echo "available=${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}" >> $GITHUB_OUTPUT
@@ -114,8 +130,28 @@ jobs:
             find "$GRADLE_USER_HOME/caches" -type f -name "file-access.bin" -delete || true
           fi
 
+      - name: Prepare reproducible build directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/build
+          mkdir -p /tmp/build
+          cp -a "$GITHUB_WORKSPACE"/. /tmp/build/
+          chown -R "$(id -u):$(id -g)" /tmp/build || true
+
       - name: Build APK
-        run: flutter build apk --release --target-platform android-arm64 --verbose
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/build
+          export PUB_CACHE=/tmp/build/.pub-cache
+          export GRADLE_USER_HOME=/tmp/build/.gradle-home
+          export GRADLE_OPTS="-Dorg.gradle.vfs.watch=false -Dorg.gradle.daemon=false"
+          rm -rf .gradle android/.gradle "$GRADLE_USER_HOME"
+          flutter build apk --release --target-platform android-arm64 --no-pub --verbose
+          mkdir -p "$GITHUB_WORKSPACE/build/app/outputs/flutter-apk"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "$GITHUB_WORKSPACE/build/app/outputs/flutter-apk/app-release.apk"
 
       - name: Verify APK signer fingerprint
         shell: bash

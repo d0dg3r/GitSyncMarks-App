@@ -12,8 +12,9 @@ This folder contains metadata for submitting GitSyncMarks-App to [F-Droid](https
    - No comments in YAML (rewritemeta fails).
    - Create [metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/{versionCode}.txt](metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/)
    - Update `CurrentVersion` and `CurrentVersionCode`
-4. **Verify:** `git rev-parse vX.Y.Z` must match `commit:` in the YAML (or use tag name directly).
-5. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
+4. **Verify tag/commit:** `git rev-parse vX.Y.Z` must match `commit:` in the YAML (or use tag name directly).
+5. **Run reproducibility proof:** `bash scripts/fdroid-repro-proof.sh` must pass (`libapp.so` hash match).
+6. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
 
 The tag must exist before submitting. Use the **full commit hash** in `commit:` (not the tag name) – F-Droid's shallow clone may not fetch tags. Get it with `git rev-parse vX.Y.Z`.
 
@@ -26,6 +27,7 @@ git checkout main
 git pull
 git tag vX.Y.Z
 git push origin vX.Y.Z
+bash scripts/fdroid-repro-proof.sh
 ./fdroid/submit-to-gitlab.sh --validate-only
 ./fdroid/submit-to-gitlab.sh YOUR_GITLAB_USER
 ```
@@ -44,6 +46,7 @@ git push origin vX.Y.Z
 After retagging, update `commit:` in submit metadata to `git rev-parse vX.Y.Z`, then run:
 
 ```bash
+bash scripts/fdroid-repro-proof.sh
 ./fdroid/submit-to-gitlab.sh --validate-only
 ./fdroid/submit-to-gitlab.sh YOUR_GITLAB_USER
 ```
@@ -106,7 +109,16 @@ CI workflow `F-Droid Validate` performs a reproducibility preflight:
 - checks stable-only submit metadata
 - validates deterministic metadata settings for the current build
 - downloads upstream APK and verifies signer fingerprint against `AllowedAPKSigningKeys`
+- runs `scripts/fdroid-repro-proof.sh` to compare `lib/arm64-v8a/libapp.so` hash between a local `buildserver-trixie` container build and the upstream release APK
 - uploads verification logs as workflow artifacts
+
+`libapp.so` for Flutter contains absolute build paths. To avoid path-based drift, all release paths are aligned to `/tmp/build`:
+
+- GitHub Actions `build-android` job copies the workspace to `/tmp/build` and runs `flutter build apk` there
+- F-Droid metadata (`prebuild` and `build`) moves `com.d0dg3r.gitsyncmarks` to `/tmp/build` during the build and moves it back afterward
+- `scripts/fdroid-repro-proof.sh` clones and builds in `/tmp/build`
+
+Important transition note: older tags built before this alignment (for example existing `v0.3.3`) can still fail the `libapp.so` proof against newly aligned local builds. Reproducibility validation should be treated as authoritative for the next tag built with the aligned `/tmp/build` pipeline.
 
 ## Fixing CI: check apk (Dependency metadata)
 

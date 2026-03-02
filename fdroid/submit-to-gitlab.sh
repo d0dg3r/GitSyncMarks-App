@@ -126,6 +126,10 @@ fi
 echo "   OK: Only stable versions in submit metadata."
 echo "   OK: Version/code/tag/hash gates passed."
 
+echo "3. Running libapp.so reproducibility proof..."
+bash "$PROJECT_DIR/scripts/fdroid-repro-proof.sh"
+echo "   OK: libapp.so reproducibility proof passed."
+
 if [[ "$VALIDATE_ONLY" == "true" ]]; then
   BRANCH="com.d0dg3r.gitsyncmarks"
   write_proof
