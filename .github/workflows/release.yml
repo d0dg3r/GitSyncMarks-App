@@ -94,9 +94,17 @@ jobs:
           set -euo pipefail
           java -version
           flutter --version
-          "$ANDROID_HOME/platform-tools/adb" --version
+          if [ -x "$ANDROID_HOME/platform-tools/adb" ]; then
+            "$ANDROID_HOME/platform-tools/adb" --version
+          else
+            echo "adb not found under $ANDROID_HOME/platform-tools (continuing)"
+          fi
           BT_DIR="$(ls -1d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
-          "$BT_DIR/apksigner" version
+          if [ -x "$BT_DIR/apksigner" ]; then
+            "$BT_DIR/apksigner" version
+          else
+            echo "apksigner not found in $BT_DIR (continuing)"
+          fi
           "$BT_DIR/aapt2" version || true
 
       - name: Check release signing secrets
