@@ -91,7 +91,7 @@ jobs:
       - name: Log Android toolchain versions
         shell: bash
         run: |
-          set -euo pipefail
+          set -u
           java -version
           flutter --version
           if [ -x "$ANDROID_HOME/platform-tools/adb" ]; then
@@ -99,13 +99,17 @@ jobs:
           else
             echo "adb not found under $ANDROID_HOME/platform-tools (continuing)"
           fi
-          BT_DIR="$(ls -1d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
-          if [ -x "$BT_DIR/apksigner" ]; then
-            "$BT_DIR/apksigner" version
+          if compgen -G "$ANDROID_HOME/build-tools/*" > /dev/null; then
+            BT_DIR="$(ls -1d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+            if [ -x "$BT_DIR/apksigner" ]; then
+              "$BT_DIR/apksigner" version
+            else
+              echo "apksigner not found in $BT_DIR (continuing)"
+            fi
+            "$BT_DIR/aapt2" version || true
           else
-            echo "apksigner not found in $BT_DIR (continuing)"
+            echo "No build-tools directory found under $ANDROID_HOME (continuing)"
           fi
-          "$BT_DIR/aapt2" version || true
 
       - name: Check release signing secrets
         id: signing
