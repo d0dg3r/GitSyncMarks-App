@@ -134,6 +134,10 @@ Trigger behavior is serialized with release flow:
 - F-Droid metadata (`prebuild` and `build`) moves `com.d0dg3r.gitsyncmarks` to `/tmp/build` during the build and moves it back afterward
 - `scripts/fdroid-repro-proof.sh` clones and builds in `/tmp/build`
 
+Container troubleshooting note:
+
+- If `verify-libapp-reproducibility` fails early with `fatal: detected dubious ownership in repository at '/repo/.git'` (exit 128), ensure the proof script configures `git safe.directory` for `/repo` and `/repo/.git` before clone and uses `git clone --no-local file:///repo /tmp/build`.
+
 Important transition note: older tags built before this alignment (for example existing `v0.3.3`) can still fail the `libapp.so` proof against newly aligned local builds. Reproducibility validation should be treated as authoritative for the next tag built with the aligned `/tmp/build` pipeline.
 
 ## Fixing CI: check apk (Dependency metadata)
