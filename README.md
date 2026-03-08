@@ -1,7 +1,7 @@
 ![GitSyncMarks](store/banner_logo.png)
 
 <p align="center">
-  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases/latest"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-App?style=flat-square&label=Release&color=blue" alt="GitHub Release"></a>
+  <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="https://img.shields.io/github/v/release/d0dg3r/GitSyncMarks-App?include_prereleases&style=flat-square&label=Release&color=blue" alt="GitHub Release"></a>
   <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="https://img.shields.io/badge/Android-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android"></a>
   <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="https://img.shields.io/badge/Windows-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows"></a>
   <a href="https://github.com/d0dg3r/GitSyncMarks-App/releases"><img src="https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS"></a>
