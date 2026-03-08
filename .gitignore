@@ -491,7 +491,7 @@ FodyWeavers.xsd
 !.vscode/extensions.json
 
 # Cursor
-# .cursor/
+.cursor/
 
 # OS
 .DS_Store
@@ -515,6 +515,7 @@ macos/Flutter/ephemeral/
 .env
 .env.*
 *.env
+.venv/
 
 # Windows Installer files from build outputs
 *.cab
@@ -525,3 +526,7 @@ macos/Flutter/ephemeral/
 
 # Test data
 test_data/
+
+# Flatpak Tools (External Repositories)
+flatpak-builder-tools/
+flatpak-flutter/

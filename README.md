@@ -1,5 +1,9 @@
 ![GitSyncMarks](store/banner_logo.png)
 
+<p align="left">
+  <a href="https://github.com/sponsors/d0dg3r"><img src="https://img.shields.io/badge/Sponsor-EA4AAA?style=flat-square&logo=githubsponsors&logoColor=white" alt="Sponsor"></a>
+</p>
+
 **Status:** In active development. Before version 1.0, the app is considered beta; all platforms are maintained on a best-effort basis.
 
 Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.  
@@ -196,3 +200,13 @@ Android is the main focus. All other platforms share the same Flutter codebase a
 ## License
 
 [MIT](LICENSE)
+
+---
+
+## Support the Project
+
+If you find **GitSyncMarks-App** helpful, consider supporting its development:
+
+- **[Sponsor on GitHub](https://github.com/sponsors/d0dg3r)**: Directly support the developer.
+- **Star the Repository**: Help others discover the project.
+- **[Contribute](CONTRIBUTING.md)**: Submit bug reports, feature ideas, or pull requests.

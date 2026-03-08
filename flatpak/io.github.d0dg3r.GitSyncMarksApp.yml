@@ -1,10 +1,11 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/flatpak/flatpak-builder/main/data/flatpak-manifest.schema.json
 
----
 app-id: io.github.d0dg3r.GitSyncMarksApp
-runtime: org.gnome.Platform
-runtime-version: "47"
-sdk: org.gnome.Sdk
+runtime: org.freedesktop.Platform
+runtime-version: "25.08"
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.llvm20
 command: gitsyncmarks_app
 separate-locales: false
 finish-args:
@@ -18,18 +19,30 @@ finish-args:
 modules:
   - name: GitSyncMarksApp
     buildsystem: simple
-    only-arches:
-      - x86_64
+    build-options:
+      arch:
+        x86_64:
+          env:
+            BUNDLE_PATH: build/linux/x64/release/bundle
+        aarch64:
+          env:
+            BUNDLE_PATH: build/linux/arm64/release/bundle
+      append-path: /usr/lib/sdk/llvm20/bin:/var/lib/flutter/bin
+      prepend-ld-library-path: /usr/lib/sdk/llvm20/lib
+      env:
+        PUB_CACHE: /run/build/GitSyncMarksApp/.pub-cache
     build-commands:
-      - "./build-flatpak.sh"
+      - setup-flutter.sh
+      - flutter build linux --release --no-pub
+      - install -D $BUNDLE_PATH/gitsyncmarks_app /app/bin/gitsyncmarks_app
+      - cp -r $BUNDLE_PATH/lib /app/bin/lib
+      - cp -r $BUNDLE_PATH/data /app/bin/data
+      - install -Dm644 assets/images/app_icon.png /app/share/icons/hicolor/128x128/apps/io.github.d0dg3r.GitSyncMarksApp.png
+      - install -Dm644 flatpak/io.github.d0dg3r.GitSyncMarksApp.desktop -t /app/share/applications/
+      - install -Dm644 flatpak/io.github.d0dg3r.GitSyncMarksApp.metainfo.xml -t /app/share/metainfo/
     sources:
-      - type: file
-        path: GitSyncMarks-App-Linux-Portable.tar.gz
-      - type: file
-        path: build-flatpak.sh
-      - type: file
-        path: io.github.d0dg3r.GitSyncMarksApp.desktop
-      - type: file
-        path: io.github.d0dg3r.GitSyncMarksApp.metainfo.xml
-      - type: file
-        path: ../assets/images/app_icon.png
+      - type: dir
+        path: ..
+      - generated/sources/pubspec.json
+    modules:
+      - generated/modules/flutter-sdk-3.41.2.json
