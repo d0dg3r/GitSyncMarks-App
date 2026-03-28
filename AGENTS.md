@@ -17,8 +17,8 @@ Kurze Anleitung für AI-Agenten (Cursor, etc.) bei der Arbeit an diesem Projekt.
 
 ## Release
 
-- Tag auf finalen Merge-Commit setzen
-- F-Droid `commit:` = Tag-Commit
+- Ablauf Schritt für Schritt: [docs/skills/gitsyncmarks-app-release/SKILL.md](docs/skills/gitsyncmarks-app-release/SKILL.md) (nach Merge: `./scripts/finish-release-fdroid-commit.sh --tag` falls noch nicht gelaufen)
+- Tag auf den **Release-Quell-Commit** (gleicher SHA wie `commit:` in `com.d0dg3r.gitsyncmarks-fdroid-submit.yml`)
 - Siehe [.cursor/rules/release-workflow.mdc](.cursor/rules/release-workflow.mdc)
 
 ## Dokumentation
