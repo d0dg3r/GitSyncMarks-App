@@ -111,10 +111,60 @@ Builds:
       - popd
       - mv /tmp/build com.d0dg3r.gitsyncmarks
 
+  - versionName: 0.3.6
+    versionCode: 13
+    commit: PLACEHOLDER
+    output: build/app/outputs/flutter-apk/app-release.apk
+    binary: 
+      https://github.com/d0dg3r/GitSyncMarks-App/releases/download/v%v/GitSyncMarks-App-%v.apk
+    srclibs:
+      - flutter@stable
+    rm:
+      - ios
+    prebuild:
+      - flutterVersion=$(sed -n -E 's/.*flutter-version:[[:space:]]*("([^"]*)|'\''([^'\'']*)'\'').*/\2\3/p' .github/workflows/release.yml
+        | head -1)
+      - '[[ $flutterVersion ]]'
+      - cd ..
+      - rm -rf /tmp/build
+      - mv com.d0dg3r.gitsyncmarks /tmp/build
+      - pushd /tmp/build/
+      - git -C $$flutter$$ checkout -f $flutterVersion
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export GRADLE_USER_HOME=$(pwd)/.gradle-home
+      - export GRADLE_OPTS="-Dorg.gradle.vfs.watch=false -Dorg.gradle.daemon=false"
+      - export LANG=en_US.UTF-8
+      - export LC_ALL=en_US.UTF-8
+      - export LANGUAGE=en_US:en
+      - rm -rf .gradle android/.gradle "$GRADLE_USER_HOME"
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get
+      - $$flutter$$/bin/flutter gen-l10n
+      - popd
+      - mv /tmp/build com.d0dg3r.gitsyncmarks
+    scandelete:
+      - .pub-cache
+    build:
+      - cd ..
+      - rm -rf /tmp/build
+      - mv com.d0dg3r.gitsyncmarks /tmp/build
+      - pushd /tmp/build/
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - export GRADLE_USER_HOME=$(pwd)/.gradle-home
+      - export GRADLE_OPTS="-Dorg.gradle.vfs.watch=false -Dorg.gradle.daemon=false"
+      - export LANG=en_US.UTF-8
+      - export LC_ALL=en_US.UTF-8
+      - export LANGUAGE=en_US:en
+      - rm -rf .gradle android/.gradle "$GRADLE_USER_HOME"
+      - export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+      - $$flutter$$/bin/flutter build apk --release --target-platform android-arm64 --no-pub
+      - popd
+      - mv /tmp/build com.d0dg3r.gitsyncmarks
+
 AllowedAPKSigningKeys: ceffc9aadd2e0a2a40176bb5c146a6833ed375de87fb19d7e8b270449c71da29
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
 UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
-CurrentVersion: 0.3.5
-CurrentVersionCode: 12
+CurrentVersion: 0.3.6
+CurrentVersionCode: 13
