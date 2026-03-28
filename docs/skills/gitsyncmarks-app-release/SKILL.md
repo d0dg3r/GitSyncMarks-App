@@ -61,7 +61,7 @@ git push origin vX.Y.Z
 2. **Edit:** `pubspec`, `CHANGELOG`, F-Droid version fields + changelog file, docs, `whats_new_service.dart` if needed.
 3. **Commit:** `chore(release): GitSyncMarks-App vX.Y.Z` (one logical release commit).
 4. **Run:** `./scripts/finish-release-fdroid-commit.sh --tag`
-5. **Push** branch → open **PR** (if using a branch); after merge, ensure **tag** is on the correct commit on `main`.
+5. **Push** branch → open **PR** (if using a branch). The **tag** must target the **same commit** as `commit:` in the submit YAML (the release source commit from step 3 — **before** any extra doc-only commits, unless you re-run the patch script).
 6. **CI:** Wait for **Build & Release** green; confirm GitHub Release APK URL exists.
 7. **Local proof:** `bash scripts/fdroid-repro-proof.sh`
 8. **Validate:** `./fdroid/submit-to-gitlab.sh --validate-only`
