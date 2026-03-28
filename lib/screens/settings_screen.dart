@@ -11,13 +11,19 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../config/github_credentials.dart';
 import '../models/bookmark_node.dart';
+import '../services/bookmark_parser.dart';
+import '../services/file_generators.dart';
+import '../services/git_data_api.dart';
 import '../services/github_api.dart';
 import '../services/settings_sync_service.dart';
 import '../services/storage_service.dart';
+import '../services/sync_history.dart';
 import '../l10n/app_localizations.dart';
 import '../models/profile.dart';
 import '../providers/app_locale_controller.dart';
+import '../providers/app_density_controller.dart';
 import '../providers/app_theme_controller.dart';
+import '../services/debug_log.dart';
 import '../providers/bookmark_provider.dart';
 import '../services/bookmark_export.dart';
 import '../services/settings_crypto.dart';
@@ -62,7 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       initialIndex: widget.initialTabIndex.clamp(0, 5),
     );
     _githubSubTabController = TabController(length: 3, vsync: this);
-    _filesSubTabController = TabController(length: 2, vsync: this);
+    _filesSubTabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFromProvider());
   }
 
@@ -1270,14 +1276,39 @@ class _BasePathBrowserDialogState extends State<_BasePathBrowserDialog> {
 // Sync Tab
 // =============================================================================
 
-class _SyncTab extends StatelessWidget {
+class _SyncTab extends StatefulWidget {
   const _SyncTab({required this.provider});
 
   final BookmarkProvider provider;
 
   @override
+  State<_SyncTab> createState() => _SyncTabState();
+}
+
+class _SyncTabState extends State<_SyncTab> {
+  late final TextEditingController _lwUrlController;
+  late final TextEditingController _lwTokenController;
+
+  @override
+  void initState() {
+    super.initState();
+    final active = widget.provider.activeProfile;
+    _lwUrlController = TextEditingController(text: active?.linkwardenUrl ?? '');
+    _lwTokenController =
+        TextEditingController(text: active?.linkwardenToken ?? '');
+  }
+
+  @override
+  void dispose() {
+    _lwUrlController.dispose();
+    _lwTokenController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final provider = widget.provider;
     final active = provider.activeProfile;
     final selectedProfile = active?.syncProfile ?? 'normal';
     final isCustomProfile = selectedProfile == 'custom';
@@ -1429,6 +1460,139 @@ class _SyncTab extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        const _SectionHeader(title: 'GitHub Repos'),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Show GitHub Repos tab'),
+                  subtitle: Text(
+                    'Display your GitHub repositories as a virtual bookmark folder',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                  ),
+                  value: active?.githubReposEnabled ?? false,
+                  onChanged: (v) {
+                    provider.updateSyncSettings(githubReposEnabled: v);
+                    if (v) provider.loadGitHubRepos();
+                  },
+                ),
+                if (provider.githubReposLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: LinearProgressIndicator(),
+                  ),
+                if (provider.githubRepos.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '${provider.githubRepos.length} repos loaded'
+                      '${provider.githubReposUsername != null ? " (${provider.githubReposUsername})" : ""}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _SectionHeader(title: 'Linkwarden'),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Linkwarden Integration'),
+                  subtitle: Text(
+                    'Show Linkwarden collections as a virtual folder',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                  ),
+                  value: active?.linkwardenEnabled ?? false,
+                  onChanged: (v) {
+                    provider.updateSyncSettings(linkwardenEnabled: v);
+                    if (v &&
+                        _lwUrlController.text.isNotEmpty &&
+                        _lwTokenController.text.isNotEmpty) {
+                      provider.loadLinkwarden(
+                        url: _lwUrlController.text.trim(),
+                        token: _lwTokenController.text.trim(),
+                      );
+                    }
+                  },
+                ),
+                if (active?.linkwardenEnabled ?? false) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _lwUrlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Instance URL',
+                      hintText: 'https://linkwarden.example.com',
+                    ),
+                    onChanged: (v) {
+                      provider.updateSyncSettings(linkwardenUrl: v.trim());
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _lwTokenController,
+                    decoration: const InputDecoration(
+                      labelText: 'API Token',
+                    ),
+                    obscureText: true,
+                    onChanged: (v) {
+                      provider.updateSyncSettings(linkwardenToken: v.trim());
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _lwUrlController.text.isNotEmpty &&
+                                _lwTokenController.text.isNotEmpty
+                            ? () {
+                                provider.loadLinkwarden(
+                                  url: _lwUrlController.text.trim(),
+                                  token: _lwTokenController.text.trim(),
+                                );
+                              }
+                            : null,
+                        icon: const Icon(Icons.sync, size: 18),
+                        label: const Text('Sync'),
+                      ),
+                      const SizedBox(width: 12),
+                      if (provider.linkwardenLoading)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      if (provider.linkwardenFolder != null)
+                        Text(
+                          '${provider.linkwardenFolder!.children.length} collections',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 32),
       ],
     );
@@ -1481,6 +1645,7 @@ class _FilesTab extends StatelessWidget {
             tabs: [
               Tab(text: l.subTabExportImport),
               Tab(text: l.subTabSettings),
+              const Tab(text: 'History'),
             ],
           ),
         ),
@@ -1496,6 +1661,7 @@ class _FilesTab extends StatelessWidget {
                 onClearCache: onClearCache,
               ),
               _SettingsSyncSubTab(provider: provider),
+              _HistorySubTab(provider: provider),
             ],
           ),
         ),
@@ -1504,7 +1670,7 @@ class _FilesTab extends StatelessWidget {
   }
 }
 
-class _ExportImportSubTab extends StatelessWidget {
+class _ExportImportSubTab extends StatefulWidget {
   const _ExportImportSubTab({
     required this.isImporting,
     required this.onImport,
@@ -1518,6 +1684,108 @@ class _ExportImportSubTab extends StatelessWidget {
   final VoidCallback onExport;
   final VoidCallback onExportBookmarks;
   final Future<void> Function() onClearCache;
+
+  @override
+  State<_ExportImportSubTab> createState() => _ExportImportSubTabState();
+}
+
+class _ExportImportSubTabState extends State<_ExportImportSubTab> {
+  GenMode _readmeMd = GenMode.off;
+  GenMode _bookmarksHtml = GenMode.off;
+  GenMode _feedXml = GenMode.off;
+  GenMode _dashyYml = GenMode.off;
+  bool _isGenerating = false;
+
+  Future<void> _generateNow() async {
+    final provider = context.read<BookmarkProvider>();
+    final creds = provider.credentials;
+    if (creds == null || !creds.isValid) return;
+
+    setState(() => _isGenerating = true);
+    try {
+      final basePath = creds.basePath.replaceAll(RegExp(r'/+$'), '');
+      final localFiles = bookmarkTreeToFileMap(provider.rootFolders, basePath);
+      final config = GeneratedFilesConfig(
+        readmeMd: _readmeMd,
+        bookmarksHtml: _bookmarksHtml,
+        feedXml: _feedXml,
+        dashyYml: _dashyYml,
+      );
+      final fileChanges = <String, String?>{};
+      addGeneratedFiles(fileChanges, localFiles, basePath,
+          config: config, threshold: 'notOff');
+
+      if (fileChanges.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No generated files enabled')),
+          );
+        }
+        return;
+      }
+
+      final api = GitDataApi(
+        token: creds.token,
+        owner: creds.owner,
+        repo: creds.repo,
+        branch: creds.branch,
+      );
+      try {
+        await api.atomicCommit('Generate files from app', fileChanges);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text('Generated ${fileChanges.length} file(s)')),
+          );
+        }
+      } finally {
+        api.close();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGenerating = false);
+    }
+  }
+
+  Future<void> _exportAs(String format) async {
+    final provider = context.read<BookmarkProvider>();
+    if (provider.rootFolders.isEmpty) return;
+
+    final creds = provider.credentials;
+    final basePath =
+        creds?.basePath.replaceAll(RegExp(r'/+$'), '') ?? 'bookmarks';
+
+    final export = BookmarkExportService();
+    try {
+      switch (format) {
+        case 'html':
+          await export.exportAsHtml(provider.rootFolders, basePath);
+        case 'rss':
+          await export.exportAsRss(provider.rootFolders, basePath);
+        case 'yaml':
+          await export.exportAsDashyYaml(provider.rootFolders, basePath);
+        case 'markdown':
+          await export.exportAsMarkdown(provider.rootFolders, basePath);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Exported as $format')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export error: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1545,7 +1813,7 @@ class _ExportImportSubTab extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: isImporting ? null : onImport,
+                        onPressed: widget.isImporting ? null : widget.onImport,
                         icon: const Icon(Icons.file_download, size: 18),
                         label: Text(l.importSettings),
                       ),
@@ -1553,7 +1821,7 @@ class _ExportImportSubTab extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: onExport,
+                        onPressed: widget.onExport,
                         icon: const Icon(Icons.file_upload, size: 18),
                         label: Text(l.exportSettings),
                       ),
@@ -1562,9 +1830,95 @@ class _ExportImportSubTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 OutlinedButton.icon(
-                  onPressed: onExportBookmarks,
+                  onPressed: widget.onExportBookmarks,
                   icon: const Icon(Icons.bookmark, size: 18),
                   label: Text(l.exportBookmarks),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Export as...',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => _exportAs('html'),
+                      icon: const Icon(Icons.code, size: 16),
+                      label: const Text('HTML'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _exportAs('rss'),
+                      icon: const Icon(Icons.rss_feed, size: 16),
+                      label: const Text('RSS'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _exportAs('yaml'),
+                      icon: const Icon(Icons.dashboard, size: 16),
+                      label: const Text('Dashy YAML'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _exportAs('markdown'),
+                      icon: const Icon(Icons.description, size: 16),
+                      label: const Text('Markdown'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const _SectionHeader(title: 'Generated Files'),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Generate companion files in your repo alongside bookmarks.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Theme.of(context).colorScheme.outline),
+                ),
+                const SizedBox(height: 8),
+                _GenModeDropdown(
+                  label: 'README.md',
+                  value: _readmeMd,
+                  onChanged: (v) => setState(() => _readmeMd = v),
+                ),
+                _GenModeDropdown(
+                  label: 'bookmarks.html',
+                  value: _bookmarksHtml,
+                  onChanged: (v) => setState(() => _bookmarksHtml = v),
+                ),
+                _GenModeDropdown(
+                  label: 'feed.xml',
+                  value: _feedXml,
+                  onChanged: (v) => setState(() => _feedXml = v),
+                ),
+                _GenModeDropdown(
+                  label: 'dashy-conf.yml',
+                  value: _dashyYml,
+                  onChanged: (v) => setState(() => _dashyYml = v),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _isGenerating ? null : _generateNow,
+                  icon: _isGenerating
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_fix_high, size: 18),
+                  label: const Text('Generate Now'),
                 ),
               ],
             ),
@@ -1587,7 +1941,7 @@ class _ExportImportSubTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 OutlinedButton.icon(
-                  onPressed: () => onClearCache(),
+                  onPressed: () => widget.onClearCache(),
                   icon: const Icon(Icons.cleaning_services, size: 18),
                   label: Text(l.clearCache),
                 ),
@@ -1597,6 +1951,442 @@ class _ExportImportSubTab extends StatelessWidget {
         ),
         const SizedBox(height: 32),
       ],
+    );
+  }
+}
+
+class _HistorySubTab extends StatefulWidget {
+  const _HistorySubTab({required this.provider});
+
+  final BookmarkProvider provider;
+
+  @override
+  State<_HistorySubTab> createState() => _HistorySubTabState();
+}
+
+class _HistorySubTabState extends State<_HistorySubTab> {
+  List<CommitEntry>? _commits;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final commits = await widget.provider.listSyncHistory();
+      if (mounted) {
+        setState(() {
+          _commits = commits;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _showDiffPreview(CommitEntry commit) async {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (_) => _DiffPreviewDialog(
+        provider: widget.provider,
+        commit: commit,
+      ),
+    );
+  }
+
+  Future<void> _confirmRestore(CommitEntry commit) async {
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restore from commit?'),
+        content: Text(
+          'This will restore bookmarks to the state at commit '
+          '${commit.sha.substring(0, 7)}. This creates a new commit '
+          'and can be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final success = await widget.provider.restoreFromCommit(commit.sha);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success
+                ? 'Restored from ${commit.sha.substring(0, 7)}'
+                : widget.provider.error ?? 'Restore failed'),
+          ),
+        );
+        if (success) _loadHistory();
+      }
+    }
+  }
+
+  Future<void> _undoLastSync() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Undo last sync?'),
+        content: const Text(
+          'This will restore bookmarks to their state before the last sync.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Undo'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final success = await widget.provider.undoLastSync();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success
+                ? 'Last sync undone'
+                : widget.provider.error ?? 'Undo failed'),
+          ),
+        );
+        if (success) _loadHistory();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, style: TextStyle(color: scheme.error)),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _loadHistory,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final commits = _commits ?? [];
+    return Column(
+      children: [
+        if (widget.provider.canUndoLastSync)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.undo, size: 18),
+                label: const Text('Undo last sync'),
+                onPressed: widget.provider.isLoading ? null : _undoLastSync,
+              ),
+            ),
+          ),
+        Expanded(
+          child: commits.isEmpty
+              ? Center(
+                  child: Text(
+                    'No sync history available',
+                    style: TextStyle(color: scheme.outline),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadHistory,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: commits.length,
+                    itemBuilder: (context, index) {
+                      final c = commits[index];
+                      final date = DateTime.tryParse(c.date);
+                      final clientId =
+                          SyncHistoryService.extractClientId(c.message);
+                      return ListTile(
+                        leading: CircleAvatar(
+                          radius: 16,
+                          backgroundColor:
+                              scheme.primaryContainer,
+                          child: Text(
+                            c.sha.substring(0, 2),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: scheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          c.message,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        subtitle: Text(
+                          [
+                            if (date != null) _formatDate(date),
+                            c.sha.substring(0, 7),
+                            if (clientId.isNotEmpty) clientId,
+                          ].join(' · '),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: scheme.outline,
+                          ),
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'preview',
+                              child: Text('Preview diff'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'restore',
+                              child: Text('Restore'),
+                            ),
+                          ],
+                          onSelected: (action) {
+                            if (action == 'preview') {
+                              _showDiffPreview(c);
+                            } else if (action == 'restore') {
+                              _confirmRestore(c);
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays < 1) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+}
+
+class _DiffPreviewDialog extends StatefulWidget {
+  const _DiffPreviewDialog({
+    required this.provider,
+    required this.commit,
+  });
+
+  final BookmarkProvider provider;
+  final CommitEntry commit;
+
+  @override
+  State<_DiffPreviewDialog> createState() => _DiffPreviewDialogState();
+}
+
+class _DiffPreviewDialogState extends State<_DiffPreviewDialog> {
+  DiffPreviewResult? _result;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreview();
+  }
+
+  Future<void> _loadPreview() async {
+    try {
+      final result =
+          await widget.provider.previewCommitDiff(widget.commit.sha);
+      if (mounted) {
+        setState(() {
+          _result = result;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _result = DiffPreviewResult(
+            success: false,
+            message: e.toString(),
+          );
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final sha = widget.commit.sha.substring(0, 7);
+
+    return AlertDialog(
+      title: Text('Diff preview — $sha'),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _result == null || !_result!.success
+                ? Center(
+                    child: Text(
+                      _result?.message ?? 'Failed to load diff',
+                      style: TextStyle(color: scheme.error),
+                    ),
+                  )
+                : _result!.totalChanges == 0
+                    ? Center(
+                        child: Text(
+                          'No differences',
+                          style: TextStyle(color: scheme.outline),
+                        ),
+                      )
+                    : ListView(
+                        children: [
+                          if (_result!.added.isNotEmpty) ...[
+                            _DiffSectionHeader(
+                              label: 'Added (${_result!.added.length})',
+                              color: Colors.green,
+                            ),
+                            ..._result!.added.map(
+                              (b) => _DiffItem(
+                                icon: Icons.add_circle_outline,
+                                color: Colors.green,
+                                title: b.title,
+                                subtitle: b.url,
+                              ),
+                            ),
+                          ],
+                          if (_result!.removed.isNotEmpty) ...[
+                            _DiffSectionHeader(
+                              label: 'Removed (${_result!.removed.length})',
+                              color: Colors.red,
+                            ),
+                            ..._result!.removed.map(
+                              (b) => _DiffItem(
+                                icon: Icons.remove_circle_outline,
+                                color: Colors.red,
+                                title: b.title,
+                                subtitle: b.url,
+                              ),
+                            ),
+                          ],
+                          if (_result!.changed.isNotEmpty) ...[
+                            _DiffSectionHeader(
+                              label: 'Changed (${_result!.changed.length})',
+                              color: Colors.orange,
+                            ),
+                            ..._result!.changed.map(
+                              (b) => _DiffItem(
+                                icon: Icons.edit_outlined,
+                                color: Colors.orange,
+                                title: b.title,
+                                subtitle: '${b.oldTitle} → ${b.title}',
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+}
+
+class _DiffSectionHeader extends StatelessWidget {
+  const _DiffSectionHeader({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 4),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: color,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+}
+
+class _DiffItem extends StatelessWidget {
+  const _DiffItem({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      leading: Icon(icon, color: color, size: 18),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        subtitle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 12),
+      ),
     );
   }
 }
@@ -2193,6 +2983,7 @@ class _GeneralTab extends StatelessWidget {
     final l = AppLocalizations.of(context)!;
     final localeController = context.watch<AppLocaleController>();
     final themeController = context.watch<AppThemeController>();
+    final densityController = context.watch<AppDensityController>();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -2305,6 +3096,40 @@ class _GeneralTab extends StatelessWidget {
                   onChanged: (value) async {
                     if (value == null) return;
                     await themeController.setThemeModeKey(value);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l.settingsSaved)),
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'UI Density',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<AppDensity>(
+                  segments: const [
+                    ButtonSegment(
+                      value: AppDensity.small,
+                      label: Text('S'),
+                      icon: Icon(Icons.density_small),
+                    ),
+                    ButtonSegment(
+                      value: AppDensity.medium,
+                      label: Text('M'),
+                      icon: Icon(Icons.density_medium),
+                    ),
+                    ButtonSegment(
+                      value: AppDensity.large,
+                      label: Text('L'),
+                      icon: Icon(Icons.density_large),
+                    ),
+                  ],
+                  selected: {densityController.density},
+                  onSelectionChanged: (selected) async {
+                    await densityController.setDensity(selected.first);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(l.settingsSaved)),
@@ -2440,12 +3265,17 @@ class _HelpLink extends StatelessWidget {
 // About Tab
 // =============================================================================
 
-class _AboutTab extends StatelessWidget {
+class _AboutTab extends StatefulWidget {
   const _AboutTab({required this.launchUrl, required this.onReset});
 
   final Future<void> Function(String) launchUrl;
   final VoidCallback onReset;
 
+  @override
+  State<_AboutTab> createState() => _AboutTabState();
+}
+
+class _AboutTabState extends State<_AboutTab> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -2519,7 +3349,7 @@ class _AboutTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 InkWell(
-                  onTap: () => launchUrl(_gitSyncMarksUrl),
+                  onTap: () => widget.launchUrl(_gitSyncMarksUrl),
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding:
@@ -2551,7 +3381,7 @@ class _AboutTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 InkWell(
-                  onTap: () => launchUrl(_gitSyncMarksAppUrl),
+                  onTap: () => widget.launchUrl(_gitSyncMarksAppUrl),
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding:
@@ -2579,6 +3409,62 @@ class _AboutTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
+        const _SectionHeader(title: 'Debug'),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Debug Log'),
+                  subtitle: Text(
+                    'Record sync diagnostics',
+                    style: textTheme.bodySmall?.copyWith(color: scheme.outline),
+                  ),
+                  value: debugLog.enabled,
+                  onChanged: (v) => setState(() => debugLog.enabled = v),
+                ),
+                const Divider(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${debugLog.entries.length} entries',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: scheme.outline,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: debugLog.entries.isEmpty
+                          ? null
+                          : () => _showDebugLog(context),
+                      icon: const Icon(Icons.visibility, size: 16),
+                      label: const Text('View'),
+                    ),
+                    TextButton.icon(
+                      onPressed: debugLog.entries.isEmpty
+                          ? null
+                          : () => _exportDebugLog(context),
+                      icon: const Icon(Icons.file_download, size: 16),
+                      label: const Text('Export'),
+                    ),
+                    TextButton.icon(
+                      onPressed: debugLog.entries.isEmpty
+                          ? null
+                          : () => setState(() => debugLog.clear()),
+                      icon: Icon(Icons.clear_all, size: 16, color: scheme.error),
+                      label: Text('Clear', style: TextStyle(color: scheme.error)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -2586,7 +3472,7 @@ class _AboutTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 OutlinedButton.icon(
-                  onPressed: onReset,
+                  onPressed: widget.onReset,
                   icon:
                       Icon(Icons.delete_forever, size: 18, color: scheme.error),
                   label: Text(
@@ -2613,11 +3499,97 @@ class _AboutTab extends StatelessWidget {
       ],
     );
   }
+
+  void _showDebugLog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Debug Log'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: ListView.builder(
+            itemCount: debugLog.entries.length,
+            itemBuilder: (_, i) {
+              final e = debugLog.entries[i];
+              final ts = '${e.timestamp.hour.toString().padLeft(2, '0')}:'
+                  '${e.timestamp.minute.toString().padLeft(2, '0')}:'
+                  '${e.timestamp.second.toString().padLeft(2, '0')}';
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  '[$ts] ${e.message}',
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportDebugLog(BuildContext context) async {
+    final text = debugLog.export();
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debug log copied to clipboard')),
+      );
+    }
+  }
 }
 
 // =============================================================================
 // Shared widgets
 // =============================================================================
+
+class _GenModeDropdown extends StatelessWidget {
+  const _GenModeDropdown({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final GenMode value;
+  final ValueChanged<GenMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          SegmentedButton<GenMode>(
+            showSelectedIcon: false,
+            style: const ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            segments: const [
+              ButtonSegment(value: GenMode.off, label: Text('Off')),
+              ButtonSegment(value: GenMode.manual, label: Text('Manual')),
+              ButtonSegment(value: GenMode.auto, label: Text('Auto')),
+            ],
+            selected: {value},
+            onSelectionChanged: (s) => onChanged(s.first),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title, this.trailing});

@@ -7,9 +7,16 @@ import '../models/bookmark_node.dart';
 import '../models/profile.dart';
 import '../repositories/bookmark_repository.dart';
 import '../services/bookmark_cache.dart';
+import '../services/git_data_api.dart';
 import '../services/github_api.dart';
 import '../services/settings_sync_service.dart';
 import '../services/storage_service.dart';
+import '../services/github_repos_service.dart';
+import '../services/linkwarden_api.dart';
+import '../services/linkwarden_sync.dart';
+import '../services/sync_engine.dart';
+import '../services/sync_history.dart';
+import '../services/sync_state.dart';
 import '../utils/bookmark_filename.dart';
 
 /// App state: profiles, credentials, bookmarks, sync status.
@@ -18,13 +25,16 @@ class BookmarkProvider extends ChangeNotifier {
     StorageService? storage,
     BookmarkRepository? repository,
     BookmarkCacheService? cacheService,
+    SyncStateService? syncStateService,
   })  : _storage = storage ?? StorageService(),
         _repository = repository ?? BookmarkRepository(),
-        _cache = cacheService ?? BookmarkCacheService();
+        _cache = cacheService ?? BookmarkCacheService(),
+        _syncState = syncStateService ?? SyncStateService();
 
   final StorageService _storage;
   final BookmarkRepository _repository;
   final BookmarkCacheService _cache;
+  final SyncStateService _syncState;
   final SettingsSyncService _settingsSync = SettingsSyncService();
 
   List<Profile> _profiles = [];
@@ -43,6 +53,16 @@ class BookmarkProvider extends ChangeNotifier {
   Timer? _autoSyncTimer;
   DateTime? _nextAutoSyncAt;
   String _searchQuery = '';
+  bool _hasConflict = false;
+  List<GitHubRepo> _githubRepos = [];
+  bool _githubReposLoading = false;
+  String? _githubReposUsername;
+  BookmarkFolder? _linkwardenFolder;
+  bool _linkwardenLoading = false;
+
+  late final SyncEngine _syncEngine = SyncEngine(syncState: _syncState);
+  late final SyncHistoryService _historyService =
+      SyncHistoryService(syncState: _syncState);
 
   // ---------------------------------------------------------------------------
   // Getters
@@ -96,10 +116,21 @@ class BookmarkProvider extends ChangeNotifier {
 
   List<BookmarkFolder> get displayedRootFolders {
     final effective = _effectiveRootFolders;
-    if (_selectedRootFolders.isEmpty) return effective;
-    final names = _selectedRootFolders.toSet();
-    final filtered = effective.where((f) => names.contains(f.title)).toList();
-    return filtered.isEmpty ? effective : filtered;
+    List<BookmarkFolder> base;
+    if (_selectedRootFolders.isEmpty) {
+      base = effective;
+    } else {
+      final names = _selectedRootFolders.toSet();
+      final filtered =
+          effective.where((f) => names.contains(f.title)).toList();
+      base = filtered.isEmpty ? effective : filtered;
+    }
+    final extras = <BookmarkFolder>[];
+    final reposFolder = githubReposFolder;
+    if (reposFolder != null) extras.add(reposFolder);
+    if (_linkwardenFolder != null) extras.add(_linkwardenFolder!);
+    if (extras.isEmpty) return base;
+    return [...base, ...extras];
   }
 
   List<String> get availableRootFolderNames => _effectiveRootFolders.isNotEmpty
@@ -124,6 +155,14 @@ class BookmarkProvider extends ChangeNotifier {
 
   bool get canAddProfile => _profiles.length < maxProfiles;
 
+  bool get hasConflict => _hasConflict;
+
+  List<GitHubRepo> get githubRepos => _githubRepos;
+  bool get githubReposLoading => _githubReposLoading;
+  String? get githubReposUsername => _githubReposUsername;
+
+  BookmarkFolder? get linkwardenFolder => _linkwardenFolder;
+  bool get linkwardenLoading => _linkwardenLoading;
   DateTime? get lastSyncTime => _lastSyncTime;
   String? get lastSyncCommitSha => _lastSyncCommitSha;
   String? get lastSyncCommitShort {
@@ -205,6 +244,17 @@ class BookmarkProvider extends ChangeNotifier {
           await syncBookmarks();
         }
         _startOrStopAutoSync();
+        if (active?.githubReposEnabled == true) {
+          loadGitHubRepos();
+        }
+        if (active?.linkwardenEnabled == true &&
+            active?.linkwardenUrl != null &&
+            active?.linkwardenToken != null) {
+          loadLinkwarden(
+            url: active!.linkwardenUrl!,
+            token: active.linkwardenToken!,
+          );
+        }
       } else {
         notifyListeners();
       }
@@ -353,6 +403,10 @@ class BookmarkProvider extends ChangeNotifier {
     int? customIntervalMinutes,
     bool? syncOnStart,
     bool? allowMoveReorder,
+    bool? githubReposEnabled,
+    String? linkwardenUrl,
+    String? linkwardenToken,
+    bool? linkwardenEnabled,
   }) async {
     final active = activeProfile;
     if (active == null) return;
@@ -365,6 +419,10 @@ class BookmarkProvider extends ChangeNotifier {
               customIntervalMinutes ?? p.customIntervalMinutes,
           syncOnStart: syncOnStart ?? p.syncOnStart,
           allowMoveReorder: allowMoveReorder ?? p.allowMoveReorder,
+          githubReposEnabled: githubReposEnabled ?? p.githubReposEnabled,
+          linkwardenUrl: linkwardenUrl ?? p.linkwardenUrl,
+          linkwardenToken: linkwardenToken ?? p.linkwardenToken,
+          linkwardenEnabled: linkwardenEnabled ?? p.linkwardenEnabled,
         );
       }
       return p;
@@ -485,6 +543,21 @@ class BookmarkProvider extends ChangeNotifier {
 
   /// Adds a bookmark to the given folder via GitHub API.
   /// [folderPath] is e.g. "bookmarks/toolbar".
+  /// Adds a bookmark to a folder using the folder object. Persists to GitHub.
+  Future<bool> addBookmark(
+    String title,
+    String url,
+    BookmarkFolder targetFolder,
+  ) async {
+    final folderPath = getFolderPath(targetFolder);
+    if (folderPath == null) {
+      _error = 'Could not determine folder path';
+      notifyListeners();
+      return false;
+    }
+    return addBookmarkFromUrl(url, title, folderPath);
+  }
+
   Future<bool> addBookmarkFromUrl(
     String url,
     String title,
@@ -541,10 +614,29 @@ class BookmarkProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _rootFolders = await _repository.fetchBookmarks(c);
+      final profileId = _activeProfileId ?? '';
+      final baseFiles = _syncState.getLastSyncFiles(profileId);
+      final prevCommitSha = _syncState.getLastCommitSha(profileId);
+
+      final result = await _repository.fetchBookmarks(
+        c,
+        baseFiles: baseFiles.isNotEmpty ? baseFiles : null,
+      );
+      _rootFolders = result.rootFolders;
       await _cache.saveCache(c.cacheKey, _rootFolders);
       _lastSyncTime = DateTime.now();
-      _lastSyncCommitSha = await _tryFetchHeadCommitSha(c);
+      _lastSyncCommitSha = result.commitSha;
+
+      if (result.commitSha != null) {
+        await _syncState.saveSyncState(
+          profileId: profileId,
+          commitSha: result.commitSha!,
+          shaMap: result.shaMap,
+          fileMap: result.fileMap,
+          previousCommitSha: prevCommitSha,
+        );
+      }
+
       final bc = _countBookmarks(_rootFolders);
       _lastSuccessMessage =
           'Synced ${_rootFolders.length} folder(s), $bc bookmark(s)';
@@ -617,6 +709,315 @@ class BookmarkProvider extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
+  // Force push / pull (conflict resolution)
+  // ---------------------------------------------------------------------------
+
+  /// Force pull: overwrite local bookmarks with remote state.
+  Future<bool> forcePull() async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      _error = 'Configure GitHub connection in Settings';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _error = null;
+    _lastSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final profileId = _activeProfileId ?? '';
+      final result = await _syncEngine.forcePull(
+        creds: c,
+        profileId: profileId,
+      );
+
+      if (!result.success) {
+        _error = result.message;
+        notifyListeners();
+        return false;
+      }
+
+      _rootFolders = result.rootFolders ?? [];
+      await _cache.saveCache(c.cacheKey, _rootFolders);
+      _lastSyncTime = DateTime.now();
+      _lastSyncCommitSha = result.commitSha;
+      _hasConflict = false;
+      _lastSuccessMessage = result.message;
+      _scheduleNextAutoSync();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Force push: overwrite remote with current local bookmarks.
+  Future<bool> forcePush() async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      _error = 'Configure GitHub connection in Settings';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _error = null;
+    _lastSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final profileId = _activeProfileId ?? '';
+      final deviceId = await _storage.getOrCreateDeviceId();
+      final result = await _syncEngine.forcePush(
+        creds: c,
+        profileId: profileId,
+        cachedTree: _rootFolders,
+        deviceId: deviceId,
+      );
+
+      if (!result.success) {
+        _error = result.message;
+        notifyListeners();
+        return false;
+      }
+
+      _lastSyncTime = DateTime.now();
+      _lastSyncCommitSha = result.commitSha;
+      _hasConflict = false;
+      _lastSuccessMessage = result.message;
+      _scheduleNextAutoSync();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Clears the conflict flag (e.g. after user acknowledges it).
+  void clearConflict() {
+    _hasConflict = false;
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sync History
+  // ---------------------------------------------------------------------------
+
+  /// Lists recent commits that touched the bookmark path.
+  Future<List<CommitEntry>> listSyncHistory({int perPage = 20}) async {
+    final c = _credentials;
+    if (c == null || !c.isValid) return [];
+    return _historyService.listHistory(c, perPage: perPage);
+  }
+
+  /// Previews the diff between a target commit and current bookmarks.
+  Future<DiffPreviewResult> previewCommitDiff(String commitSha) async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      return DiffPreviewResult(success: false, message: 'Not configured');
+    }
+    return _historyService.previewCommitDiff(c, commitSha, _rootFolders);
+  }
+
+  /// Restores bookmarks from a specific commit SHA.
+  Future<bool> restoreFromCommit(String commitSha) async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      _error = 'Configure GitHub connection in Settings';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _error = null;
+    _lastSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final profileId = _activeProfileId ?? '';
+      final deviceId = await _storage.getOrCreateDeviceId();
+      final result = await _historyService.restoreFromCommit(
+        c,
+        commitSha,
+        profileId,
+        deviceId: deviceId,
+      );
+
+      if (!result.success) {
+        _error = result.message;
+        notifyListeners();
+        return false;
+      }
+
+      _rootFolders = result.rootFolders ?? [];
+      await _cache.saveCache(c.cacheKey, _rootFolders);
+      _lastSyncTime = DateTime.now();
+      _lastSyncCommitSha = result.commitSha;
+      _hasConflict = false;
+      _lastSuccessMessage = result.message;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Undoes the last sync by restoring from the previous commit.
+  Future<bool> undoLastSync() async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      _error = 'Configure GitHub connection in Settings';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _error = null;
+    _lastSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final profileId = _activeProfileId ?? '';
+      final deviceId = await _storage.getOrCreateDeviceId();
+      final result = await _historyService.undoLastSync(
+        c,
+        profileId,
+        deviceId: deviceId,
+      );
+
+      if (!result.success) {
+        _error = result.message;
+        notifyListeners();
+        return false;
+      }
+
+      _rootFolders = result.rootFolders ?? [];
+      await _cache.saveCache(c.cacheKey, _rootFolders);
+      _lastSyncTime = DateTime.now();
+      _lastSyncCommitSha = result.commitSha;
+      _hasConflict = false;
+      _lastSuccessMessage = result.message;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Whether undo is available (previous commit SHA exists).
+  bool get canUndoLastSync {
+    final profileId = _activeProfileId ?? '';
+    final prev = _syncState.getPreviousCommitSha(profileId);
+    return prev != null && prev.isNotEmpty;
+  }
+
+  // ---------------------------------------------------------------------------
+  // GitHub Repos virtual folder
+  // ---------------------------------------------------------------------------
+
+  Future<void> loadGitHubRepos() async {
+    final c = _credentials;
+    if (c == null || !c.isValid) return;
+
+    _githubReposLoading = true;
+    notifyListeners();
+
+    try {
+      final svc = GitHubReposService(token: c.token);
+      if (_githubReposUsername == null || _githubReposUsername!.isEmpty) {
+        _githubReposUsername = await svc.fetchCurrentUser();
+      }
+      _githubRepos = await svc.fetchUserRepos();
+    } catch (e) {
+      debugPrint('GitHub repos error: $e');
+    } finally {
+      _githubReposLoading = false;
+      notifyListeners();
+    }
+  }
+
+  BookmarkFolder? get githubReposFolder {
+    if (_githubRepos.isEmpty) return null;
+    final name = _githubReposUsername ?? 'user';
+    return BookmarkFolder(
+      title: 'GitHubRepos ($name)',
+      children: _githubRepos.map((r) {
+        final title = r.isPrivate ? '${r.fullName} (private)' : r.fullName;
+        return Bookmark(title: title, url: r.htmlUrl);
+      }).toList(),
+      dirName: '_github_repos',
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Linkwarden integration
+  // ---------------------------------------------------------------------------
+
+  Future<void> loadLinkwarden({
+    required String url,
+    required String token,
+  }) async {
+    _linkwardenLoading = true;
+    notifyListeners();
+
+    try {
+      final api = LinkwardenAPI(baseUrl: url, token: token);
+      final result = await fetchLinkwardenAsFolder(api);
+      _linkwardenFolder = result.folder;
+    } catch (e) {
+      debugPrint('Linkwarden error: $e');
+    } finally {
+      _linkwardenLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> saveToLinkwarden({
+    required String url,
+    required String token,
+    required String linkUrl,
+    required String linkName,
+    int? collectionId,
+    List<String>? tags,
+  }) async {
+    try {
+      final api = LinkwardenAPI(baseUrl: url, token: token);
+      await api.saveLink(
+        url: linkUrl,
+        name: linkName,
+        collectionId: collectionId,
+        tags: tags,
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Linkwarden save error: $e');
+      return false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Misc
   // ---------------------------------------------------------------------------
 
@@ -625,6 +1026,7 @@ class BookmarkProvider extends ChangeNotifier {
     _stopAutoSync();
     await _storage.resetAll();
     await _cache.clearCache();
+    await _syncState.clearAll();
     _profiles = [];
     _activeProfileId = null;
     _credentials = null;
@@ -845,6 +1247,110 @@ class BookmarkProvider extends ChangeNotifier {
     }
   }
 
+  /// Creates a new subfolder within a parent folder. Persists to GitHub.
+  Future<bool> createFolder(
+    BookmarkFolder parentFolder,
+    String folderTitle,
+  ) async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      _error = 'Configure GitHub connection in Settings';
+      notifyListeners();
+      return false;
+    }
+
+    final parentPath = getFolderPath(parentFolder);
+    if (parentPath == null) return false;
+
+    _isLoading = true;
+    _error = null;
+    _lastSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final ok = await _repository.createFolder(c, parentPath, folderTitle);
+      if (ok) {
+        final slug = folderTitle
+            .toLowerCase()
+            .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+            .replaceAll(RegExp(r'^-+|-+$'), '');
+        final newFolder = BookmarkFolder(
+          title: folderTitle,
+          children: [],
+          dirName: slug.isEmpty ? 'untitled' : slug,
+        );
+        final newChildren = [...parentFolder.children, newFolder];
+        _rootFolders =
+            _replaceFolderInTree(_rootFolders, parentFolder, newChildren);
+        await _cache.saveCache(c.cacheKey, _rootFolders);
+        _lastSuccessMessage = 'Folder created';
+        notifyListeners();
+      }
+      return ok;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Edits a bookmark's title and/or URL. Persists to GitHub.
+  Future<bool> editBookmark(
+    Bookmark bookmark,
+    BookmarkFolder sourceFolder, {
+    required String newTitle,
+    required String newUrl,
+  }) async {
+    final c = _credentials;
+    if (c == null || !c.isValid) {
+      _error = 'Configure GitHub connection in Settings';
+      notifyListeners();
+      return false;
+    }
+
+    final folderPath = getFolderPath(sourceFolder);
+    if (folderPath == null) return false;
+
+    _isLoading = true;
+    _error = null;
+    _lastSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final ok = await _repository.editBookmarkInFolder(
+        c,
+        folderPath,
+        bookmark,
+        newTitle: newTitle,
+        newUrl: newUrl,
+      );
+      if (ok) {
+        final updated =
+            Bookmark(title: newTitle, url: newUrl, filename: bookmark.filename);
+        final newChildren = sourceFolder.children.map((child) {
+          if (identical(child, bookmark)) return updated;
+          return child;
+        }).toList();
+        _rootFolders =
+            _replaceFolderInTree(_rootFolders, sourceFolder, newChildren);
+        await _cache.saveCache(c.cacheKey, _rootFolders);
+        _lastSuccessMessage = 'Bookmark updated';
+        notifyListeners();
+      }
+      return ok;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Deletes a bookmark from its folder. Persists to GitHub.
   Future<bool> deleteBookmark(
     Bookmark bookmark,
@@ -1037,21 +1543,6 @@ class BookmarkProvider extends ChangeNotifier {
     return count;
   }
 
-  Future<String?> _tryFetchHeadCommitSha(GithubCredentials creds) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
-    try {
-      return await api.getBranchHeadSha();
-    } catch (_) {
-      // Commit metadata is best-effort and should not fail bookmark sync.
-      return null;
-    } finally {
-      api.close();
-    }
-  }
+  /// Access sync state service (for history, undo, etc.).
+  SyncStateService get syncStateService => _syncState;
 }

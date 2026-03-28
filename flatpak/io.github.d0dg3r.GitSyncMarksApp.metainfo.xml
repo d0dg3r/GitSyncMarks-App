@@ -53,6 +53,13 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="0.3.5" date="2026-03-28">
+      <description>
+        <p>Git Data API atomic sync, three-way merge, sync history, conflict handling,
+           edit/add/create folder, generated companion files, extra export formats,
+           optional GitHub Repos and Linkwarden tabs, UI density and debug log.</p>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-02-21">
       <description>
         <p>Beta release. Settings Sync to Git (extension-compatible), move/reorder bookmarks,

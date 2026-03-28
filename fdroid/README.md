@@ -4,18 +4,14 @@ This folder contains metadata for submitting GitSyncMarks-App to [F-Droid](https
 
 ## Release workflow (correct order)
 
-1. **Release as usual:** Version bump in `pubspec.yaml`, update `CHANGELOG.md`, commit and push.
-2. **Tag:** `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. **Wait for Build & Release to finish green** and verify the GitHub release APK exists for `vX.Y.Z`.
-4. **Update F-Droid metadata** (in a separate commit, after release is available):
-   - In [com.d0dg3r.gitsyncmarks-fdroid-submit.yml](metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml): keep only the current stable build block (`versionName`, `versionCode`, `commit`)
-   - For cross-channel updates, keep `AllowedAPKSigningKeys` at top-level and `binary:` in the current build block.
-   - No comments in YAML (rewritemeta fails).
-   - Create [metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/{versionCode}.txt](metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/)
-   - Update `CurrentVersion` and `CurrentVersionCode`
-5. **Verify tag/commit:** `git rev-parse vX.Y.Z` must match `commit:` in the YAML (or use tag name directly).
-6. **Run reproducibility proof:** `bash scripts/fdroid-repro-proof.sh` must pass (`libapp.so` hash match).
-7. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
+1. **Release commit:** Version bump in `pubspec.yaml`, `CHANGELOG.md`, docs, `fdroid/metadata/...` `versionName` / `versionCode` / `CurrentVersion*`, new `en-US/changelogs/{versionCode}.txt`, then `git commit`.
+2. **F-Droid build commit:** From repo root, run `./scripts/finish-release-fdroid-commit.sh` — sets every `    commit:` in [com.d0dg3r.gitsyncmarks-fdroid-submit.yml](metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml) and [com.d0dg3r.gitsyncmarks.yml](metadata/com.d0dg3r.gitsyncmarks.yml) to the **first** (release) commit hash, then creates a small follow-up commit. Use `./scripts/finish-release-fdroid-commit.sh --tag` to also create `vX.Y.Z` pointing at that release commit.
+3. **Push** branch (and tag): `git push origin main` and `git push origin vX.Y.Z` (or push your release branch + tag as per your workflow).
+4. **Wait for Build & Release to finish green** and verify the GitHub release APK exists for `vX.Y.Z`.
+5. **Submit metadata checks:** In [com.d0dg3r.gitsyncmarks-fdroid-submit.yml](metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml): single current stable build block with `binary:`; keep `AllowedAPKSigningKeys`. No comments in YAML (rewritemeta fails).
+6. **Verify tag/commit:** `git rev-parse vX.Y.Z` must equal `commit:` in the submit YAML (`./fdroid/submit-to-gitlab.sh` enforces this).
+7. **Run reproducibility proof:** `bash scripts/fdroid-repro-proof.sh` must pass (`libapp.so` hash match).
+8. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
 
 The tag must exist before submitting. Use the **full commit hash** in `commit:` (not the tag name) – F-Droid's shallow clone may not fetch tags. Get it with `git rev-parse vX.Y.Z`.
 
@@ -35,7 +31,9 @@ gh run list --workflow "Build & Release" --limit 5
 ```bash
 git checkout main
 git pull
-git tag vX.Y.Z
+# After your release commit is on main:
+./scripts/finish-release-fdroid-commit.sh --tag   # metadata + optional tag on release commit
+git push origin main
 git push origin vX.Y.Z
 bash scripts/fdroid-repro-proof.sh
 ./fdroid/submit-to-gitlab.sh --validate-only

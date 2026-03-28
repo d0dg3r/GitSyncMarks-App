@@ -13,29 +13,24 @@ When opening this project fresh: read CONTEXT.md and PLAN.md first so you have f
 | [ROADMAP.md](../ROADMAP.md) | Milestones, current status, future vision |
 | [BOOKMARK-FORMAT.md](BOOKMARK-FORMAT.md) | GitSyncMarks repo structure (JSON format, API) |
 | [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) | Mandatory release order, gates, and recovery commands |
+| [skills/gitsyncmarks-app-release/SKILL.md](skills/gitsyncmarks-app-release/SKILL.md) | Stable release + F-Droid workflow (copy to Cursor skills if desired) |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Technical architecture, CI/Release |
 | [CHANGELOG.md](../CHANGELOG.md) | Version history |
 | [BETA_JOIN.md](../BETA_JOIN.md) | Beta testing signup (Google Play launch) |
 | [AGENTS.md](../AGENTS.md) | AI agent guidance (Cursor rules, workflow) |
 
-## Current Status (v0.3.4)
+## Current Status (v0.3.5)
 
-- Bookmark sync, move, reorder, delete, add via share
-- Settings Sync to Git (extension-compatible, Global/Individual mode, `profiles/<alias>/settings.enc`)
-- Individual settings sync with explicit client name flow
-- Base path folder browser in GitHub connection settings
-- `_index.json` compatibility handling (`version: 2`) on bookmark write operations
-- Password-protected export/import of settings
-- Configurable root folder for tab-based navigation
-- Auto-lock edit mode (60s inactivity timer)
-- Post-import auto-sync, reset all data
-- Local cache (Hive), Profiles, multi-root-folder selection
-- i18n (DE/EN/ES/FR), Dark Mode, Favicons
-- **Platforms:** Android (stable), iOS, Windows, macOS, Linux (all alpha)
-- **Release workflow:** Tag `v*` → APK, Flatpak + ZIP (Linux), ZIP (Windows, macOS); pre-release tags supported
-- **Flatpak test workflow:** `workflow_dispatch` or tag `v*-flatpak-test*` for isolated Flatpak build
-- **CI screenshots:** Golden tests auto-generate screenshots; `flatpak/screenshots/` is source of truth
-- **F-Droid:** Metadata in `fdroid/`; update changelogs and metadata with each release
+- **Sync:** Git Data API, atomic commits, three-way merge, conflicts (force push/pull), sync history (preview / restore / undo)
+- Bookmark move, reorder, delete, add (share + FAB), **edit**, **create folder**
+- Generated files (README / HTML / RSS / Dashy), multi-format **export** from the tree
+- Optional **GitHub Repos** and **Linkwarden** virtual tabs; UI density, sync-on-resume, What’s New, debug log
+- Settings Sync to Git (extension-compatible, Global/Individual, `profiles/<alias>/settings.enc`)
+- Base path folder browser, `_index.json` handling, password-protected settings export/import
+- Configurable root folder, auto-lock edit mode, Hive cache, profiles, 12 locales, themes
+- **Platforms:** Android (stable), iOS, Windows, macOS, Linux (alpha)
+- **Release:** Tag `v*` → artifacts; use `scripts/finish-release-fdroid-commit.sh` after the release commit so F-Droid `commit:` matches the tagged tree (see [skills/gitsyncmarks-app-release/SKILL.md](skills/gitsyncmarks-app-release/SKILL.md))
+- **F-Droid:** Metadata + `en-US/changelogs/<versionCode>.txt` per release; `./fdroid/submit-to-gitlab.sh --validate-only` before submit
 
 ## Related Repos
 

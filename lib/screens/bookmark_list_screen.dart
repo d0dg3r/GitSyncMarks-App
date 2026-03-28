@@ -11,7 +11,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/bookmark_node.dart';
+import '../providers/app_density_controller.dart';
 import '../providers/bookmark_provider.dart';
+import '../services/whats_new_service.dart';
 import '../services/settings_crypto.dart';
 import '../services/settings_import_export.dart';
 import '../services/web_import_picker_stub.dart'
@@ -199,8 +201,51 @@ class BookmarkListScreen extends StatefulWidget {
   State<BookmarkListScreen> createState() => _BookmarkListScreenState();
 }
 
-class _BookmarkListScreenState extends State<BookmarkListScreen> {
+class _BookmarkListScreenState extends State<BookmarkListScreen>
+    with WidgetsBindingObserver {
   bool _isImporting = false;
+  DateTime? _lastResumeSyncAt;
+
+  static const _resumeSyncCooldown = Duration(seconds: 60);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkWhatsNew();
+  }
+
+  Future<void> _checkWhatsNew() async {
+    final entry = await WhatsNewService.checkForNew();
+    if (entry != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          WhatsNewService.showWhatsNewDialog(context, entry);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final now = DateTime.now();
+      if (_lastResumeSyncAt == null ||
+          now.difference(_lastResumeSyncAt!) > _resumeSyncCooldown) {
+        _lastResumeSyncAt = now;
+        final provider = context.read<BookmarkProvider>();
+        if (provider.hasCredentials && !provider.isLoading) {
+          provider.syncBookmarks();
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -464,6 +509,8 @@ class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: _StatusArea(provider: provider),
             ),
+            if (provider.hasConflict)
+              _ConflictBanner(provider: provider),
             if (folders.isNotEmpty)
               TabBar(
                 tabAlignment: TabAlignment.start,
@@ -549,6 +596,173 @@ class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
             ),
           ],
         ),
+        floatingActionButton: provider.hasCredentials
+            ? FloatingActionButton(
+                onPressed: provider.isLoading
+                    ? null
+                    : () => _showAddMenu(context, provider, folders),
+                tooltip: 'Add',
+                child: const Icon(Icons.add),
+              )
+            : null,
+      ),
+    );
+  }
+
+  void _showAddMenu(
+    BuildContext context,
+    BookmarkProvider provider,
+    List<BookmarkFolder> folders,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.bookmark_add),
+              title: const Text('Add Bookmark'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showAddBookmarkDialog(context, provider, folders);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.create_new_folder),
+              title: const Text('Create Folder'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showCreateFolderDialog(context, provider, folders);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddBookmarkDialog(
+    BuildContext context,
+    BookmarkProvider provider,
+    List<BookmarkFolder> folders,
+  ) {
+    final titleCtrl = TextEditingController();
+    final urlCtrl = TextEditingController();
+    String? selectedFolder;
+    if (folders.isNotEmpty) selectedFolder = folders.first.title;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Add Bookmark'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: 'Title'),
+                autofocus: true,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: urlCtrl,
+                decoration: const InputDecoration(labelText: 'URL'),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedFolder,
+                decoration: const InputDecoration(labelText: 'Folder'),
+                items: folders
+                    .map((f) => DropdownMenuItem(
+                          value: f.title,
+                          child: Text(f.title),
+                        ))
+                    .toList(),
+                onChanged: (v) => setDialogState(() => selectedFolder = v),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final title = titleCtrl.text.trim();
+                final url = urlCtrl.text.trim();
+                if (title.isEmpty || url.isEmpty || selectedFolder == null) {
+                  return;
+                }
+                Navigator.pop(ctx);
+                final folder =
+                    folders.firstWhere((f) => f.title == selectedFolder);
+                await provider.addBookmark(title, url, folder);
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCreateFolderDialog(
+    BuildContext context,
+    BookmarkProvider provider,
+    List<BookmarkFolder> folders,
+  ) {
+    final nameCtrl = TextEditingController();
+    String? selectedParent;
+    if (folders.isNotEmpty) selectedParent = folders.first.title;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Create Folder'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Folder name'),
+                autofocus: true,
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedParent,
+                decoration: const InputDecoration(labelText: 'Parent folder'),
+                items: folders
+                    .map((f) => DropdownMenuItem(
+                          value: f.title,
+                          child: Text(f.title),
+                        ))
+                    .toList(),
+                onChanged: (v) => setDialogState(() => selectedParent = v),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty || selectedParent == null) return;
+                Navigator.pop(ctx);
+                final parent =
+                    folders.firstWhere((f) => f.title == selectedParent);
+                await provider.createFolder(parent, name);
+              },
+              child: const Text('Create'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -558,6 +772,71 @@ class _TabbedBookmarkViewState extends State<_TabbedBookmarkView> {
     final m = d.inMinutes;
     final s = d.inSeconds % 60;
     return '$m:${s.toString().padLeft(2, '0')}';
+  }
+}
+
+class _ConflictBanner extends StatelessWidget {
+  const _ConflictBanner({required this.provider});
+
+  final BookmarkProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: scheme.error, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Sync conflict detected',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Changes were made both locally and on GitHub.',
+            style: TextStyle(color: scheme.onErrorContainer, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                  label: const Text('Local \u2192 GitHub'),
+                  onPressed: provider.isLoading ? null : () => provider.forcePush(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton.icon(
+                  icon: const Icon(Icons.cloud_download_outlined, size: 18),
+                  label: const Text('GitHub \u2192 Local'),
+                  onPressed: provider.isLoading ? null : () => provider.forcePull(),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1143,10 +1422,11 @@ class _FolderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final density = context.watch<AppDensityController>();
     final folderIcon = Icon(
       initiallyExpanded || level == 0 ? Icons.folder_open : Icons.folder,
       color: scheme.primary,
-      size: 22,
+      size: density.iconSize,
     );
     final leading = reorderIndex != null
         ? Row(
@@ -1159,7 +1439,7 @@ class _FolderTile extends StatelessWidget {
                   child: Icon(
                     Icons.drag_handle,
                     color: scheme.outline,
-                    size: 20,
+                    size: density.iconSize - 2,
                   ),
                 ),
               ),
@@ -1180,12 +1460,13 @@ class _FolderTile extends StatelessWidget {
         leading: leading,
         shape: const RoundedRectangleBorder(),
         collapsedShape: const RoundedRectangleBorder(),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        tilePadding: density.listItemPadding,
         childrenPadding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
         title: Text(
           folder.title,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                fontSize: density.titleFontSize,
               ),
         ),
         children: _buildFolderChildren(context),
@@ -1370,6 +1651,7 @@ class _BookmarkTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final l = AppLocalizations.of(context)!;
+    final density = context.watch<AppDensityController>();
     final hasCredentials =
         sourceFolder != null && provider != null && provider!.hasCredentials;
     final canMove =
@@ -1380,14 +1662,17 @@ class _BookmarkTile extends StatelessWidget {
       child: ListTile(
         dense: true,
         visualDensity: VisualDensity.compact,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        contentPadding: density.listItemPadding,
+        minVerticalPadding: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         leading: _buildLeading(context),
         title: Text(
           bookmark.title,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: density.titleFontSize,
+              ),
         ),
         subtitle: Text(
           bookmark.url,
@@ -1395,6 +1680,7 @@ class _BookmarkTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: scheme.outline,
+                fontSize: density.subtitleFontSize,
               ),
         ),
         onTap: () => _openUrl(context, bookmark.url),
@@ -1405,6 +1691,20 @@ class _BookmarkTile extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        ListTile(
+                          leading: const Icon(Icons.edit_outlined),
+                          title: const Text('Edit'),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            onEditAction?.call();
+                            _showEditBookmarkDialog(
+                              context,
+                              bookmark,
+                              sourceFolder!,
+                              provider!,
+                            );
+                          },
+                        ),
                         if (canMove)
                           ListTile(
                             leading: const Icon(Icons.drive_file_move),
@@ -1443,6 +1743,72 @@ class _BookmarkTile extends StatelessWidget {
             : null,
       ),
     );
+  }
+
+  Future<void> _showEditBookmarkDialog(
+    BuildContext context,
+    Bookmark bookmark,
+    BookmarkFolder sourceFolder,
+    BookmarkProvider provider,
+  ) async {
+    final titleController = TextEditingController(text: bookmark.title);
+    final urlController = TextEditingController(text: bookmark.url);
+
+    final result = await showDialog<Map<String, String>?>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Bookmark'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: 'Title'),
+              autofocus: true,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(labelText: 'URL'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final title = titleController.text.trim();
+              final url = urlController.text.trim();
+              if (title.isNotEmpty && url.isNotEmpty) {
+                Navigator.pop(ctx, {'title': title, 'url': url});
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && context.mounted) {
+      final newTitle = result['title']!;
+      final newUrl = result['url']!;
+      if (newTitle == bookmark.title && newUrl == bookmark.url) return;
+
+      final ok = await provider.editBookmark(
+        bookmark,
+        sourceFolder,
+        newTitle: newTitle,
+        newUrl: newUrl,
+      );
+      if (ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bookmark updated')),
+        );
+      }
+    }
   }
 
   Future<void> _confirmDeleteBookmark(

@@ -2,236 +2,205 @@ import 'dart:convert';
 
 import '../config/github_credentials.dart';
 import '../models/bookmark_node.dart';
+import '../services/bookmark_parser.dart';
+import '../services/git_data_api.dart';
 import '../services/github_api.dart';
+import '../services/remote_fetch.dart';
 import '../utils/bookmark_filename.dart';
 
+/// Result of fetching bookmarks from GitHub.
+class FetchResult {
+  FetchResult({
+    required this.rootFolders,
+    required this.commitSha,
+    required this.fileMap,
+    required this.shaMap,
+  });
+
+  FetchResult.empty()
+      : rootFolders = [],
+        commitSha = null,
+        fileMap = {},
+        shaMap = {};
+
+  final List<BookmarkFolder> rootFolders;
+  final String? commitSha;
+  final Map<String, String> fileMap;
+  final Map<String, String> shaMap;
+}
+
 /// Orchestrates syncing bookmarks from GitHub and parsing the tree.
+///
+/// Reads use the Git Data API (tree walk + batched blob fetch) for efficiency.
+/// Writes use atomic multi-file commits for consistency.
+/// Test-connection and folder browsing still use the Contents API.
 class BookmarkRepository {
   BookmarkRepository();
 
   static const Set<String> _hiddenRootDirs = {'profiles'};
 
-  /// Fetches the full bookmark tree from GitHub.
-  /// Returns a list of root folders (toolbar, other, menu, mobile).
-  Future<List<BookmarkFolder>> fetchBookmarks(GithubCredentials creds) async {
-    final api = GithubApi(
+  // ---------------------------------------------------------------------------
+  // Read: Git Data API (tree walk)
+  // ---------------------------------------------------------------------------
+
+  /// Fetches the full bookmark tree from GitHub using the Git Data API.
+  ///
+  /// Returns a [FetchResult] containing the parsed tree, commit SHA, and raw
+  /// file/sha maps (used by sync state for three-way merge).
+  ///
+  /// [baseFiles] allows reusing content from the last sync to skip unchanged
+  /// blob downloads.
+  Future<FetchResult> fetchBookmarks(
+    GithubCredentials creds, {
+    Map<String, SyncFileEntry>? baseFiles,
+  }) async {
+    final api = GitDataApi(
       token: creds.token,
       owner: creds.owner,
       repo: creds.repo,
       branch: creds.branch,
-      basePath: creds.basePath,
     );
     try {
-      await _readIndexVersion(api, creds.basePath);
-      return await _fetchRootFolders(api, creds.basePath);
+      final remote = await fetchRemoteFileMap(
+        api,
+        creds.basePath,
+        baseFiles: baseFiles,
+      );
+      if (remote == null) return FetchResult.empty();
+
+      final rootFolders =
+          fileMapToBookmarkTree(remote.fileMap, creds.basePath);
+      return FetchResult(
+        rootFolders: rootFolders,
+        commitSha: remote.commitSha,
+        fileMap: remote.fileMap,
+        shaMap: remote.shaMap,
+      );
     } finally {
       api.close();
     }
   }
 
-  /// Adds a bookmark to a folder in the repo.
-  /// [folderPath] is e.g. "bookmarks/toolbar" (basePath/folderName).
-  /// Returns true on success.
+  // ---------------------------------------------------------------------------
+  // Write: Atomic commits via Git Data API
+  // ---------------------------------------------------------------------------
+
+  /// Adds a bookmark to a folder in the repo (single atomic commit).
   Future<bool> addBookmarkToFolder(
     GithubCredentials creds,
     String folderPath,
     String title,
     String url,
   ) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _createContentsApi(creds);
+    final gitApi = _createGitDataApi(creds);
     try {
-      await _ensureIndexVersion2(
-          api, creds.basePath, 'Ensure _index.json (v2)');
       final filename = bookmarkFilename(title, url);
       final content = json.encode({'title': title, 'url': url});
 
-      final filePath = '$folderPath/$filename';
-      await api.createOrUpdateFile(
-        filePath,
-        content,
-        'Add bookmark: $title',
-      );
-
       final orderPath = '$folderPath/_order.json';
-      String? orderJson;
-      String? orderSha;
-      try {
-        orderJson = await api.getFileContent(orderPath);
-        final meta = await api.getFileMeta(orderPath);
-        orderSha = meta?.sha;
-      } catch (_) {}
-
-      final List<dynamic> orderList;
-      if (orderJson != null && orderJson.trim().isNotEmpty) {
-        final decoded = json.decode(orderJson);
-        orderList = decoded is List ? List.from(decoded) : [];
-      } else {
-        orderList = [];
-      }
+      final orderList = await _readOrderList(api, orderPath);
 
       if (!orderList.contains(filename)) {
         orderList.insert(0, filename);
-        final newOrderJson =
-            const JsonEncoder.withIndent('  ').convert(orderList);
-        await api.createOrUpdateFile(
-          orderPath,
-          newOrderJson,
-          'Update order: add $filename',
-          sha: orderSha,
-        );
       }
 
+      final fileChanges = <String, String?>{
+        '$folderPath/$filename': content,
+        orderPath: const JsonEncoder.withIndent('  ').convert(orderList),
+        '${creds.basePath}/_index.json':
+            const JsonEncoder.withIndent('  ').convert({'version': 2}),
+      };
+
+      await gitApi.atomicCommit('Add bookmark: $title', fileChanges);
       return true;
     } finally {
       api.close();
+      gitApi.close();
     }
   }
 
-  /// Moves a bookmark from one folder to another in the repo.
-  /// [fromFolderPath] and [toFolderPath] are e.g. "bookmarks/toolbar" (basePath/folderName).
-  /// Returns true on success.
+  /// Moves a bookmark between folders (single atomic commit).
   Future<bool> moveBookmarkToFolder(
     GithubCredentials creds,
     String fromFolderPath,
     String toFolderPath,
     Bookmark bookmark,
   ) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    if (fromFolderPath == toFolderPath) return true;
+
+    final api = _createContentsApi(creds);
+    final gitApi = _createGitDataApi(creds);
     try {
-      await _ensureIndexVersion2(
-          api, creds.basePath, 'Ensure _index.json (v2)');
       final sourceFilename =
           bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
-      final fromFilePath = '$fromFolderPath/$sourceFilename';
-
-      if (fromFolderPath == toFolderPath) return true;
-
+      final toFilename = bookmarkFilename(bookmark.title, bookmark.url);
       final content =
           json.encode({'title': bookmark.title, 'url': bookmark.url});
-      final toFilename = bookmarkFilename(bookmark.title, bookmark.url);
-      final toFilePath = '$toFolderPath/$toFilename';
-
-      await api.createOrUpdateFile(
-          toFilePath, content, 'Move bookmark: ${bookmark.title}');
-
-      final toOrderPath = '$toFolderPath/_order.json';
-      String? toOrderJson;
-      String? toOrderSha;
-      try {
-        toOrderJson = await api.getFileContent(toOrderPath);
-        final meta = await api.getFileMeta(toOrderPath);
-        toOrderSha = meta?.sha;
-      } catch (_) {}
-      final toOrderList = _orderListFromJson(toOrderJson);
-      if (!toOrderList.contains(toFilename)) {
-        toOrderList.add(toFilename);
-        await api.createOrUpdateFile(
-          toOrderPath,
-          const JsonEncoder.withIndent('  ').convert(toOrderList),
-          'Update order: add $toFilename',
-          sha: toOrderSha,
-        );
-      }
-
-      final fileMeta = await api.getFileMeta(fromFilePath);
-      if (fileMeta != null && fileMeta.sha != null) {
-        await api.deleteFile(
-            fromFilePath, fileMeta.sha!, 'Move bookmark: ${bookmark.title}');
-      }
 
       final fromOrderPath = '$fromFolderPath/_order.json';
-      String? fromOrderJson;
-      String? fromOrderSha;
-      try {
-        fromOrderJson = await api.getFileContent(fromOrderPath);
-        final meta = await api.getFileMeta(fromOrderPath);
-        fromOrderSha = meta?.sha;
-      } catch (_) {}
-      final fromOrderList = _orderListFromJson(fromOrderJson);
-      fromOrderList.remove(sourceFilename);
-      await api.createOrUpdateFile(
-        fromOrderPath,
-        const JsonEncoder.withIndent('  ').convert(fromOrderList),
-        'Update order: remove $sourceFilename',
-        sha: fromOrderSha,
-      );
+      final toOrderPath = '$toFolderPath/_order.json';
 
+      final fromOrderList = await _readOrderList(api, fromOrderPath);
+      final toOrderList = await _readOrderList(api, toOrderPath);
+
+      fromOrderList.remove(sourceFilename);
+      if (!toOrderList.contains(toFilename)) {
+        toOrderList.add(toFilename);
+      }
+
+      final fileChanges = <String, String?>{
+        '$toFolderPath/$toFilename': content,
+        '$fromFolderPath/$sourceFilename': null,
+        fromOrderPath:
+            const JsonEncoder.withIndent('  ').convert(fromOrderList),
+        toOrderPath: const JsonEncoder.withIndent('  ').convert(toOrderList),
+        '${creds.basePath}/_index.json':
+            const JsonEncoder.withIndent('  ').convert({'version': 2}),
+      };
+
+      await gitApi.atomicCommit(
+        'Move bookmark: ${bookmark.title}',
+        fileChanges,
+      );
       return true;
     } finally {
       api.close();
+      gitApi.close();
     }
   }
 
-  /// Deletes a bookmark from a folder in the repo.
-  /// Removes the JSON file and updates _order.json.
+  /// Deletes a bookmark from a folder (single atomic commit).
   Future<bool> deleteBookmarkFromFolder(
     GithubCredentials creds,
     String folderPath,
     Bookmark bookmark,
   ) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _createContentsApi(creds);
+    final gitApi = _createGitDataApi(creds);
     try {
-      await _ensureIndexVersion2(
-          api, creds.basePath, 'Ensure _index.json (v2)');
       final filename =
           bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
       final filePath = '$folderPath/$filename';
 
-      final fileMeta = await api.getFileMeta(filePath);
-      if (fileMeta == null || fileMeta.sha == null) return false;
-
-      await api.deleteFile(
-          filePath, fileMeta.sha!, 'Delete bookmark: ${bookmark.title}');
-
       final orderPath = '$folderPath/_order.json';
-      String? orderJson;
-      String? orderSha;
-      try {
-        orderJson = await api.getFileContent(orderPath);
-        final meta = await api.getFileMeta(orderPath);
-        orderSha = meta?.sha;
-      } catch (_) {}
-
-      final orderList = _orderListFromJson(orderJson);
+      final orderList = await _readOrderList(api, orderPath);
       orderList.remove(filename);
-      await api.createOrUpdateFile(
-        orderPath,
-        const JsonEncoder.withIndent('  ').convert(orderList),
-        'Update order: remove $filename',
-        sha: orderSha,
-      );
 
+      final fileChanges = <String, String?>{
+        filePath: null,
+        orderPath: const JsonEncoder.withIndent('  ').convert(orderList),
+      };
+
+      await gitApi.atomicCommit(
+        'Delete bookmark: ${bookmark.title}',
+        fileChanges,
+      );
       return true;
     } finally {
       api.close();
+      gitApi.close();
     }
-  }
-
-  List<dynamic> _orderListFromJson(String? jsonStr) {
-    if (jsonStr == null || jsonStr.trim().isEmpty) return [];
-    try {
-      final decoded = json.decode(jsonStr);
-      if (decoded is List) return List<dynamic>.from(decoded);
-    } catch (_) {}
-    return [];
   }
 
   /// Updates _order.json in a folder to match the given order entries.
@@ -240,51 +209,126 @@ class BookmarkRepository {
     String folderPath,
     List<OrderEntry> orderEntries,
   ) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final gitApi = _createGitDataApi(creds);
     try {
-      await _ensureIndexVersion2(
-          api, creds.basePath, 'Ensure _index.json (v2)');
-      final orderPath = '$folderPath/_order.json';
       final list = orderEntries.map((e) {
         if (e.isFile) return e.filename!;
         return {'dir': e.dirName, 'title': e.title ?? e.dirName};
       }).toList();
       final orderJson = const JsonEncoder.withIndent('  ').convert(list);
 
-      String? sha;
-      try {
-        final meta = await api.getFileMeta(orderPath);
-        sha = meta?.sha;
-      } catch (_) {}
+      final fileChanges = <String, String?>{
+        '$folderPath/_order.json': orderJson,
+        '${creds.basePath}/_index.json':
+            const JsonEncoder.withIndent('  ').convert({'version': 2}),
+      };
 
-      await api.createOrUpdateFile(
-        orderPath,
-        orderJson,
-        'Reorder bookmarks',
-        sha: sha,
-      );
+      await gitApi.atomicCommit('Reorder bookmarks', fileChanges);
       return true;
     } finally {
-      api.close();
+      gitApi.close();
     }
   }
 
-  /// Validates that the token and repo are accessible.
-  /// Returns the list of root folder names (dirs at base path) on success.
+  /// Edits a bookmark's title and/or URL (single atomic commit).
+  ///
+  /// If the URL changed, the filename changes too (delete old + create new).
+  Future<bool> editBookmarkInFolder(
+    GithubCredentials creds,
+    String folderPath,
+    Bookmark bookmark, {
+    required String newTitle,
+    required String newUrl,
+  }) async {
+    final api = _createContentsApi(creds);
+    final gitApi = _createGitDataApi(creds);
+    try {
+      final oldFilename =
+          bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
+      final newFilename = bookmarkFilename(newTitle, newUrl);
+      final content = json.encode({'title': newTitle, 'url': newUrl});
+
+      final fileChanges = <String, String?>{};
+
+      if (oldFilename == newFilename) {
+        fileChanges['$folderPath/$oldFilename'] = content;
+      } else {
+        fileChanges['$folderPath/$oldFilename'] = null;
+        fileChanges['$folderPath/$newFilename'] = content;
+
+        final orderPath = '$folderPath/_order.json';
+        final orderList = await _readOrderList(api, orderPath);
+        final idx = orderList.indexOf(oldFilename);
+        if (idx >= 0) {
+          orderList[idx] = newFilename;
+        } else {
+          orderList.add(newFilename);
+        }
+        fileChanges[orderPath] =
+            const JsonEncoder.withIndent('  ').convert(orderList);
+      }
+
+      await gitApi.atomicCommit('Edit bookmark: $newTitle', fileChanges);
+      return true;
+    } finally {
+      api.close();
+      gitApi.close();
+    }
+  }
+
+  /// Creates a new subfolder (single atomic commit).
+  Future<bool> createFolder(
+    GithubCredentials creds,
+    String parentFolderPath,
+    String folderTitle,
+  ) async {
+    final api = _createContentsApi(creds);
+    final gitApi = _createGitDataApi(creds);
+    try {
+      final dirName = _slugify(folderTitle);
+      final newFolderPath = '$parentFolderPath/$dirName';
+
+      final orderPath = '$parentFolderPath/_order.json';
+      final orderList = await _readOrderList(api, orderPath);
+
+      final folderEntry = {'dir': dirName, 'title': folderTitle};
+      final alreadyExists = orderList.any((e) =>
+          e is Map && e['dir'] == dirName);
+      if (!alreadyExists) {
+        orderList.add(folderEntry);
+      }
+
+      final fileChanges = <String, String?>{
+        '$newFolderPath/_order.json':
+            const JsonEncoder.withIndent('  ').convert([]),
+        orderPath: const JsonEncoder.withIndent('  ').convert(orderList),
+        '${creds.basePath}/_index.json':
+            const JsonEncoder.withIndent('  ').convert({'version': 2}),
+      };
+
+      await gitApi.atomicCommit('Create folder: $folderTitle', fileChanges);
+      return true;
+    } finally {
+      api.close();
+      gitApi.close();
+    }
+  }
+
+  static String _slugify(String str) {
+    if (str.isEmpty) return 'untitled';
+    var slug = str.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    slug = slug.replaceAll(RegExp(r'^-+|-+$'), '');
+    if (slug.length > 40) slug = slug.substring(0, 40);
+    return slug.isEmpty ? 'untitled' : slug;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Test connection (Contents API — simple and sufficient)
+  // ---------------------------------------------------------------------------
+
+  /// Validates token and repo access. Returns root folder names.
   Future<List<String>> testConnection(GithubCredentials creds) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _createContentsApi(creds);
     try {
       final entries = await api.getContents(creds.basePath);
       return entries
@@ -296,228 +340,33 @@ class BookmarkRepository {
     }
   }
 
-  Future<List<BookmarkFolder>> _fetchRootFolders(
-    GithubApi api,
-    String basePath,
-  ) async {
-    final entries = await api.getContents(basePath);
-    final dirs = entries
-        .where((e) => e.type == 'dir' && _isVisibleRootDir(e.name))
-        .toList();
-    final rootFolders = <BookmarkFolder>[];
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
-    for (final dir in dirs) {
-      final folderPath = basePath.isEmpty ? dir.name : '$basePath/${dir.name}';
-      final folder = await _fetchFolder(api, folderPath, dir.name);
-      if (_hasContent(folder)) {
-        rootFolders.add(folder);
-      }
-    }
+  GithubApi _createContentsApi(GithubCredentials creds) => GithubApi(
+        token: creds.token,
+        owner: creds.owner,
+        repo: creds.repo,
+        branch: creds.branch,
+        basePath: creds.basePath,
+      );
 
-    return rootFolders;
-  }
+  GitDataApi _createGitDataApi(GithubCredentials creds) => GitDataApi(
+        token: creds.token,
+        owner: creds.owner,
+        repo: creds.repo,
+        branch: creds.branch,
+      );
 
-  Future<BookmarkFolder> _fetchFolder(
-    GithubApi api,
-    String path,
-    String title, {
-    String? dirName,
-  }) async {
-    final entries = await api.getContents(path);
-    final entriesByName = {for (final e in entries) e.name: e};
-
-    List<BookmarkNode> children = [];
-    List<OrderEntry> orderEntries = [];
-
-    String? orderJson;
-    final orderEntry = entriesByName['_order.json'];
-    if (orderEntry != null) {
-      if (orderEntry.content != null) {
-        orderJson = api.decodeContent(orderEntry.content!);
-      } else {
-        try {
-          final orderPath = orderEntry.path ?? '$path/_order.json';
-          orderJson = await api.getFileContent(orderPath);
-        } catch (_) {}
-      }
-    }
-    if (orderJson != null) {
-      orderEntries = _parseOrder(orderJson);
-      // Append dirs from disk not in _order.json (like extension: "picked up automatically")
-      final orderDirNames =
-          orderEntries.where((e) => !e.isFile).map((e) => e.dirName!).toSet();
-      for (final e in entries) {
-        if (e.type == 'dir' && !orderDirNames.contains(e.name)) {
-          orderEntries = [...orderEntries, OrderEntry.folder(e.name, e.name)];
-        }
-      }
-      // Append files from disk not in _order.json
-      final orderFiles =
-          orderEntries.where((e) => e.isFile).map((e) => e.filename!).toSet();
-      for (final e in entries) {
-        if (e.type == 'file' &&
-            e.name.endsWith('.json') &&
-            e.name != '_order.json' &&
-            !orderFiles.contains(e.name)) {
-          orderEntries = [...orderEntries, OrderEntry.file(e.name)];
-        }
-      }
-    } else {
-      // No _order.json: use natural order (files first, then dirs)
-      final files = entries
-          .where((e) => e.type == 'file' && e.name.endsWith('.json'))
-          .where((e) => e.name != '_order.json')
-          .map((e) => OrderEntry.file(e.name))
-          .toList();
-      final subdirs = entries
-          .where((e) => e.type == 'dir')
-          .map((e) => OrderEntry.folder(e.name, e.name))
-          .toList();
-      orderEntries = [...files, ...subdirs];
-    }
-
-    for (final entry in orderEntries) {
-      if (entry.isFile) {
-        final filename = entry.filename!;
-        if (!filename.endsWith('.json') || filename == '_order.json') {
-          continue;
-        }
-        String? content;
-        final fileEntry = entriesByName[filename];
-        final filePath = fileEntry?.path ?? '$path/$filename';
-        if (fileEntry != null && fileEntry.content != null) {
-          content = api.decodeContent(fileEntry.content!);
-        } else {
-          try {
-            content = await api.getFileContent(filePath);
-          } catch (_) {
-            continue;
-          }
-        }
-        final bookmark = _parseBookmark(content, filename);
-        if (bookmark != null) {
-          children.add(bookmark);
-        }
-      } else {
-        final dirName = entry.dirName!;
-        var subdirEntry = entriesByName[dirName];
-        if (subdirEntry == null) {
-          for (final e in entries) {
-            if (e.type == 'dir' && e.name == dirName) {
-              subdirEntry = e;
-              break;
-            }
-          }
-        }
-        if (subdirEntry != null && subdirEntry.type == 'dir') {
-          final subfolder = await _fetchFolder(
-            api,
-            '$path/${subdirEntry.name}',
-            entry.title ?? subdirEntry.name,
-            dirName: subdirEntry.name,
-          );
-          // Always add subfolders to preserve structure (incl. empty ones)
-          children.add(subfolder);
-        }
-      }
-    }
-
-    final dName = dirName ?? path.split('/').lastOrNull;
-    return BookmarkFolder(title: title, children: children, dirName: dName);
-  }
-
-  /// Returns true if folder has bookmarks or subfolders (incl. empty subfolders).
-  bool _hasContent(BookmarkFolder folder) {
-    if (folder.children.isNotEmpty) return true;
-    return false;
-  }
-
-  List<OrderEntry> _parseOrder(String jsonStr) {
-    final decoded = json.decode(jsonStr);
-    List<dynamic> list;
-    if (decoded is List) {
-      list = decoded;
-    } else if (decoded is Map) {
-      list = (decoded['order'] ?? decoded['items'] ?? decoded['entries'] ?? [])
-              as List<dynamic>? ??
-          [];
-    } else {
-      return [];
-    }
-
-    return list
-        .map((e) {
-          if (e is String) {
-            return OrderEntry.file(e);
-          }
-          if (e is Map) {
-            final dir = e['dir'] as String?;
-            final title = e['title'] as String?;
-            if (dir != null) {
-              return OrderEntry.folder(dir, title ?? dir);
-            }
-          }
-          return null;
-        })
-        .whereType<OrderEntry>()
-        .toList();
-  }
-
-  Bookmark? _parseBookmark(String jsonStr, [String? filename]) {
+  /// Reads _order.json via Contents API and returns a mutable list.
+  Future<List<dynamic>> _readOrderList(GithubApi api, String path) async {
     try {
-      final map = json.decode(jsonStr) as Map<String, dynamic>;
-      final title = (map['title'] ?? map['name']) as String?;
-      final url = (map['url'] ?? map['link'] ?? map['href']) as String?;
-      if (title != null &&
-          title.isNotEmpty &&
-          url != null &&
-          url.toString().isNotEmpty) {
-        return Bookmark(title: title, url: url.toString(), filename: filename);
-      }
+      final content = await api.getFileContent(path);
+      final decoded = json.decode(content);
+      if (decoded is List) return List<dynamic>.from(decoded);
     } catch (_) {}
-    return null;
-  }
-
-  Future<void> _readIndexVersion(GithubApi api, String basePath) async {
-    final indexPath = '$basePath/_index.json';
-    try {
-      final content = await api.getFileContent(indexPath);
-      final decoded = json.decode(content);
-      if (decoded is Map<String, dynamic> && decoded['version'] == 2) {
-        return;
-      }
-    } catch (_) {
-      // Best-effort only for reads; write operations ensure the file.
-    }
-  }
-
-  Future<void> _ensureIndexVersion2(
-    GithubApi api,
-    String basePath,
-    String message,
-  ) async {
-    final indexPath = '$basePath/_index.json';
-    String? sha;
-    bool needsWrite = true;
-    try {
-      final content = await api.getFileContent(indexPath);
-      final meta = await api.getFileMeta(indexPath);
-      sha = meta?.sha;
-      final decoded = json.decode(content);
-      if (decoded is Map<String, dynamic> && decoded['version'] == 2) {
-        needsWrite = false;
-      }
-    } catch (_) {
-      // Missing or invalid; write a fresh v2 metadata file.
-    }
-
-    if (!needsWrite) return;
-    await api.createOrUpdateFile(
-      indexPath,
-      const JsonEncoder.withIndent('  ').convert({'version': 2}),
-      message,
-      sha: sha,
-    );
+    return [];
   }
 
   bool _isVisibleRootDir(String name) => !_hiddenRootDirs.contains(name);
