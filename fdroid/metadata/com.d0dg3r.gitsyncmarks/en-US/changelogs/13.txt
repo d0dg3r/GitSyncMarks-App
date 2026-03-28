@@ -1,0 +1,1 @@
+Layered tree uploads: atomicCommit now embeds file content inline in tree requests instead of one blob POST per file, dramatically reducing API calls and avoiding rate limits on large pushes.

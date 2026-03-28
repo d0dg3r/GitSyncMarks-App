@@ -37,7 +37,7 @@ Contains data models that represent the domain entities.
 ### lib/services/
 Contains business logic and external integrations.
 
-- `git_data_api.dart`: GitHub Git Data API (refs, commits, trees, blobs, `atomicCommit`)
+- `git_data_api.dart`: GitHub Git Data API (refs, commits, trees, blobs, `atomicCommit` with layered tree batching and inline content)
 - `remote_fetch.dart`: Recursive tree → SHA map, batched blob fetch, diff filters (generated/settings paths)
 - `bookmark_parser.dart`: `BookmarkNode` tree ↔ flat file map (extension-parity filenames)
 - `sync_state.dart`: Hive sync base per profile (last commit SHA, file map, previous SHA for undo)

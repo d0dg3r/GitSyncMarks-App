@@ -53,11 +53,66 @@ class GitDataApiException implements Exception {
   String toString() => 'GitDataApiException($statusCode): $message';
 }
 
+/// Max tree entries per `POST /git/trees` (stay under payload / server limits).
+const int _treeBatchMaxEntries = 400;
+
+/// Rough UTF-8 byte budget per layered tree request (GitHub caps at ~40 MiB).
+const int _treeBatchMaxBytes = 28 * 1024 * 1024;
+
+/// Split deletions + uploads into batches for layered `POST /git/trees`.
+/// Upload entries carry `content` so GitHub creates blobs server-side.
+List<List<Map<String, dynamic>>> _chunkTreeBatches(
+  List<String> deletions,
+  List<_UploadEntry> uploads,
+) {
+  final batches = <List<Map<String, dynamic>>>[];
+  var batch = <Map<String, dynamic>>[];
+  var approxBytes = 0;
+
+  void flush() {
+    if (batch.isNotEmpty) {
+      batches.add(batch);
+      batch = <Map<String, dynamic>>[];
+      approxBytes = 0;
+    }
+  }
+
+  int approxItemBytes(Map<String, dynamic> item) {
+    var n = 64 + ((item['path'] as String).length * 2);
+    if (item.containsKey('content')) {
+      n += utf8.encode(item['content'] as String).length;
+    }
+    return n;
+  }
+
+  void push(Map<String, dynamic> item) {
+    final ib = approxItemBytes(item);
+    if (batch.isNotEmpty &&
+        (batch.length >= _treeBatchMaxEntries ||
+            approxBytes + ib > _treeBatchMaxBytes)) {
+      flush();
+    }
+    batch.add(item);
+    approxBytes += ib;
+  }
+
+  for (final path in deletions) {
+    push({'path': path, 'mode': '100644', 'type': 'blob', 'sha': null});
+  }
+  for (final u in uploads) {
+    push({'path': u.path, 'mode': '100644', 'type': 'blob', 'content': u.content});
+  }
+  flush();
+  return batches;
+}
+
 /// GitHub Git Data API client for atomic multi-file operations.
 ///
 /// Uses the low-level Git endpoints (blobs, trees, commits, refs) to read the
 /// full repo tree in a handful of requests and write multiple file changes in a
-/// single atomic commit.
+/// single atomic commit. Uploads use inline `content` on tree entries so GitHub
+/// creates blobs server-side — avoids per-file POST /git/blobs and secondary
+/// rate limits on large pushes.
 class GitDataApi {
   GitDataApi({
     required this.token,
@@ -383,10 +438,28 @@ class GitDataApi {
     }
   }
 
+  /// Build a tree by applying [batches] on top of [baseTreeSha] (chained
+  /// `POST /git/trees` with `base_tree`).
+  Future<String> _buildLayeredTree(
+    String? baseTreeSha,
+    List<List<Map<String, dynamic>>> batches,
+  ) async {
+    var sha = baseTreeSha;
+    for (final batch in batches) {
+      sha = await createTree(sha, batch);
+    }
+    return sha!;
+  }
+
   /// Atomic multi-file commit via the Git Data API.
   ///
   /// [fileChanges] maps file paths to content strings. A `null` value deletes
   /// the file. All changes are applied in a single commit.
+  ///
+  /// Upload entries carry inline `content` in `POST /git/trees` — GitHub
+  /// creates blobs server-side. Large change sets are split into layered tree
+  /// batches (~400 entries / ~28 MiB each) to stay within API limits and avoid
+  /// secondary rate limits on huge first pushes.
   ///
   /// Returns the SHA of the new commit, or the current HEAD SHA when
   /// [fileChanges] produces no tree items.
@@ -424,31 +497,16 @@ class GitDataApi {
       }
     }
 
-    final treeItems = <Map<String, dynamic>>[
-      for (final path in deletions)
-        {'path': path, 'mode': '100644', 'type': 'blob', 'sha': null},
-    ];
+    if (deletions.isEmpty && uploads.isEmpty) return currentCommitSha ?? '';
 
-    for (var i = 0; i < uploads.length; i += _blobConcurrency) {
-      final end = (i + _blobConcurrency).clamp(0, uploads.length);
-      final batch = uploads.sublist(i, end);
-      final results = await Future.wait(
-        batch.map((u) async {
-          final sha = await createBlob(u.content);
-          return {'path': u.path, 'mode': '100644', 'type': 'blob', 'sha': sha};
-        }),
-      );
-      treeItems.addAll(results);
-    }
-
-    if (treeItems.isEmpty) return currentCommitSha ?? '';
+    final batches = _chunkTreeBatches(deletions, uploads);
 
     if (isEmptyRepo) {
-      return _commitOnEmptyRepo(message, treeItems);
+      return _commitOnEmptyRepo(message, batches);
     }
     return _commitOnExistingBranch(
       message,
-      treeItems,
+      batches,
       currentTreeSha!,
       currentCommitSha!,
     );
@@ -456,7 +514,7 @@ class GitDataApi {
 
   Future<String> _commitOnExistingBranch(
     String message,
-    List<Map<String, dynamic>> treeItems,
+    List<List<Map<String, dynamic>>> batches,
     String baseTreeSha,
     String parentSha,
   ) async {
@@ -464,7 +522,7 @@ class GitDataApi {
     var parent = parentSha;
 
     for (var attempt = 0; attempt < 3; attempt++) {
-      final newTreeSha = await createTree(tree, treeItems);
+      final newTreeSha = await _buildLayeredTree(tree, batches);
       final newCommitSha =
           await createCommit(message, newTreeSha, parentSha: parent);
       try {
@@ -489,10 +547,10 @@ class GitDataApi {
 
   Future<String> _commitOnEmptyRepo(
     String message,
-    List<Map<String, dynamic>> treeItems,
+    List<List<Map<String, dynamic>>> batches,
   ) async {
     for (var attempt = 0; attempt < 4; attempt++) {
-      final newTreeSha = await createTree(null, treeItems);
+      final newTreeSha = await _buildLayeredTree(null, batches);
       final newCommitSha = await createCommit(message, newTreeSha);
       try {
         await createRef(newCommitSha);
@@ -507,7 +565,7 @@ class GitDataApi {
             final fresh = await getCommit(latestSha);
             return _commitOnExistingBranch(
               message,
-              treeItems,
+              batches,
               fresh.treeSha,
               fresh.sha,
             );

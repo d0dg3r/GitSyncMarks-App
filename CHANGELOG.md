@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Serialized release validation flow:** `F-Droid Validate` no longer starts on metadata push/PR events and now runs automatically only after successful `Build & Release` completion (manual `workflow_dispatch` remains available).
 - **Container Git safety in libapp proof:** `scripts/fdroid-repro-proof.sh` now configures `git safe.directory` for `/repo` in the buildserver container and clones via `file:///repo` to avoid CI ownership trust failures (`exit 128`) before reproducibility checks.
 
+## [0.3.6] - 2026-03-28
+
+### Changed
+
+- **Git Data API: layered tree uploads** — `atomicCommit` now embeds file content inline in `POST /git/trees` entries (GitHub creates blobs server-side) instead of issuing one `POST /git/blobs` per file. Large change sets are split into layered tree batches (~400 entries / ~28 MiB each), dramatically reducing API calls (e.g. 5 000 files → ~13 tree POSTs instead of 5 000 blob POSTs) and avoiding secondary rate limits on large first pushes. Aligned with browser extension optimization.
+
 ## [0.3.5] - 2026-03-28
 
 ### Added
