@@ -1,0 +1,1 @@
+Git Data API sync, three-way merge, sync history, edit/add folders, generated files, UI density, GitHub Repos & Linkwarden options, extra export formats, debug log.

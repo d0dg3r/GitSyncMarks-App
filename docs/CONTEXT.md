@@ -19,7 +19,7 @@ This document captures the context and decisions from when the project was creat
 | Topic | Decision |
 |-------|----------|
 | **Platform** | Flutter (Android, iOS, Windows, macOS, Linux from one codebase) |
-| **Scope** | Sync, display tree, open in browser; move/reorder/delete/add bookmarks; settings sync; encrypted export/import; configurable root folder; auto-lock edit mode; reset all data |
+| **Scope** | Sync (Git Data API, three-way merge, history), display tree, open in browser; move/reorder/delete/add/edit bookmarks; optional GitHub Repos / Linkwarden virtual folders; generated files; settings sync; encrypted export/import; configurable root folder; auto-lock edit mode; reset all data |
 | **Storage** | GitHub repo (same format as extension); local cache for offline |
 | **Browser** | User selects preferred browser; URLs open via `url_launcher` |
 
@@ -52,17 +52,17 @@ See [BOOKMARK-FORMAT.md](BOOKMARK-FORMAT.md) for full spec.
 
 ## GitHub API
 
-**Contents API (simple):**
-```
-GET /repos/{owner}/{repo}/contents/{path}?ref={branch}
-```
-Returns directory listing; files have `content` (base64). Walk recursively.
+**Primary (app v0.3.5+): Git Data API** — same model as the browser extension: recursive tree, batched blobs, single atomic commit for multiple file changes (`git_data_api.dart`, `remote_fetch.dart`).
 
-**Git Data API (efficient for many files):**
 ```
+GET /repos/{owner}/{repo}/git/refs/heads/{branch}
 GET /repos/{owner}/{repo}/git/trees/{treeSha}?recursive=1
 GET /repos/{owner}/{repo}/git/blobs/{blobSha}
+POST .../git/blobs, .../git/trees, .../git/commits
+PATCH .../git/refs/heads/{branch}
 ```
+
+**Contents API (legacy / simple ops):** still used where appropriate (e.g. connection test, folder browser) via `github_api.dart`.
 
 Token: GitHub PAT with `repo` scope.
 

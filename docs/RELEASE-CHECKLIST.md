@@ -5,9 +5,10 @@ Use this checklist for every stable release.
 ## Stable release flow
 
 1. Finalize release content on `main`
-   - `pubspec.yaml` version is final (e.g. `0.3.4+11`)
-   - `CHANGELOG.md` has matching release entry (`0.3.4`)
+   - `pubspec.yaml` version is final (e.g. `0.3.5+12`)
+   - `CHANGELOG.md` has matching release entry (`0.3.5`)
    - F-Droid changelog file exists: `fdroid/metadata/com.d0dg3r.gitsyncmarks/en-US/changelogs/<versionCode>.txt`
+   - After the **release commit**, run `./scripts/finish-release-fdroid-commit.sh` (optional `--tag`) so F-Droid `commit:` fields match the **release** commit (see `docs/skills/gitsyncmarks-app-release/SKILL.md`)
    - Runtime version propagation is verified:
      - `android/app/build.gradle` uses `flutter.versionCode` / `flutter.versionName`
      - platform plist files use `FLUTTER_BUILD_NAME` / `FLUTTER_BUILD_NUMBER`

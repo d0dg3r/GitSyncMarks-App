@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import 'l10n/app_localizations.dart';
+import 'providers/app_density_controller.dart';
 import 'providers/app_locale_controller.dart';
 import 'providers/app_theme_controller.dart';
 import 'providers/bookmark_provider.dart';
@@ -57,6 +58,9 @@ class GitSyncMarksApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<AppThemeController>(
           create: (_) => AppThemeController()..load(),
+        ),
+        ChangeNotifierProvider<AppDensityController>(
+          create: (_) => AppDensityController(),
         ),
       ],
       child: Consumer2<AppLocaleController, AppThemeController>(

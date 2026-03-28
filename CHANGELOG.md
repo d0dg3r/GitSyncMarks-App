@@ -16,6 +16,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Serialized release validation flow:** `F-Droid Validate` no longer starts on metadata push/PR events and now runs automatically only after successful `Build & Release` completion (manual `workflow_dispatch` remains available).
 - **Container Git safety in libapp proof:** `scripts/fdroid-repro-proof.sh` now configures `git safe.directory` for `/repo` in the buildserver container and clones via `file:///repo` to avoid CI ownership trust failures (`exit 128`) before reproducibility checks.
 
+## [0.3.5] - 2026-03-28
+
+### Added
+
+- **Git Data API:** Atomic multi-file commits (blobs, trees, commits, refs) aligned with the browser extension; `GitDataApi`, `RemoteFetch`, and `bookmark_parser` for tree/file-map conversion
+- **Three-way merge sync:** `SyncEngine`, `SyncDiff`, `SyncStateService` (Hive) for base/local/remote merge, conflict detection, force push / force pull
+- **Sync history:** List commits, diff preview, restore from commit, undo last sync (`SyncHistoryService`, Settings → Files → History)
+- **Bookmark editing & folders:** Edit title/URL, FAB add bookmark / create folder; repository uses atomic commits for writes
+- **Generated files:** `file_generators.dart` — README.md, Netscape `bookmarks.html`, RSS `feed.xml`, `dashy-conf.yml` with Off / Manual / Auto and “Generate now” in Settings
+- **UX:** UI density (S/M/L) via `AppDensityController`, sync on app resume (cooldown), What’s New dialog (`WhatsNewService`), debug log (About)
+- **GitHub Repos:** Optional virtual tab listing authenticated user repositories (`github_repos_service.dart`, profile flag)
+- **Linkwarden:** Optional API client, virtual collections folder, save-to-Linkwarden helper (`linkwarden_api.dart`, `linkwarden_sync.dart`, profile fields)
+- **Export formats:** HTML, RSS, Dashy YAML, Markdown from the bookmark tree (`BookmarkExportService`)
+- **Release tooling:** `scripts/finish-release-fdroid-commit.sh` and `scripts/patch-fdroid-metadata-commits.py` to align F-Droid `commit:` with the release source commit (submit file + latest dev build only); repeatable checklist in `docs/skills/gitsyncmarks-app-release/SKILL.md`
+
+### Changed
+
+- **Bookmark list:** Conflict banner when merge conflicts are detected; density-aware list tiles
+- **Settings:** Linkwarden and GitHub Repos sections on Sync tab; expanded Export/Import with format buttons
+- **Documentation:** `ARCHITECTURE.md`, `README.md`, `docs/CONTEXT.md`, `docs/README.md`, `ROADMAP.md` updated for the new stack
+
 ## [0.3.4] - 2026-03-02
 
 ### Changed

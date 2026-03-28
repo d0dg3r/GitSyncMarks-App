@@ -24,6 +24,10 @@ class Profile {
     this.syncOnStart = false,
     this.allowMoveReorder = false,
     this.viewRootFolder,
+    this.githubReposEnabled = false,
+    this.linkwardenUrl,
+    this.linkwardenToken,
+    this.linkwardenEnabled = false,
   }) : selectedRootFolders = selectedRootFolders ?? [];
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -41,6 +45,10 @@ class Profile {
       syncOnStart: json['syncOnStart'] == true,
       allowMoveReorder: false,
       viewRootFolder: json['viewRootFolder'] as String?,
+      githubReposEnabled: json['githubReposEnabled'] == true,
+      linkwardenUrl: json['linkwardenUrl'] as String?,
+      linkwardenToken: json['linkwardenToken'] as String?,
+      linkwardenEnabled: json['linkwardenEnabled'] == true,
     );
   }
 
@@ -53,6 +61,10 @@ class Profile {
   final int customIntervalMinutes;
   final bool syncOnStart;
   final bool allowMoveReorder;
+  final bool githubReposEnabled;
+  final String? linkwardenUrl;
+  final String? linkwardenToken;
+  final bool linkwardenEnabled;
 
   /// When set, this folder's children become the tab-bar tabs instead of
   /// the top-level root folders.  Supports nested paths ("toolbar/dev-tools").
@@ -76,6 +88,10 @@ class Profile {
     bool? allowMoveReorder,
     String? viewRootFolder,
     bool clearViewRootFolder = false,
+    bool? githubReposEnabled,
+    String? linkwardenUrl,
+    String? linkwardenToken,
+    bool? linkwardenEnabled,
   }) {
     return Profile(
       id: id ?? this.id,
@@ -88,6 +104,10 @@ class Profile {
       syncOnStart: syncOnStart ?? this.syncOnStart,
       allowMoveReorder: allowMoveReorder ?? this.allowMoveReorder,
       viewRootFolder: clearViewRootFolder ? null : (viewRootFolder ?? this.viewRootFolder),
+      githubReposEnabled: githubReposEnabled ?? this.githubReposEnabled,
+      linkwardenUrl: linkwardenUrl ?? this.linkwardenUrl,
+      linkwardenToken: linkwardenToken ?? this.linkwardenToken,
+      linkwardenEnabled: linkwardenEnabled ?? this.linkwardenEnabled,
     );
   }
 
@@ -100,6 +120,10 @@ class Profile {
         'syncProfile': syncProfile,
         'customIntervalMinutes': customIntervalMinutes,
         'syncOnStart': syncOnStart,
+        'githubReposEnabled': githubReposEnabled,
+        if (linkwardenUrl != null) 'linkwardenUrl': linkwardenUrl,
+        if (linkwardenToken != null) 'linkwardenToken': linkwardenToken,
+        'linkwardenEnabled': linkwardenEnabled,
         if (viewRootFolder != null) 'viewRootFolder': viewRootFolder,
       };
 }

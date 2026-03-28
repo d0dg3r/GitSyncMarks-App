@@ -54,21 +54,31 @@ import on empty state, golden_toolkit for screenshots, F-Droid screenshots/icon
 - General settings tab with app language and theme selection
 - Full localization across all supported app locales
 
+### v0.3.4
+
+- Android release signing, reproducible container builds, F-Droid submit gates, CI split for APK/AAB
+
+### v0.3.5
+
+- Extension-parity sync: Git Data API, three-way merge, sync history, conflict handling
+- Edit / add / create folder, generated files, extra export formats
+- GitHub Repos & Linkwarden (optional), UI density, debug log, What’s New, sync on resume
+
 ---
 
-## Current (post-v0.3.4)
+## Current (post-v0.3.5)
 
-- **Features:** Stable v0.3.4 feature set shipped (settings sync profile-path compatibility, client-name flow, folder browser, General language/theme settings, and full localization coverage)
+- **Features:** Same stack as v0.3.5; companion app aligned with GitSyncMarks extension sync model on GitHub
 - **Platforms:** Android (beta), iOS, Windows, macOS, Linux (alpha)
-- **Release:** Stable tags (`vX.Y.Z`) create latest releases; suffixed tags (`-beta/-rc/-test`) create pre-releases
+- **Release:** Stable tags (`vX.Y.Z`); F-Droid metadata `commit:` must reference the release source commit (see `scripts/finish-release-fdroid-commit.sh`)
 
 ---
 
 ## Near-term (next cycle)
 
-- Minor UX improvements
+- Per-profile “sync on resume” toggle (global behavior exists today)
+- Local notifications / sync snackbar modes (plan item)
 - Stability fixes for alpha platforms
-- Documentation updates
 
 ---
 

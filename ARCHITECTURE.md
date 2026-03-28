@@ -37,21 +37,35 @@ Contains data models that represent the domain entities.
 ### lib/services/
 Contains business logic and external integrations.
 
-- `github_api.dart`: GitHub Contents API client (GET, PUT, DELETE)
+- `git_data_api.dart`: GitHub Git Data API (refs, commits, trees, blobs, `atomicCommit`)
+- `remote_fetch.dart`: Recursive tree → SHA map, batched blob fetch, diff filters (generated/settings paths)
+- `bookmark_parser.dart`: `BookmarkNode` tree ↔ flat file map (extension-parity filenames)
+- `sync_state.dart`: Hive sync base per profile (last commit SHA, file map, previous SHA for undo)
+- `sync_diff.dart`: Three-way diff, `_order.json` merge, conflict detection
+- `sync_engine.dart`: Orchestrates sync / force pull / force push
+- `sync_history.dart`: Commit list, diff preview, restore, undo last sync
+- `file_generators.dart`: README, Netscape HTML, RSS, Dashy YAML; `addGeneratedFiles` for commits
+- `github_repos_service.dart`: `GET /user/repos` for virtual folder
+- `linkwarden_api.dart` / `linkwarden_sync.dart`: Linkwarden REST client and virtual folder tree
+- `bookmark_export.dart`: JSON + HTML / RSS / YAML / Markdown export helpers
+- `debug_log.dart`: Ring-buffer diagnostic log
+- `whats_new_service.dart`: Post-update highlights dialog
+- `github_api.dart`: GitHub Contents API (test connection, simple operations where still used)
 - `settings_sync_service.dart`: Encrypted settings push/pull (extension-compatible)
 - `settings_crypto.dart`: PBKDF2 + AES-256-GCM (gitsyncmarks-enc:v1)
 - `storage_service.dart`: flutter_secure_storage for credentials, profiles, settings sync password
 - `bookmark_cache.dart`: Hive-based offline cache
 
 ### lib/repositories/
-- `bookmark_repository.dart`: Fetches bookmarks, move, reorder, add; orchestrates GitHub API
+- `bookmark_repository.dart`: Fetch via Git Data API + remote map; writes via atomic commits; move/reorder/add/edit/folder ops
 
 ### lib/screens/
 - `bookmark_list_screen.dart`: Main screen with folder tabs, ReorderableListView, move-to-folder
 - `settings_screen.dart`: Tabbed Settings (GitHub, Sync, Files, Help, About)
 
 ### lib/providers/
-- `bookmark_provider.dart`: App state, sync, move, reorder; uses ChangeNotifier
+- `bookmark_provider.dart`: App state, sync engine, conflicts, history, GitHub Repos / Linkwarden loaders
+- `app_density_controller.dart`: S/M/L UI density (SharedPreferences)
 
 ### lib/main.dart
 Application entry point.
@@ -209,18 +223,11 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 ### Integration Tests
 - (Future) End-to-end user flows
 
-## Features (v0.3.0)
+## Features (v0.3.5 snapshot)
 
+- Git Data API atomic sync, three-way merge, conflict banner, sync history (restore / undo)
+- Edit bookmark, FAB add / create folder, generated companion files, multi-format export
+- Optional GitHub Repos and Linkwarden virtual tabs; UI density, debug log, What’s New
 - Settings Sync to Git (extension-compatible, Global/Individual)
-- Move bookmarks to folder (hierarchical picker)
-- Reorder bookmarks (drag-and-drop, persisted)
-- Delete bookmarks (long-press, available in locked mode)
-- Share link as bookmark (receive_sharing_intent)
-- Recursive folder display
-- Password-protected settings export/import (AES-256-GCM)
-- Configurable root folder for tab navigation
-- Auto-lock edit mode (60s inactivity timer)
-- Post-import auto-sync
-- Reset all data (profiles, settings, cache)
-- Search, Export settings, Export bookmarks
-- CI screenshot generation via golden tests
+- Move / reorder / delete bookmarks; share intent; search; password-protected settings export/import
+- Configurable root folder; auto-lock edit mode; local Hive cache; golden / Flatpak screenshots

@@ -13,7 +13,7 @@
 **Status:** In active development. Before version 1.0, the app is considered beta; all platforms are maintained on a best-effort basis.
 
 Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.  
-Companion to the [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension. Supports move, reorder, add via share (mobile), and encrypted settings sync.
+Companion to the [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension. Uses the **GitHub Git Data API** for atomic commits (aligned with the extension), three-way merge sync, optional GitHub Repos / Linkwarden virtual folders, move, reorder, add, edit, and encrypted settings sync.
 
 
 
@@ -25,12 +25,17 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and [ROADMAP.md](ROADMAP.md
 
 ## Features
 
-- **Sync from GitHub**: Bookmarks from your GitSyncMarks-compatible repository via Contents API
+- **Sync from GitHub**: GitSyncMarks-compatible repo via **Git Data API** (atomic commits), with three-way merge, conflict resolution (force push / pull), and sync history (preview, restore, undo)
 - **Settings Sync to Git**: Encrypted sync (extension-compatible), individual mode with client-name based `profiles/<alias>/settings.enc`, import from other device
 - **Move bookmarks**: Long-press to move bookmarks to any folder (including subfolders)
 - **Reorder bookmarks**: Drag-and-drop to reorder; changes persisted to repo
 - **Delete bookmarks**: Long-press to delete (available even when edit mode is locked)
-- **Share link as bookmark** (Android/iOS): Add shared URLs from browser or other apps as bookmarks; on desktop use "Add bookmark" dialog
+- **Share link as bookmark** (Android/iOS): Add shared URLs from browser or other apps as bookmarks; FAB / dialog to add bookmarks and create folders on all platforms
+- **Edit bookmarks**: Long-press → edit title and URL (atomic commit to repo)
+- **Generated files**: Optional README.md, Netscape HTML, RSS, Dashy YAML (Off / Manual / Auto) committed with “Generate now”
+- **GitHub Repos / Linkwarden** (optional): Virtual tabs from your GitHub account or Linkwarden collections (profile toggles in Sync settings)
+- **Export**: JSON plus HTML, RSS, Dashy YAML, Markdown from the current tree (Settings → Files)
+- **UI density & diagnostics**: S/M/L list density, sync on resume, What’s New after updates, debug log (About)
 - **Password-protected export/import**: Export settings with AES-256-GCM encryption; import detects encrypted files and prompts for password
 - **Configurable root folder**: Select any folder as "root" for tab navigation
 - **Auto-lock edit mode**: Edit mode auto-locks after 60 seconds of inactivity

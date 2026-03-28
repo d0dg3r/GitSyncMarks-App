@@ -1,7 +1,7 @@
 # Implementation Summary
 
 ## Overview
-Successfully implemented a cross-platform Flutter application (Android, iOS, Windows, macOS, Linux) that syncs and displays bookmarks from the GitSyncMarks GitHub repository. The app supports move, reorder, delete, add-via-share, encrypted settings sync (extension-compatible), password-protected export/import, configurable root folder navigation, and Flatpak distribution for Linux.
+Successfully implemented a cross-platform Flutter application (Android, iOS, Windows, macOS, Linux) that syncs and displays bookmarks from the GitSyncMarks GitHub repository. As of **v0.3.5**, bookmark I/O uses the **GitHub Git Data API** (atomic commits, three-way merge, sync history) in line with the browser extension, plus optional GitHub Repos / Linkwarden virtual folders, generated companion files, multi-format export, and UX polish (density, debug log, What’s New).
 
 ## v0.3.0 Additions
 
@@ -33,8 +33,14 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - ✅ Desktop: Windows, macOS, Linux from same codebase
 - ✅ Linux: Flatpak (recommended) + ZIP fallback; CI builds both on tag push
 
+### v0.3.5 (extension parity)
+
+- ✅ Git Data API client, remote file map, sync state (Hive), diff/merge engine, history/restore/undo
+- ✅ Conflict UI; edit bookmark; create folder; FAB add; generated files; export HTML/RSS/YAML/Markdown
+- ✅ Optional GitHub Repos + Linkwarden; `AppDensityController`; `WhatsNewService`; `DebugLogService`
+
 ### 2. Bookmark Syncing from GitHub
-- ✅ Fetches bookmarks from GitSyncMarks repository via Contents API
+- ✅ Fetches and writes via Git Data API (`git_data_api.dart`, `bookmark_repository.dart`); Contents API retained for simple operations
 - ✅ GitSyncMarks per-file format (see [BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md))
 - ✅ Move, reorder, add bookmarks; changes persisted to repo
 - ✅ Parses hierarchical bookmark structure with `_order.json`

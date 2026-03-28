@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../models/bookmark_node.dart';
+import 'bookmark_parser.dart';
+import 'file_generators.dart';
 import 'web_download_stub.dart'
     if (dart.library.html) 'web_download_web.dart';
 
@@ -71,6 +73,80 @@ class BookmarkExportService {
       await Share.shareXFiles(
         [XFile(file.path)],
         subject: 'GitSyncMarks Bookmarks',
+      );
+    }
+  }
+
+  Future<void> exportAsHtml(
+    List<BookmarkFolder> rootFolders,
+    String basePath,
+  ) async {
+    final fileMap = bookmarkTreeToFileMap(rootFolders, basePath);
+    final content = generateBookmarksHtml(fileMap, basePath);
+    await _shareContent(content, 'bookmarks.html', 'text/html');
+  }
+
+  Future<void> exportAsRss(
+    List<BookmarkFolder> rootFolders,
+    String basePath,
+  ) async {
+    final fileMap = bookmarkTreeToFileMap(rootFolders, basePath);
+    final content = generateFeedXml(fileMap, basePath);
+    await _shareContent(content, 'feed.xml', 'application/xml');
+  }
+
+  Future<void> exportAsDashyYaml(
+    List<BookmarkFolder> rootFolders,
+    String basePath,
+  ) async {
+    final fileMap = bookmarkTreeToFileMap(rootFolders, basePath);
+    final content = generateDashyYaml(fileMap, basePath);
+    await _shareContent(content, 'dashy-conf.yml', 'text/yaml');
+  }
+
+  Future<void> exportAsMarkdown(
+    List<BookmarkFolder> rootFolders,
+    String basePath,
+  ) async {
+    final fileMap = bookmarkTreeToFileMap(rootFolders, basePath);
+    final content = generateReadme(fileMap, basePath);
+    await _shareContent(content, 'bookmarks.md', 'text/markdown');
+  }
+
+  Future<void> _shareContent(
+    String content,
+    String fileName,
+    String mimeType,
+  ) async {
+    if (kIsWeb) {
+      final bytes = Uint8List.fromList(utf8.encode(content));
+      await downloadBytesForWeb(bytes, fileName, mimeType);
+      return;
+    }
+
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/$fileName');
+    await file.writeAsString(content);
+
+    late final bool isDesktop;
+    try {
+      isDesktop = Platform.isLinux || Platform.isWindows || Platform.isMacOS;
+    } catch (e) {
+      rethrow;
+    }
+
+    if (isDesktop) {
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save $fileName',
+        fileName: fileName,
+      );
+      if (savePath == null) return;
+      await file.copy(savePath);
+    } else {
+      // ignore: deprecated_member_use
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'GitSyncMarks Export',
       );
     }
   }
