@@ -22,7 +22,7 @@ Builds:
     rm:
       - ios
     prebuild:
-      - flutterVersion=$(sed -n -E "s/.*flutter-version:\ '(.*)'/\1/p" .github/workflows/release.yml
+      - flutterVersion=$(sed -n -E 's/.*flutter-version:[[:space:]]*("([^"]*)|'\''([^'\'']*)'\'').*/\2\3/p' .github/workflows/release.yml
         | head -1)
       - '[[ $flutterVersion ]]'
       - cd ..
@@ -72,7 +72,7 @@ Builds:
     rm:
       - ios
     prebuild:
-      - flutterVersion=$(sed -n -E "s/.*flutter-version:\ '(.*)'/\1/p" .github/workflows/release.yml
+      - flutterVersion=$(sed -n -E 's/.*flutter-version:[[:space:]]*("([^"]*)|'\''([^'\'']*)'\'').*/\2\3/p' .github/workflows/release.yml
         | head -1)
       - '[[ $flutterVersion ]]'
       - cd ..

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **F-Droid / repro proof:** Parse `flutter-version` from `.github/workflows/release.yml` when the value uses double quotes (matches `release.yml`); F-Droid `prebuild` sed updated accordingly. **`./fdroid/submit-to-gitlab.sh`** compares the release tag to metadata using the peeled commit (`vX.Y.Z^{commit}`) so annotated tags match `commit:`.
+
 ### Changed
 
 - **Android-only manual CI mode:** `Build & Release` now supports `workflow_dispatch` with `build_scope=android-only`, so only `build-android` runs while desktop/flatpak/release jobs are skipped.

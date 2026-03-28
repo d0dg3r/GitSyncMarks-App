@@ -9,11 +9,11 @@ This folder contains metadata for submitting GitSyncMarks-App to [F-Droid](https
 3. **Push** branch (and tag): `git push origin main` and `git push origin vX.Y.Z` (or push your release branch + tag as per your workflow).
 4. **Wait for Build & Release to finish green** and verify the GitHub release APK exists for `vX.Y.Z`.
 5. **Submit metadata checks:** In [com.d0dg3r.gitsyncmarks-fdroid-submit.yml](metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml): single current stable build block with `binary:`; keep `AllowedAPKSigningKeys`. No comments in YAML (rewritemeta fails).
-6. **Verify tag/commit:** `git rev-parse vX.Y.Z` must equal `commit:` in the submit YAML (`./fdroid/submit-to-gitlab.sh` enforces this).
+6. **Verify tag/commit:** `git rev-parse vX.Y.Z^{commit}` (or a lightweight tag) must equal `commit:` in the submit YAML (`./fdroid/submit-to-gitlab.sh` enforces this).
 7. **Run reproducibility proof:** `bash scripts/fdroid-repro-proof.sh` must pass (`libapp.so` hash match).
 8. **Submit:** `./fdroid/submit-to-gitlab.sh` from project root.
 
-The tag must exist before submitting. Use the **full commit hash** in `commit:` (not the tag name) – F-Droid's shallow clone may not fetch tags. Get it with `git rev-parse vX.Y.Z`.
+The tag must exist before submitting. Use the **full commit hash** in `commit:` (not the tag name) – F-Droid's shallow clone may not fetch tags. Get it with `git rev-parse vX.Y.Z^{commit}` (annotated tags) or `git rev-parse vX.Y.Z` (lightweight tags).
 
 ## Android-only CI run (manual)
 

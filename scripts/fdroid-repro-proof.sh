@@ -82,15 +82,19 @@ git -C "$PROJECT_DIR" fetch --tags --quiet
     cd /tmp/build
     git checkout -f "'"$METADATA_COMMIT"'"
 
-    FLUTTER_VERSION="$(
-      python3 - <<'"'"'PY'"'"'
+    FLUTTER_VERSION=$(
+      python3 <<PY
 import pathlib
 import re
 text = pathlib.Path("/tmp/build/.github/workflows/release.yml").read_text(encoding="utf-8")
-match = re.search(r"flutter-version:\s*'"'"'([^'"'"']+)'"'"'", text)
-print(match.group(1) if match else "")
+q = chr(39)
+part = "[^" + q + "]+"
+pat = "flutter-version:\\s*(?:\"([^\\\"]+)\"|" + q + part + q + ")"
+match = re.search(pat, text)
+ver = (match.group(1) or match.group(2)) if match else ""
+print(ver)
 PY
-    )"
+    )
     if [ -z "$FLUTTER_VERSION" ]; then
       echo "ERROR: Failed to resolve flutter-version from release workflow."
       exit 1

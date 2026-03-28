@@ -37,7 +37,7 @@ description: >-
 - `CurrentVersion` / `CurrentVersionCode` match `pubspec.yaml`
 - Changelog file `en-US/changelogs/{versionCode}.txt` exists
 - Tag `vX.Y.Z` exists
-- **`git rev-parse vX.Y.Z` equals the `commit:` line** in `com.d0dg3r.gitsyncmarks-fdroid-submit.yml`
+- **`git rev-parse vX.Y.Z^{commit}`** (or a **lightweight** tag) **equals the `commit:` line** in `com.d0dg3r.gitsyncmarks-fdroid-submit.yml` — `./fdroid/submit-to-gitlab.sh` peels annotated tags automatically
 
 The **release source tree** must live at that commit. A follow-up commit may only adjust metadata; the **tag should point at the commit that contains `pubspec` + code for X.Y.Z**, while `commit:` in YAML matches that same hash.
 
@@ -53,7 +53,7 @@ git push origin vX.Y.Z
 ```
 
 - The script records `C1 = HEAD` at run time (the **release** commit), then runs `scripts/patch-fdroid-metadata-commits.py`: submit YAML gets its single `commit:` set to `C1`; dev YAML gets **only the last** `commit:` updated (older build blocks keep historical SHAs).
-- With `--tag`, it creates an **annotated** tag `v{version from pubspec}` on `C1` (not on the metadata-only follow-up).
+- With `--tag`, it creates an **annotated** tag `v{version from pubspec}` on `C1` (not on the metadata-only follow-up). Submit validation uses the peeled commit, so this matches `commit:`; alternatively use a **lightweight** tag if you prefer `git rev-parse vX.Y.Z` to print the commit hash directly.
 
 If you add more commits **after** the first metadata patch (e.g. Flatpak metainfo), run `./scripts/finish-release-fdroid-commit.sh` again so `commit:` matches the new tip that should be built.
 
@@ -90,7 +90,7 @@ Body (adapt):
 - [ ] After merge: push tag, wait for Build & Release, run `submit-to-gitlab.sh --validate-only`
 
 ### F-Droid
-Submit metadata `commit:` must equal `git rev-parse vX.Y.Z` (enforced by submit script).
+Submit metadata `commit:` must equal the tag’s release commit: `git rev-parse vX.Y.Z^{commit}` or a lightweight tag (enforced by submit script).
 ```
 
 ## Screenshots (if UI changed)
@@ -101,7 +101,7 @@ Per project rules: run `./scripts/generate-screenshots.sh` (or project’s golde
 
 - Put pre-release suffixes in `com.d0dg3r.gitsyncmarks-fdroid-submit.yml` (CI fails).
 - Add inline YAML comments in F-Droid metadata (rewritemeta).
-- Tag before `commit:` in submit YAML matches `git rev-parse vX.Y.Z`.
+- Tag before `commit:` in submit YAML matches `git rev-parse vX.Y.Z^{commit}` (or use a lightweight tag).
 
 ## Cursor (optional)
 

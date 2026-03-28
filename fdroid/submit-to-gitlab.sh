@@ -118,7 +118,8 @@ if ! git -C "$PROJECT_DIR" rev-parse "$TAG_NAME" >/dev/null 2>&1; then
   echo "   ERROR: Missing release tag $TAG_NAME in app repository."
   exit 1
 fi
-TAG_COMMIT=$(git -C "$PROJECT_DIR" rev-parse "$TAG_NAME")
+TAG_COMMIT=$(git -C "$PROJECT_DIR" rev-parse "${TAG_NAME}^{commit}" 2>/dev/null \
+  || git -C "$PROJECT_DIR" rev-parse "$TAG_NAME")
 if [[ "$TAG_COMMIT" != "$METADATA_COMMIT" ]]; then
   echo "   ERROR: Tag commit mismatch: $TAG_NAME -> $TAG_COMMIT, metadata commit -> $METADATA_COMMIT"
   exit 1
