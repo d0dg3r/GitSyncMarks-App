@@ -13,6 +13,8 @@ description: >-
 - User asks for a **release**, **tag**, **F-Droid update**, or **release PR**
 - After a feature freeze for `vX.Y.Z`
 
+**F-Droid listing (project status):** The app is **not** on F-Droid; the previous fdroiddata **MR was closed**. Metadata remains for a **future** resubmit. See [fdroid/README.md](../../fdroid/README.md#listing-status-paused) before opening a new MR.
+
 ## Versioning
 
 - **`pubspec.yaml`:** `version: X.Y.Z+NN` — `NN` is **versionCode** (Android / F-Droid). Increment both for every store release.

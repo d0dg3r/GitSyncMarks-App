@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **F-Droid:** Document that the app is not listed on F-Droid (fdroiddata MR was closed). Metadata in `fdroid/` is retained for a future resubmit. See [fdroid/README.md](fdroid/README.md#listing-status-paused).
+
 ## [0.3.7] - 2026-04-26
 
 ### Changed

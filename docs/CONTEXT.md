@@ -78,7 +78,7 @@ Token: GitHub PAT with `repo` scope.
 
 ## Platforms
 
-- **Android:** Beta; primary platform; F-Droid metadata in `fdroid/`
+- **Android:** Beta; primary platform; **F-Droid:** metadata in `fdroid/` is kept for a future listing attempt — the previous fdroiddata MR was **closed**; there is **no** active F-Droid release at the moment (see [fdroid/README.md](../fdroid/README.md#listing-status-paused))
 - **iOS, Windows, macOS, Linux:** Alpha; same codebase; Share-Intent only on mobile; desktop uses HomeScreen directly
 - **Linux distribution:** Flatpak (recommended) + ZIP fallback; CI builds both on tag push
 

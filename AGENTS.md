@@ -20,6 +20,7 @@ Kurze Anleitung für AI-Agenten (Cursor, etc.) bei der Arbeit an diesem Projekt.
 - Ablauf Schritt für Schritt: [docs/skills/gitsyncmarks-app-release/SKILL.md](docs/skills/gitsyncmarks-app-release/SKILL.md) (nach Merge: `./scripts/finish-release-fdroid-commit.sh --tag` falls noch nicht gelaufen)
 - Tag auf den **Release-Quell-Commit** (gleicher SHA wie `commit:` in `com.d0dg3r.gitsyncmarks-fdroid-submit.yml`)
 - Siehe [.cursor/rules/release-workflow.mdc](.cursor/rules/release-workflow.mdc)
+- **F-Droid (Stand):** Kein aktives Listing — früheres fdroiddata-MR gelöscht; Metadaten bleiben für später; Details: [fdroid/README.md](fdroid/README.md#listing-status-paused)
 
 ## Dokumentation
 

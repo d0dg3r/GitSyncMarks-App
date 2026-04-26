@@ -89,6 +89,7 @@ import on empty state, golden_toolkit for screenshots, F-Droid screenshots/icon
 
 ## Future / Vision
 
+- **F-Droid:** New **fdroiddata** merge request when we retry listing (metadata and scripts already in `fdroid/`; previous MR was closed — see [fdroid/README.md](fdroid/README.md#listing-status-paused))
 - **iOS:** TestFlight / IPA distribution
 - **Flathub:** Flathub submission for Linux
 - Further platform polish (Windows, macOS, Linux to stable)

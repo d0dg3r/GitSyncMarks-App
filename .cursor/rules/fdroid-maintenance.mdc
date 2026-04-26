@@ -6,6 +6,8 @@ globs: fdroid/**/*, pubspec.yaml, CHANGELOG.md
 
 # F-Droid Store Maintenance
 
+**Listing status (2026-04):** The **fdroiddata** MR was **closed**; the app is **not** on F-Droid. Metadata in `fdroid/` is retained for a **future** resubmit. See [fdroid/README.md](../../fdroid/README.md#listing-status-paused).
+
 When changing app metadata, release notes, screenshots, package IDs, or submission flow:
 
 1. **Submit metadata (for F-Droid MRs)** — [fdroid/metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml](fdroid/metadata/com.d0dg3r.gitsyncmarks-fdroid-submit.yml) must contain **only stable versions** (no -beta, -alpha, -rc). CI fails if pre-releases are present. Use [com.d0dg3r.gitsyncmarks.yml](fdroid/metadata/com.d0dg3r.gitsyncmarks.yml) for development (may include pre-releases).

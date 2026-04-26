@@ -2,6 +2,10 @@
 
 This folder contains metadata for submitting GitSyncMarks-App to [F-Droid](https://f-droid.org/).
 
+## Listing status (paused)
+
+**The app is not published on F-Droid at the moment.** The previous **fdroiddata** merge request was **closed**; we are **not** maintaining an active submission until a later retry. The YAML, changelogs, and scripts here stay in the repo so a future resubmit does not start from zero. When you open a new MR, refresh `commit:` / versions with the release you intend to ship and run the usual repro + validate flow (`./fdroid/submit-to-gitlab.sh` from the repo root).
+
 ## Release workflow (correct order)
 
 1. **Release commit:** Version bump in `pubspec.yaml`, `CHANGELOG.md`, docs, `fdroid/metadata/...` `versionName` / `versionCode` / `CurrentVersion*`, new `en-US/changelogs/{versionCode}.txt`, then `git commit`.
