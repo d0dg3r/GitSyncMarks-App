@@ -66,6 +66,10 @@ const _width = 480.0;
 const _height = 960.0;
 const _pixelRatio = 2.0;
 
+/// Keep in sync with [pubspec.yaml] `version:` for What’s New / any version UI in goldens.
+const _mockPackageInfoVersion = '0.3.7';
+const _mockPackageInfoBuild = '14';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
@@ -89,8 +93,8 @@ void main() {
         return <String, dynamic>{
           'appName': 'gitsyncmarks',
           'packageName': 'com.d0dg3r.gitsyncmarks',
-          'version': '0.3.6',
-          'buildNumber': '13',
+          'version': _mockPackageInfoVersion,
+          'buildNumber': _mockPackageInfoBuild,
         };
       }
       return null;

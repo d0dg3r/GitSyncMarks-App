@@ -23,7 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **F-Droid metadata:** `binary:` is a one-line URL in YAML (unambiguous string value).
 - **F-Droid / repro proof:** Parse `flutter-version` from `.github/workflows/release.yml` when the value uses double quotes (matches `release.yml`); F-Droid `prebuild` sed updated. **`./fdroid/submit-to-gitlab.sh`** matches the tag using a peeled ref (`vX.Y.Z^{commit}`) to `commit:` in metadata. [scripts/fdroid-repro-proof.sh](scripts/fdroid-repro-proof.sh) sets `git safe.directory` in the build container.
+- **Serialize merge:** Merged same-title folders keep `dirName: existing.dirName ?? child.dirName` so a non-null on-disk name from a later duplicate is not lost.
+- **screenshot_test:** `package_info` mock uses `0.3.7` / `14` to match [pubspec.yaml](pubspec.yaml); goldens refreshed if version text is visible.
 
 ### Changed (CI / build)
 

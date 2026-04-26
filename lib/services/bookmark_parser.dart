@@ -253,7 +253,7 @@ List<BookmarkNode> _mergeSiblingFoldersByTitle(List<BookmarkNode> children) {
         final existing = result[idx] as BookmarkFolder;
         result[idx] = BookmarkFolder(
           title: existing.title,
-          dirName: existing.dirName,
+          dirName: existing.dirName ?? child.dirName,
           children: [...existing.children, ...child.children],
         );
       } else {
