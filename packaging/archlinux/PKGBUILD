@@ -1,0 +1,43 @@
+# Template for Arch User Repository (AUR) package (build from source with Flutter).
+# For each release: adjust pkgver/sha256sums, then makepkg and .SRCINFO:
+#   makepkg --printsrcinfo > .SRCINFO
+# See packaging/archlinux/README.md
+
+pkgname=gitsyncmarks-app
+pkgver=0.3.7
+pkgrel=1
+pkgdesc='View and sync bookmarks from a GitSyncMarks GitHub repo (Flutter Linux desktop)'
+arch=('x86_64')
+url='https://github.com/d0dg3r/GitSyncMarks-App'
+license=('MIT')
+depends=('gtk3' 'libsecret' 'gcc-libs' 'glibc' 'zlib')
+makedepends=('cmake' 'ninja' 'clang' 'pkgconf' 'flutter' 'git')
+
+# Upstream source tarball folder: GitSyncMarks-App-$pkgver
+# shellcheck disable=SC2034,SC2140
+source=("GitSyncMarks-App-$pkgver.tar.gz::https://github.com/d0dg3r/GitSyncMarks-App/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('0000000000000000000000000000000000000000000000000000000000000000')
+
+prepare() {
+  cd "$srcdir/GitSyncMarks-App-$pkgver"
+}
+
+build() {
+  cd "$srcdir/GitSyncMarks-App-$pkgver"
+  flutter pub get
+  flutter gen-l10n
+  flutter build linux --release
+}
+
+package() {
+  cd "$srcdir/GitSyncMarks-App-$pkgver"
+  install -dm755 "$pkgdir/opt/gitsyncmarks-app"
+  cp -a build/linux/x64/release/bundle/. "$pkgdir/opt/gitsyncmarks-app/"
+  install -Dm644 "packaging/archlinux/gitsyncmarks_app.desktop" \
+    "$pkgdir/usr/share/applications/gitsyncmarks_app.desktop"
+  install -Dm644 "assets/images/app_icon.png" \
+    "$pkgdir/usr/share/pixmaps/gitsyncmarks_app.png"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -sf /opt/gitsyncmarks-app/gitsyncmarks_app \
+    "$pkgdir/usr/bin/gitsyncmarks_app"
+}

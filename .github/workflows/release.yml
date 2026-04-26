@@ -315,6 +315,12 @@ jobs:
           tar -czf ../../../../release/GitSyncMarks-App-Linux-Portable.tar.gz . --owner=root --group=root
           cd -
 
+      - name: Build Arch Linux package (.pkg.tar.zst)
+        run: |
+          set -euo pipefail
+          bash packaging/archlinux/build_pkg.sh
+          cp dist/*.pkg.tar.zst build/release/
+
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -513,6 +519,7 @@ jobs:
             | Windows (Portable ZIP) | `GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-windows-x64.zip` |
             | macOS | `GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-macos.zip` |
             | Linux (Flatpak) | `GitSyncMarks-App-${{ github.ref_name }}.flatpak` |
+            | Linux (Arch pacman) | `gitsyncmarks-app-…-x86_64.pkg.tar.zst` (name includes version) |
             | Linux (ZIP) | `GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-linux-x64.zip` |
 
             ### Installation
@@ -522,6 +529,7 @@ jobs:
             - **Windows (Portable)**: Extract ZIP, run `gitsyncmarks.exe` (requires manual VC Redist installation if missing)
             - **macOS**: Extract ZIP, move `gitsyncmarks.app` to Applications (or run from Downloads)
             - **Linux (Flatpak)**: `flatpak install --user ./GitSyncMarks-App-${{ github.ref_name }}.flatpak` then `flatpak run io.github.d0dg3r.GitSyncMarksApp`
+            - **Linux (Arch)**: `sudo pacman -U ./gitsyncmarks-app-<version>-1-x86_64.pkg.tar.zst` (exact filename on the release page; installs `gitsyncmarks_app`)
             - **Linux (ZIP)**: Extract ZIP, run `./gitsyncmarks_app`
 
             Configure GitHub token and repo in Settings. More info: [README](https://github.com/${{ github.repository }}/blob/main/README.md)

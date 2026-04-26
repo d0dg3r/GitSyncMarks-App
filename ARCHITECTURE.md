@@ -195,10 +195,11 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 ### Release Workflow (`.github/workflows/release.yml`)
 - **Trigger:** Tag push `v*` (all tags build; `-beta`/`-rc`/`-test` → pre-release; clean versions → latest)
 - **Jobs:** `build-android`, `build-linux`, `build-windows`, `build-macos`, `build-flatpak`, `release` (Screenshots lokal, CI deaktiviert)
-- **Artifacts:** APK (Android), AAB (Play Store, when signing secrets set), Flatpak + ZIP (Linux), ZIP (Windows, macOS)
+- **Artifacts:** APK (Android), AAB (Play Store, when signing secrets set), Flatpak, ZIP, Arch `*.pkg.tar.zst` (Linux), ZIP (Windows, macOS)
 - **Android signing:** `android/key.properties` + upload keystore for release builds; CI uses `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` when configured
 - **Android reproducibility parity:** `build-android` runs in `registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie` to align toolchain output with F-Droid build infrastructure
-- **Linux bundle:** Flutter Linux build packed as tar.gz with `--owner=root --group=root`
+- **Linux bundle:** Flutter Linux build packed as tar.gz with `--owner=root --group=root`; [packaging/archlinux/build_pkg.sh](packaging/archlinux/build_pkg.sh) runs in Docker (`archlinux:latest`, `makepkg`) and adds `gitsyncmarks-app-*-x86_64.pkg.tar.zst` to `build/release/`
+- **Arch local (developer):** [scripts/build_install_linux_arch_pkg.sh](scripts/build_install_linux_arch_pkg.sh) on an Arch host — `makepkg` from the same `PKGBUILD.prebuilt`, optional `pacman -U` / `--install-z13` (mirrors NoSuckTV)
 - **Screenshots:** Lokal mit `flutter test test/screenshot_test.dart --update-goldens`, dann `flatpak/screenshots/` committen
 
 ### Flatpak Test Workflow (`.github/workflows/flatpak-test.yml`)

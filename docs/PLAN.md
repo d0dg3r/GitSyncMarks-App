@@ -125,7 +125,7 @@ lib/
 - [x] Flatpak manifest (io.github.d0dg3r.GitSyncMarksApp)
 - [x] `flatpak/build-flatpak.sh`: build script with tar `--no-same-owner`, icon fallback, error handling
 - [x] CI job `build-flatpak` in release workflow
-- [x] Release job: APK, Flatpak, ZIP (Linux, Windows, macOS) on tag push `v*`
+- [x] Release job: APK, Flatpak, Arch pacman (`.pkg.tar.zst`), ZIP (Linux, Windows, macOS) on tag push `v*`
 - [x] Workflow "Flatpak test": `workflow_dispatch` or tag `v*-flatpak-test*` for isolated Flatpak build
 
 ---

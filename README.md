@@ -84,6 +84,17 @@ We're looking for beta testers before the public Google Play Store launch.
    flatpak run io.github.d0dg3r.GitSyncMarksApp
   ```
 
+### Linux (Arch, pacman)
+
+1. Download `gitsyncmarks-app-<version>-1-x86_64.pkg.tar.zst` from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases) (exact name matches the tag; version uses dots, e.g. `0.3.7-1` for a stable `v0.3.7` build).
+2. Install:
+  ```bash
+  sudo pacman -U ./gitsyncmarks-app-0.3.7-1-x86_64.pkg.tar.zst
+  ```
+3. Run: `gitsyncmarks_app` (also listed as **GitSyncMarks-App** in the app menu).
+
+**Packaging layout:** [packaging/archlinux/README.md](packaging/archlinux/README.md) (AUR `PKGBUILD` template, CI/local Docker `packaging/archlinux/build_pkg.sh`, on Arch: [scripts/build_install_linux_arch_pkg.sh](scripts/build_install_linux_arch_pkg.sh) for `makepkg` + `pacman -U`).
+
 ### Linux (ZIP fallback)
 
 1. Download `GitSyncMarks-App-X.X.X-linux-x64.zip` from [Releases](https://github.com/d0dg3r/GitSyncMarks-App/releases)

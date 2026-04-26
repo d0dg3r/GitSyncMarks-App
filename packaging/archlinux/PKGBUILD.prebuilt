@@ -1,0 +1,26 @@
+# Used by packaging/archlinux/build_pkg.sh (CI + local after `flutter build linux`).
+# Packs the Flutter Linux bundle into a pacman installable .pkg.tar.zst.
+
+pkgname=gitsyncmarks-app
+pkgver=0.0.0
+pkgrel=1
+pkgdesc='GitSyncMarks-App — sync bookmarks from a GitSyncMarks GitHub repo (prebuilt Linux bundle)'
+arch=('x86_64')
+url='https://github.com/d0dg3r/GitSyncMarks-App'
+license=('MIT')
+depends=('gtk3' 'libsecret' 'gcc-libs' 'glibc' 'zlib')
+options=('!strip')
+source=('gitsyncmarks-app-bundle.tar.gz' 'gitsyncmarks_app.desktop' 'app_icon.png')
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -dm755 "$pkgdir/opt/gitsyncmarks-app"
+  tar xzf "$srcdir/gitsyncmarks-app-bundle.tar.gz" -C "$pkgdir/opt/gitsyncmarks-app" --strip-components=1
+  install -Dm644 "$srcdir/gitsyncmarks_app.desktop" \
+    "$pkgdir/usr/share/applications/gitsyncmarks_app.desktop"
+  install -Dm644 "$srcdir/app_icon.png" \
+    "$pkgdir/usr/share/pixmaps/gitsyncmarks_app.png"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -sf /opt/gitsyncmarks-app/gitsyncmarks_app \
+    "$pkgdir/usr/bin/gitsyncmarks_app"
+}

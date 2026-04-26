@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GitSyncMarks-App
+GenericName=Bookmark sync
+Comment=View and sync bookmarks from your GitSyncMarks GitHub repo
+Exec=gitsyncmarks_app
+Icon=gitsyncmarks_app
+Terminal=false
+Categories=Utility;Network;
+Keywords=bookmarks;GitHub;sync;
+StartupNotify=true
+StartupWMClass=gitsyncmarks_app

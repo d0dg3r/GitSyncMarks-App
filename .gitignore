@@ -33,6 +33,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+# Arch makepkg / build_install_linux_arch_pkg.sh (local .pkg.tar.zst)
+/dist/
 
 # Symbolication related
 app.*.symbols
