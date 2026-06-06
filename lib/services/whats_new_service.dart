@@ -13,6 +13,13 @@ const _kLastSeenVersionKey = 'whats_new_last_seen_version';
 
 const List<WhatsNewEntry> whatsNewEntries = [
   WhatsNewEntry(
+    version: '0.4.0-beta.2',
+    items: [
+      'Fix: self-hosted Gitea URLs keep custom ports (e.g. :3000)',
+      'Gitea test connection: clearer errors and public-repo read fallback',
+    ],
+  ),
+  WhatsNewEntry(
     version: '0.4.0-beta.1',
     items: [
       'Multi-provider Git sync: GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs',

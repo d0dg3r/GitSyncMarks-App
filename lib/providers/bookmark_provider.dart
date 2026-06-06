@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../config/git_provider_caps.dart';
 import '../config/github_credentials.dart';
 import '../models/bookmark_node.dart';
 import '../models/profile.dart';
@@ -524,6 +525,23 @@ class BookmarkProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } on GithubApiException catch (e) {
+      if (e.statusCode == 401 &&
+          usesContentsApiReads(creds.gitProvider) &&
+          creds.token.isNotEmpty) {
+        try {
+          _discoveredRootFolderNames = await _repository.testConnection(
+            creds.copyWith(token: ''),
+          );
+          _lastSuccessMessage =
+              'Repo reachable (public read). Token invalid — create a new '
+              'access token in your instance (Settings → Applications) with '
+              'repository read/write scope for sync.';
+          notifyListeners();
+          return true;
+        } catch (_) {
+          // Fall through to original 401 message.
+        }
+      }
       _discoveredRootFolderNames = [];
       _error = e.statusCode != null
           ? 'Error ${e.statusCode}: ${e.message}'

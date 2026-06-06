@@ -19,6 +19,17 @@ void main() {
       );
     });
 
+    test('normalizeServerUrl keeps non-default port', () {
+      expect(
+        normalizeServerUrl('http://gittea.lan:3000'),
+        'http://gittea.lan:3000',
+      );
+      expect(
+        resolveApiBase(GitProviders.gitea, 'http://gittea.lan:3000'),
+        'http://gittea.lan:3000/api/v1',
+      );
+    });
+
     test('resolveApiBase GitLab subgroup project path encoding', () {
       final creds = GitCredentials(
         token: 't',
