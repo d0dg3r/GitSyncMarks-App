@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **CI:** GitHub Actions upgraded to Node.js 24–compatible versions (`checkout@v6`, `upload-artifact@v7`, `download-artifact@v8`, `cache@v5`, `action-gh-release@v3`); Windows job uses `windows-2025-vs2026`; Inno Setup via native `ISCC` instead of third-party action.
+
 ## [0.4.0-beta.1] - 2026-06-06
 
 Pre-release for multi-provider sync (Extension 3.0 parity). Branch `develop/3.0`; stable **0.4.0** follows after interop testing.

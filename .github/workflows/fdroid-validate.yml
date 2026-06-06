@@ -12,7 +12,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_branch) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Validate F-Droid submit metadata (no pre-releases)
         run: |
@@ -30,7 +30,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && !github.event.workflow_run.head_branch) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Precheck upstream APK availability
         shell: bash
@@ -169,7 +169,7 @@ jobs:
 
       - name: Upload verification logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fdroid-reproducibility-verification
           path: build/fdroid-verify/
@@ -179,14 +179,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [validate-no-prereleases, verify-reproducible-upstream-signature]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify libapp.so reproducibility against upstream APK
         run: bash scripts/fdroid-repro-proof.sh
 
       - name: Upload libapp reproducibility proof
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fdroid-libapp-repro-proof
           path: |

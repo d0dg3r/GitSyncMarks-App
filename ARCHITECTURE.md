@@ -201,6 +201,7 @@ The app uses `provider` with `BookmarkProvider` (ChangeNotifier).
 ### Release Workflow (`.github/workflows/release.yml`)
 - **Trigger:** Tag push `v*` (all tags build; `-beta`/`-rc`/`-test` → pre-release; clean versions → latest)
 - **Jobs:** `build-android`, `build-linux`, `build-windows`, `build-macos`, `build-flatpak`, `release` (Screenshots lokal, CI deaktiviert)
+- **Actions:** Node.js-24-kompatible Pins (`actions/checkout@v6`, `upload-artifact@v7`, `download-artifact@v8`, `softprops/action-gh-release@v3`); Windows auf `windows-2025-vs2026`; Inno Setup via `choco` + `ISCC.exe`
 - **Artifacts:** APK (Android), AAB (Play Store, when signing secrets set), Flatpak, ZIP, Arch `*.pkg.tar.zst` (Linux), ZIP (Windows, macOS)
 - **Android signing:** `android/key.properties` + upload keystore for release builds; CI uses `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` when configured
 - **Android reproducibility parity:** `build-android` runs in `registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie` to align toolchain output with F-Droid build infrastructure

@@ -25,7 +25,7 @@ jobs:
     container:
       image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Fix workspace ownership in container
         shell: bash
@@ -209,7 +209,7 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk build/release/GitSyncMarks-App-${{ steps.version.outputs.VERSION }}.apk
 
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-android
           path: build/release/
@@ -218,7 +218,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_scope == 'full' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Export SOURCE_DATE_EPOCH
         run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
@@ -266,7 +266,7 @@ jobs:
           cp build/app/outputs/bundle/release/app-release.aab build/release/GitSyncMarks-App-${{ steps.version.outputs.VERSION }}.aab
 
       - name: Upload AAB artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-android-aab
           path: build/release/
@@ -275,7 +275,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_scope == 'full' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Get version from tag
         id: version
@@ -322,22 +322,22 @@ jobs:
           cp dist/*.pkg.tar.zst build/release/
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-linux
           path: build/release/
 
       - name: Upload Linux bundle for Flatpak
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-bundle
           path: build/release/GitSyncMarks-App-Linux-Portable.tar.gz
 
   build-windows:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_scope == 'full' }}
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Export SOURCE_DATE_EPOCH
         run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
@@ -355,10 +355,13 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release
 
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
       - name: Compile Inno Setup Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-        with:
-          path: windows/gitsyncmarks.iss
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "windows\gitsyncmarks.iss"
+        shell: pwsh
 
       - name: Prepare Windows Release Artifacts
         shell: pwsh
@@ -371,7 +374,7 @@ jobs:
           Copy-Item -Path "build/windows/installer/GitSyncMarks-Setup.exe" -Destination "build/release/GitSyncMarks-App-$version-windows-setup.exe"
 
       - name: Upload Windows
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-windows
           path: build/release/
@@ -380,7 +383,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_scope == 'full' }}
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Export SOURCE_DATE_EPOCH
         run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
@@ -407,7 +410,7 @@ jobs:
           cd -
 
       - name: Upload macOS
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-macos
           path: build/release/
@@ -416,7 +419,7 @@ jobs:
     if: false # Aktivieren: if entfernen; release-job braucht dann needs: [..., generate-screenshots]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -437,7 +440,7 @@ jobs:
           cp test/goldens/*.png flatpak/screenshots/
 
       - name: Upload screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: screenshots
           path: flatpak/screenshots/
@@ -449,7 +452,7 @@ jobs:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-47
       options: --privileged
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
@@ -460,7 +463,7 @@ jobs:
           upload-artifact: false
 
       - name: Upload Flatpak
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-flatpak
           path: "**/GitSyncMarks-App-*.flatpak"
@@ -483,7 +486,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-artifacts
 
@@ -499,7 +502,7 @@ jobs:
           ls -la build/release/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: "GitSyncMarks-App ${{ github.ref_name }}"
           prerelease: ${{ contains(github.ref_name, '-') }}
