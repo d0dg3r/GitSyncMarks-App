@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **CI:** GitHub Actions upgraded to Node.js 24–compatible versions (`checkout@v6`, `upload-artifact@v7`, `download-artifact@v8`, `cache@v5`, `action-gh-release@v3`); Windows job uses `windows-2025-vs2026`; Inno Setup via native `ISCC` instead of third-party action; artifact filenames sanitize `/` in ref names (fixes `workflow_dispatch` on branches like `develop/3.0`).
+- **CI:** GitHub Actions upgraded to Node.js 24–compatible versions (`checkout@v6`, `upload-artifact@v7`, `download-artifact@v8`, `cache@v5`, `action-gh-release@v3`); Windows job uses `windows-2025-vs2026`; Inno Setup via native `ISCC` instead of third-party action; artifact filenames sanitize `/` in ref names (fixes `workflow_dispatch` on branches like `develop/3.0`); release workflow sets `overwrite: true` so tag builds can be re-run without manual release deletion.
 
 ## [0.4.0-beta.1] - 2026-06-06
 

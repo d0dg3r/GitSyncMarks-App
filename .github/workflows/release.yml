@@ -548,11 +548,14 @@ jobs:
           ls -la build/release/
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ steps.version.outputs.REF_NAME }}
           name: "GitSyncMarks-App ${{ steps.version.outputs.REF_NAME }}"
           prerelease: ${{ contains(steps.version.outputs.REF_NAME, '-') }}
           make_latest: ${{ !contains(steps.version.outputs.REF_NAME, '-') }}
+          overwrite: true
           body: |
             ## GitSyncMarks-App ${{ steps.version.outputs.REF_NAME }}
 
