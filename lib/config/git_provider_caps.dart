@@ -153,9 +153,8 @@ String normalizeServerUrl(String url) {
         break;
       }
     }
-    final host = parsed.host;
-    final scheme = parsed.scheme;
-    return path.isEmpty ? '$scheme://$host' : '$scheme://$host$path';
+    final origin = parsed.origin;
+    return path.isEmpty ? origin : '$origin$path';
   } catch (_) {
     return trimmed
         .replaceAll(RegExp(r'/+$'), '')

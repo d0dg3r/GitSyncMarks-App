@@ -9,9 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0-beta.2] - 2026-06-06
+
+### Fixed
+
+- **Self-hosted server URL:** `normalizeServerUrl` preserves non-default ports (e.g. `http://gitea.lan:3000`); previously `:3000` was dropped and API calls hit the wrong host/port.
+- **Gitea test connection:** Invalid tokens no longer block read-only checks on public repos; clearer Gitea API error messages; public-repo fallback with hint that sync needs a valid token.
+
 ### Changed
 
-- **CI:** GitHub Actions upgraded to Node.js 24–compatible versions (`checkout@v6`, `upload-artifact@v7`, `download-artifact@v8`, `cache@v5`, `action-gh-release@v3`); Windows job uses `windows-2025-vs2026`; Inno Setup via native `ISCC` instead of third-party action; artifact filenames sanitize `/` in ref names (fixes `workflow_dispatch` on branches like `develop/3.0`); release workflow sets `overwrite: true` so tag builds can be re-run without manual release deletion.
+- **CI:** GitHub Actions upgraded to Node.js 24–compatible versions; artifact filenames sanitize `/` in ref names; release workflow `overwrite: true` for re-runnable tag builds.
 
 ## [0.4.0-beta.1] - 2026-06-06
 

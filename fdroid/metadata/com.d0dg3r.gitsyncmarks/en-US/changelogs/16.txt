@@ -1,0 +1,1 @@
+v0.4.0-beta.2: Fix self-hosted server URLs (custom ports like :3000); improved Gitea connection test and error messages.

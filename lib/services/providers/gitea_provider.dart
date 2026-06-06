@@ -46,11 +46,17 @@ class GiteaProvider implements GitProviderClient {
   String? _lastCommitSha;
   String? _lastTreeSha;
 
-  Map<String, String> get _headers => {
-        'Authorization': 'token $token',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      };
+  Map<String, String> _headers({bool includeAuth = true}) {
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    };
+    // Gitea rejects invalid tokens even for public repos; omit auth when empty.
+    if (includeAuth && token.isNotEmpty) {
+      headers['Authorization'] = 'token $token';
+    }
+    return headers;
+  }
 
   @override
   String webBaseUrl() => caps.resolveWebBaseUrl(providerId, serverUrl);
@@ -68,35 +74,49 @@ class GiteaProvider implements GitProviderClient {
     String url, {
     String method = 'GET',
     Object? body,
+    bool includeAuth = true,
   }) async {
     final uri = Uri.parse(url);
     final encodedBody = body != null ? json.encode(body) : null;
+    final headers = _headers(includeAuth: includeAuth);
     late http.Response response;
     try {
       switch (method) {
         case 'POST':
           response =
-              await _client.post(uri, headers: _headers, body: encodedBody);
+              await _client.post(uri, headers: headers, body: encodedBody);
         case 'PUT':
           response =
-              await _client.put(uri, headers: _headers, body: encodedBody);
+              await _client.put(uri, headers: headers, body: encodedBody);
         case 'DELETE':
           response = await _client.delete(uri,
-              headers: _headers, body: encodedBody);
+              headers: headers, body: encodedBody);
         default:
-          response = await _client.get(uri, headers: _headers);
+          response = await _client.get(uri, headers: headers);
       }
     } catch (e) {
       throw GitProviderException('Network error: $e', statusCode: 0);
     }
 
     if (response.statusCode == 401) {
-      throw GitProviderException('Invalid token', statusCode: 401);
+      throw GitProviderException(
+        _apiErrorMessage(response.body) ?? 'Invalid token',
+        statusCode: 401,
+      );
     }
     if (response.statusCode == 403) {
-      throw GitProviderException('Access denied', statusCode: 403);
+      throw GitProviderException(
+        _apiErrorMessage(response.body) ?? 'Access denied',
+        statusCode: 403,
+      );
     }
     return response;
+  }
+
+  static String? _apiErrorMessage(String body) {
+    final parsed = _tryParseJson(body);
+    final message = parsed?['message']?.toString().trim();
+    return message != null && message.isNotEmpty ? message : null;
   }
 
   static String _encodeBase64(String str) =>
