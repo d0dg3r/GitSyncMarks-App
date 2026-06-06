@@ -14,9 +14,15 @@ class GitCredentials {
 
   factory GitCredentials.fromJson(Map<String, dynamic> json) {
     return GitCredentials(
-      token: (json['token'] as String?) ?? '',
-      owner: (json['owner'] as String?) ?? '',
-      repo: (json['repo'] as String?) ?? '',
+      token: (json['token'] as String?) ??
+          (json['githubToken'] as String?) ??
+          '',
+      owner: (json['owner'] as String?) ??
+          (json['repoOwner'] as String?) ??
+          '',
+      repo: (json['repo'] as String?) ??
+          (json['repoName'] as String?) ??
+          '',
       branch: (json['branch'] as String?) ?? 'main',
       basePath: (json['filePath'] as String?) ??
           (json['basePath'] as String?) ??

@@ -32,6 +32,27 @@ class ImportResult {
 /// The JSON format is compatible with the GitSyncMarks browser extension
 /// "Export Settings" / "Import Settings" feature.
 class SettingsImportExportService {
+  /// Normalizes extension profile JSON (token/githubToken, owner/repoOwner, …).
+  static Map<String, dynamic> normalizeExtensionProfileData(
+    Map<String, dynamic> raw, {
+    String? id,
+  }) {
+    final normalized = Map<String, dynamic>.from(raw);
+    if (id != null && id.isNotEmpty) {
+      normalized['id'] ??= id;
+    }
+    normalized['token'] ??= raw['githubToken'];
+    normalized['owner'] ??= raw['repoOwner'];
+    normalized['repo'] ??= raw['repoName'];
+    normalized['filePath'] ??= raw['basePath'];
+    normalized['gitProvider'] ??= 'github';
+    normalized['serverUrl'] ??= '';
+    return normalized;
+  }
+
+  static int countProfilesMissingTokens(List<Profile> profiles) =>
+      profiles.where((p) => p.credentials.token.isEmpty).length;
+
   /// Parses a GitSyncMarks settings JSON string into a list of profiles.
   /// Works with both the extension's multi-profile format and the legacy
   /// flat format (single `repoOwner` / `githubToken` at root level).
@@ -43,13 +64,15 @@ class SettingsImportExportService {
     if (data.containsKey('profiles') && data['profiles'] is Map) {
       final profilesMap = data['profiles'] as Map<String, dynamic>;
       for (final entry in profilesMap.entries) {
-        final profileData = entry.value as Map<String, dynamic>;
-        profileData['id'] ??= entry.key;
+        final profileData = normalizeExtensionProfileData(
+          entry.value as Map<String, dynamic>,
+          id: entry.key,
+        );
         profiles.add(Profile.fromJson(profileData));
       }
     } else {
       // Legacy flat format.
-      profiles.add(Profile.fromJson({
+      profiles.add(Profile.fromJson(normalizeExtensionProfileData({
         'id': 'default',
         'name': 'Default',
         'token': data['githubToken'] ?? data['token'] ?? '',
@@ -57,7 +80,9 @@ class SettingsImportExportService {
         'repo': data['repoName'] ?? data['repo'] ?? '',
         'branch': data['branch'] ?? 'main',
         'filePath': data['filePath'] ?? data['basePath'] ?? 'bookmarks',
-      }));
+        'gitProvider': data['gitProvider'] ?? 'github',
+        'serverUrl': data['serverUrl'] ?? '',
+      })));
     }
 
     if (profiles.isEmpty) {

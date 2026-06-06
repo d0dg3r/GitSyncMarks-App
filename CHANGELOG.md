@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Settings import:** Extension-compatible token field aliases (`githubToken`, `repoOwner`, `repoName`); preserves `gitProvider` and `serverUrl` on import; warns when imported profiles have no token.
+- **Codeberg / Gitea token check:** `validateToken` treats HTTP 403 on `/user` as valid-but-ambiguous (repo-scoped tokens without `read:user`).
+
 ## [0.4.0-beta.2] - 2026-06-06
 
 ### Fixed
