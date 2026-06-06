@@ -207,14 +207,9 @@ Builds:
       - popd
       - mv /tmp/build com.d0dg3r.gitsyncmarks
 
-AllowedAPKSigningKeys: ceffc9aadd2e0a2a40176bb5c146a6833ed375de87fb19d7e8b270449c71da29
-
-AutoUpdateMode: Version
-UpdateCheckMode: Tags ^v[0-9.]+$
-UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
-  - versionName: 0.4.0-dev
+  - versionName: 0.4.0-beta.1
     versionCode: 15
-    commit: 69e28cfd5570623d8db68b36e2cd2b62aa3ed915
+    commit: 6784989fa700579db79acecb09ca96cf8efb9fc5
     output: build/app/outputs/flutter-apk/app-release.apk
     binary: https://github.com/d0dg3r/GitSyncMarks-App/releases/download/v%v/GitSyncMarks-App-%v.apk
     srclibs:
@@ -261,5 +256,11 @@ UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
       - popd
       - mv /tmp/build com.d0dg3r.gitsyncmarks
 
-CurrentVersion: 0.4.0-dev
+AllowedAPKSigningKeys: ceffc9aadd2e0a2a40176bb5c146a6833ed375de87fb19d7e8b270449c71da29
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
+
+CurrentVersion: 0.4.0-beta.1
 CurrentVersionCode: 15

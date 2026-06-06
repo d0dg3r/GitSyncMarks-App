@@ -1,1 +1,1 @@
-Multi-provider Git sync (GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs) — Extension 3.0 parity. Provider picker and server URL in Settings.
+v0.4.0-beta.1: Multi-provider Git sync (GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs) — Extension 3.0 parity. Provider picker in Settings.

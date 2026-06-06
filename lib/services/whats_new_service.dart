@@ -13,6 +13,14 @@ const _kLastSeenVersionKey = 'whats_new_last_seen_version';
 
 const List<WhatsNewEntry> whatsNewEntries = [
   WhatsNewEntry(
+    version: '0.4.0-beta.1',
+    items: [
+      'Multi-provider Git sync: GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs',
+      'Settings: choose Git provider and optional server URL',
+      'Extension 3.0 transport parity (same bookmark format)',
+    ],
+  ),
+  WhatsNewEntry(
     version: '0.3.7',
     items: [
       'Help & docs match the browser extension (toolbar and other roots only)',
