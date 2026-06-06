@@ -19,8 +19,9 @@ This document captures the context and decisions from when the project was creat
 | Topic | Decision |
 |-------|----------|
 | **Platform** | Flutter (Android, iOS, Windows, macOS, Linux from one codebase) |
-| **Scope** | Sync (Git Data API, three-way merge, history), display tree, open in browser; move/reorder/delete/add/edit bookmarks; optional GitHub Repos / Linkwarden virtual folders; generated files; settings sync; encrypted export/import; configurable root folder; auto-lock edit mode; reset all data |
-| **Storage** | GitHub repo (same format as extension); local cache for offline |
+| **Scope** | Sync (multi-provider Git API, three-way merge, history), display tree, open in browser; move/reorder/delete/add/edit bookmarks; optional GitHub Repos / Linkwarden virtual folders; generated files; settings sync; encrypted export/import; configurable root folder; auto-lock edit mode; reset all data |
+| **Storage** | Git repo on GitHub, GitLab, or Gitea-family host (same on-disk format as extension); local cache for offline |
+| **Git providers (v0.4.0)** | GitHub (+ Enterprise), GitLab, Gitea, Forgejo, Codeberg, Gogs — aligned with extension 3.0 `PROVIDER_CAPS` |
 | **Browser** | User selects preferred browser; URLs open via `url_launcher` |
 
 ## POC Scope (Completed)
@@ -49,29 +50,25 @@ The repo contains:
   - Each folder: `_order.json` (ordering) + `*.json` (one per bookmark)
   - Bookmark JSON: `{ "title": "...", "url": "https://..." }`
 
-**Extension compatibility:** Bookmark layout and diff-ignored files are kept aligned with **GitSyncMarks 2.7.x** (see parent repo’s `package.json` / releases). See [BOOKMARK-FORMAT.md](BOOKMARK-FORMAT.md) and [EXTENSION-SYNC-VERIFY.md](EXTENSION-SYNC-VERIFY.md) for format details and a manual interop checklist.
+**Extension compatibility:** Bookmark layout and diff-ignored files are kept aligned with **GitSyncMarks 3.0.x** (on-disk format unchanged in v3.0). See [BOOKMARK-FORMAT.md](BOOKMARK-FORMAT.md) and [EXTENSION-SYNC-VERIFY.md](EXTENSION-SYNC-VERIFY.md).
 
-## GitHub API
+## Git provider API (v0.4.0)
 
-**Primary (app v0.3.5+): Git Data API** — same model as the browser extension: recursive tree, batched blobs, single atomic commit for multiple file changes (`git_data_api.dart`, `remote_fetch.dart`).
+**Factory:** `createGitProvider()` in `lib/services/git_provider.dart` — capability map in `lib/config/git_provider_caps.dart`.
 
-```
-GET /repos/{owner}/{repo}/git/refs/heads/{branch}
-GET /repos/{owner}/{repo}/git/trees/{treeSha}?recursive=1
-GET /repos/{owner}/{repo}/git/blobs/{blobSha}
-POST .../git/blobs, .../git/trees, .../git/commits
-PATCH .../git/refs/heads/{branch}
-```
+| Strategy | Providers | Read | Write |
+|----------|-----------|------|-------|
+| `tree` | GitHub (+ GHE) | Git tree + blobs | Layered `POST /git/trees` atomic commit |
+| `gitlab_commits` | GitLab | Paginated repository tree + raw blobs | `POST /repository/commits` with `actions[]` |
+| `contents` | Gitea, Forgejo, Codeberg, Gogs | Contents API directory walk | Per-file Contents API (multiple commits per push) |
 
-**Contents API (legacy / simple ops):** still used where appropriate (e.g. connection test, folder browser) via `github_api.dart`.
-
-Token: GitHub PAT with `repo` scope.
+Profile fields: `gitProvider`, `serverUrl`, `owner`, `repo`, `branch`, `filePath` (extension-compatible).
 
 ## UI Decisions
 
 - **Bookmark list:** Expandable tree (folders + bookmarks), ReorderableListView, move-to-folder (long-press), delete (long-press)
 - **Folder picker:** Hierarchical picker for move; root folder tabs for **toolbar** and **other** (synced roots), plus virtual folders when enabled; configurable root folder
-- **Settings:** Token, Owner, Repo, Branch, Base Path, Browser choice; 5 tabs (GitHub, Sync, Files, Help, About)
+- **Settings:** Git provider, optional server URL, Token, Owner, Repo, Branch, Base Path, Browser choice; tabs (Git, Sync, Files, General, Help, About)
 - **Edit mode:** Lock/unlock icon in AppBar; auto-locks after 60s inactivity; defaults to locked
 - **Export/Import:** Password-protected (AES-256-GCM); desktop uses FilePicker, mobile uses Share
 - **Empty state:** Import Settings button when no credentials configured

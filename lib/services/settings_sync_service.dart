@@ -60,13 +60,7 @@ class SettingsSyncService {
     final encrypted =
         await SettingsCrypto.encryptWithPassword(jsonString, password);
 
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _api(creds);
     try {
       final path = '${creds.basePath}/$fileName';
       String? sha;
@@ -123,13 +117,7 @@ class SettingsSyncService {
     String mode = 'individual',
     String? clientName,
   }) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _api(creds);
     try {
       final path = await _resolveSettingsPathForPull(
         api,
@@ -154,13 +142,7 @@ class SettingsSyncService {
   Future<List<DeviceConfigEntry>> listRemoteDeviceConfigs(
     GithubCredentials creds,
   ) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _api(creds);
     try {
       final results = <DeviceConfigEntry>[];
 
@@ -211,13 +193,7 @@ class SettingsSyncService {
     required StorageService storage,
     required Future<void> Function(ImportResult) applyProfiles,
   }) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _api(creds);
     try {
       final relativePath = _normalizeRelativeSettingsPath(filename);
       final path = '${creds.basePath}/$relativePath';
@@ -243,13 +219,7 @@ class SettingsSyncService {
 
   /// Checks if any compatible settings file exists in the repo.
   Future<bool> exists(GithubCredentials creds) async {
-    final api = GithubApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-      basePath: creds.basePath,
-    );
+    final api = _api(creds);
     try {
       final globalPath = '${creds.basePath}/$_globalFileName';
       final global = await api.getFileMeta(globalPath);
@@ -291,6 +261,16 @@ class SettingsSyncService {
     }
     throw GithubApiException('No settings file found in repository');
   }
+
+  GithubApi _api(GithubCredentials creds) => GithubApi(
+        token: creds.token,
+        owner: creds.owner,
+        repo: creds.repo,
+        branch: creds.branch,
+        basePath: creds.basePath,
+        gitProvider: creds.gitProvider,
+        serverUrl: creds.serverUrl,
+      );
 
   Future<List<String>> _collectLegacyFiles(
     GithubApi api,

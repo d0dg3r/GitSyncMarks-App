@@ -1,4 +1,6 @@
-import 'git_data_api.dart';
+import '../config/git_provider_caps.dart';
+import 'git_provider.dart';
+import 'providers/gitea_provider.dart';
 
 /// Paths that should be excluded from bookmark diffs (generated / metadata).
 const List<String> diffIgnoreSuffixes = [
@@ -14,7 +16,7 @@ final RegExp settingsEncPattern = RegExp(
   r'/(?:settings(?:-[^/]+)?\.enc|profiles/[^/]+/settings\.enc)$',
 );
 
-/// Result of fetching the remote file map from GitHub.
+/// Result of fetching the remote file map from a Git provider.
 class RemoteFileMapResult {
   RemoteFileMapResult({
     required this.shaMap,
@@ -22,18 +24,11 @@ class RemoteFileMapResult {
     required this.commitSha,
   });
 
-  /// path -> blob SHA
   final Map<String, String> shaMap;
-
-  /// path -> decoded file content
   final Map<String, String> fileMap;
-
-  /// HEAD commit SHA at time of fetch
   final String commitSha;
 }
 
-/// Builds a `Map<path, blobSha>` from a recursive Git tree listing,
-/// keeping only blobs under [basePath].
 Map<String, String> gitTreeToShaMap(List<TreeEntry> entries, String basePath) {
   final base = basePath.endsWith('/') ? basePath : '$basePath/';
   final shaMap = <String, String>{};
@@ -45,15 +40,12 @@ Map<String, String> gitTreeToShaMap(List<TreeEntry> entries, String basePath) {
   return shaMap;
 }
 
-/// Whether [path] is a generated or settings file that should be excluded
-/// from bookmark diffs.
 bool isGeneratedOrSettingsPath(String path) {
   if (diffIgnoreSuffixes.any((s) => path.endsWith(s))) return true;
   if (settingsEncPattern.hasMatch(path)) return true;
   return false;
 }
 
-/// Filters a file map to only files relevant for bookmark diffs.
 Map<String, String> filterForDiff(Map<String, String> files) {
   final out = <String, String>{};
   for (final entry in files.entries) {
@@ -64,22 +56,24 @@ Map<String, String> filterForDiff(Map<String, String> files) {
   return out;
 }
 
-/// Fetches the remote file map at the current HEAD of [basePath].
-///
-/// [baseFiles] allows reusing previously fetched content when blob SHAs match,
-/// avoiding redundant blob downloads.
-///
-/// Returns `null` when the repo/branch does not exist yet (empty repo).
 Future<RemoteFileMapResult?> fetchRemoteFileMap(
-  GitDataApi api,
+  GitProviderClient api,
   String basePath, {
   Map<String, SyncFileEntry>? baseFiles,
+  String? providerId,
 }) async {
+  final pid = providerId ?? api.providerId;
+
+  if (usesContentsApiReads(pid)) {
+    return _fetchViaContents(api as GiteaProvider, basePath, baseFiles);
+  }
+
   final commitSha = await api.getLatestCommitSha();
   if (commitSha == null) return null;
 
   final commit = await api.getCommit(commitSha);
-  final treeEntries = await api.getTree(commit.treeSha);
+  final treeSha = await api.getCommitTreeSha(commit.sha);
+  final treeEntries = await api.getTree(treeSha);
   final shaMap = gitTreeToShaMap(treeEntries, basePath);
 
   if (shaMap.isEmpty) {
@@ -100,14 +94,55 @@ Future<RemoteFileMapResult?> fetchRemoteFileMap(
   );
 }
 
-/// Fetches the remote file map at a specific commit (for history preview/restore).
-Future<RemoteFileMapResult> fetchRemoteFileMapAtCommit(
-  GitDataApi api,
+Future<RemoteFileMapResult?> _fetchViaContents(
+  GiteaProvider api,
   String basePath,
-  String commitSha,
+  Map<String, SyncFileEntry>? baseFiles,
 ) async {
+  final commitSha = await api.getLatestCommitSha();
+  if (commitSha == null) return null;
+
+  final result = await api.fetchFileMapViaContents(basePath, commitSha);
+  final fileMap = <String, String>{};
+
+  for (final entry in result.fileMap.entries) {
+    final base = baseFiles?[entry.key];
+    final sha = result.shaMap[entry.key];
+    if (base != null && sha != null && base.sha == sha) {
+      fileMap[entry.key] = base.content;
+    } else {
+      fileMap[entry.key] = entry.value;
+    }
+  }
+
+  return RemoteFileMapResult(
+    shaMap: result.shaMap,
+    fileMap: fileMap,
+    commitSha: commitSha,
+  );
+}
+
+Future<RemoteFileMapResult> fetchRemoteFileMapAtCommit(
+  GitProviderClient api,
+  String basePath,
+  String commitSha, {
+  String? providerId,
+}) async {
+  final pid = providerId ?? api.providerId;
+
+  if (usesContentsApiReads(pid)) {
+    final gitea = api as GiteaProvider;
+    final result = await gitea.fetchFileMapViaContents(basePath, commitSha);
+    return RemoteFileMapResult(
+      shaMap: result.shaMap,
+      fileMap: result.fileMap,
+      commitSha: commitSha,
+    );
+  }
+
   final commit = await api.getCommit(commitSha);
-  final treeEntries = await api.getTree(commit.treeSha);
+  final treeSha = await api.getCommitTreeSha(commit.sha);
+  final treeEntries = await api.getTree(treeSha);
   final shaMap = gitTreeToShaMap(treeEntries, basePath);
 
   if (shaMap.isEmpty) {

@@ -240,6 +240,108 @@ abstract class AppLocalizations {
   /// **'GitHub Connection'**
   String get githubConnection;
 
+  /// No description provided for @gitConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Git Connection'**
+  String get gitConnection;
+
+  /// No description provided for @gitProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Git provider'**
+  String get gitProvider;
+
+  /// No description provided for @serverUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get serverUrl;
+
+  /// No description provided for @serverUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://gitea.example.com'**
+  String get serverUrlHint;
+
+  /// No description provided for @serverUrlHelperRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required for self-hosted instances'**
+  String get serverUrlHelperRequired;
+
+  /// No description provided for @serverUrlHelperOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — for GitHub Enterprise or self-managed GitLab'**
+  String get serverUrlHelperOptional;
+
+  /// No description provided for @gitlabOwnerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'group or group/subgroup'**
+  String get gitlabOwnerHint;
+
+  /// No description provided for @tokenHintGitea.
+  ///
+  /// In en, this message translates to:
+  /// **'Gitea access token'**
+  String get tokenHintGitea;
+
+  /// No description provided for @tokenHintGitLab.
+  ///
+  /// In en, this message translates to:
+  /// **'glpat-xxxxxxxxxxxxxxxxxxxx'**
+  String get tokenHintGitLab;
+
+  /// No description provided for @tokenHelperGitea.
+  ///
+  /// In en, this message translates to:
+  /// **'Create in your instance: Settings → Applications → Generate New Token (repository read/write)'**
+  String get tokenHelperGitea;
+
+  /// No description provided for @tokenHelperGitLab.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal access token with api scope (read/write repository)'**
+  String get tokenHelperGitLab;
+
+  /// No description provided for @providerGitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub'**
+  String get providerGitHub;
+
+  /// No description provided for @providerGitLab.
+  ///
+  /// In en, this message translates to:
+  /// **'GitLab'**
+  String get providerGitLab;
+
+  /// No description provided for @providerGitea.
+  ///
+  /// In en, this message translates to:
+  /// **'Gitea'**
+  String get providerGitea;
+
+  /// No description provided for @providerForgejo.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgejo'**
+  String get providerForgejo;
+
+  /// No description provided for @providerCodeberg.
+  ///
+  /// In en, this message translates to:
+  /// **'Codeberg'**
+  String get providerCodeberg;
+
+  /// No description provided for @providerGogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Gogs'**
+  String get providerGogs;
+
   /// No description provided for @personalAccessToken.
   ///
   /// In en, this message translates to:
@@ -675,7 +777,7 @@ abstract class AppLocalizations {
   /// No description provided for @tabGitHub.
   ///
   /// In en, this message translates to:
-  /// **'GitHub'**
+  /// **'Git'**
   String get tabGitHub;
 
   /// No description provided for @tabSync.

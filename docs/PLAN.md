@@ -13,7 +13,8 @@
 | 7 – Flatpak/CI | Done | 1 week |
 | 8 – Edit Features | Done | 1 week |
 | 9 – Export/Import & UX | Done | 3–4 days |
-| 10 – Extension Alignment (0.3.3) | In progress | 3–5 days |
+| 10 – Extension Alignment (0.3.3) | Done | 3–5 days |
+| 11 – Multi-Provider Sync (0.4.0) | In progress | 1–2 weeks |
 
 ---
 
@@ -161,13 +162,21 @@ lib/
 
 ---
 
-## Phase 10: Extension Alignment (0.3.3) – In Progress
+## Phase 10: Extension Alignment (0.3.3) – Done
 
 - [x] Settings sync path alignment: `profiles/<alias>/settings.enc` (with legacy read support)
 - [x] Client name workflow for individual settings sync mode
 - [x] Folder browser for selecting base path in Settings
 - [x] `_index.json` compatibility handling (`{ "version": 2 }`)
-- [ ] Final validation on Android/Linux and release notes/docs cleanup
+
+## Phase 11: Multi-Provider Sync (0.4.0) – In progress (`develop/3.0`)
+
+- [x] `git_provider_caps.dart` + `GitCredentials` (`gitProvider`, `serverUrl`)
+- [x] Provider adapters: GitHub, GitLab, Gitea-family (`lib/services/providers/`)
+- [x] `createGitProvider()` wired through sync engine, repository, history, settings sync
+- [x] Settings UI: provider picker, server URL, token hints
+- [ ] Manual interop on GitLab + Codeberg (see [EXTENSION-SYNC-VERIFY.md](EXTENSION-SYNC-VERIFY.md))
+- [ ] Release `v0.4.0` after merge to `main`
 
 ## Development Quick Start
 

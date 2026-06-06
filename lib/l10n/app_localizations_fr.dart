@@ -74,6 +74,60 @@ class AppLocalizationsFr extends AppLocalizations {
   String get githubConnection => 'Connexion GitHub';
 
   @override
+  String get gitConnection => 'Connexion Git';
+
+  @override
+  String get gitProvider => 'Git provider';
+
+  @override
+  String get serverUrl => 'Server URL';
+
+  @override
+  String get serverUrlHint => 'https://gitea.example.com';
+
+  @override
+  String get serverUrlHelperRequired => 'Required for self-hosted instances';
+
+  @override
+  String get serverUrlHelperOptional =>
+      'Optional — for GitHub Enterprise or self-managed GitLab';
+
+  @override
+  String get gitlabOwnerHint => 'group or group/subgroup';
+
+  @override
+  String get tokenHintGitea => 'Gitea access token';
+
+  @override
+  String get tokenHintGitLab => 'glpat-xxxxxxxxxxxxxxxxxxxx';
+
+  @override
+  String get tokenHelperGitea =>
+      'Create in your instance: Settings → Applications → Generate New Token (repository read/write)';
+
+  @override
+  String get tokenHelperGitLab =>
+      'Personal access token with api scope (read/write repository)';
+
+  @override
+  String get providerGitHub => 'GitHub';
+
+  @override
+  String get providerGitLab => 'GitLab';
+
+  @override
+  String get providerGitea => 'Gitea';
+
+  @override
+  String get providerForgejo => 'Forgejo';
+
+  @override
+  String get providerCodeberg => 'Codeberg';
+
+  @override
+  String get providerGogs => 'Gogs';
+
+  @override
   String get personalAccessToken => 'Jeton d\'accès personnel (PAT)';
 
   @override
@@ -323,7 +377,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get folders => 'Dossiers';
 
   @override
-  String get tabGitHub => 'GitHub';
+  String get tabGitHub => 'Git';
 
   @override
   String get tabSync => 'Synchroniser';

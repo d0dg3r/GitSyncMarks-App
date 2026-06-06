@@ -9,13 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **CI:** GitHub Actions upgraded to Node.js 24–compatible versions (`checkout@v6`, `upload-artifact@v7`, `download-artifact@v8`, `cache@v5`, `action-gh-release@v3`); Windows job uses `windows-2025-vs2026`; Inno Setup via native `ISCC` instead of third-party action.
+
+## [0.4.0-beta.1] - 2026-06-06
+
+Pre-release for multi-provider sync (Extension 3.0 parity). Branch `develop/3.0`; stable **0.4.0** follows after interop testing.
+
 ### Added
 
-- **Linux (Arch):** [packaging/archlinux/](packaging/archlinux/) with `PKGBUILD.prebuilt`, Docker/`makepkg` [build_pkg.sh](packaging/archlinux/build_pkg.sh), and AUR [PKGBUILD](packaging/archlinux/PKGBUILD) template. GitHub Releases include `gitsyncmarks-app-<ver>-1-x86_64.pkg.tar.zst` (built in the `build-linux` job after `flutter build linux`). **On Arch (no Docker):** [scripts/build_install_linux_arch_pkg.sh](scripts/build_install_linux_arch_pkg.sh) — same flow as NoSuckTV: `makepkg`, optional `sudo pacman -U`, optional `--install-z13`.
+- **Multi-provider Git sync:** GitHub (incl. Enterprise), GitLab, Gitea, Forgejo, Codeberg, and Gogs. Provider capability map, `gitProvider` + `serverUrl` profile fields, three write strategies (Git Data API tree, GitLab atomic commits, Gitea Contents API).
+- **Linux (Arch):** [packaging/archlinux/](packaging/archlinux/) with `PKGBUILD.prebuilt`, Docker/`makepkg` [build_pkg.sh](packaging/archlinux/build_pkg.sh), and AUR [PKGBUILD](packaging/archlinux/PKGBUILD) template.
+
+### Changed
+
+- **Settings → Git:** Provider picker, optional server URL, provider-specific token hints.
+- **Provider-neutral copy:** Push/pull and connection messages use “remote” instead of “GitHub” where all providers apply.
 
 ### Documentation
 
-- **F-Droid:** Document that the app is not listed on F-Droid (fdroiddata MR was closed). Metadata in `fdroid/` is retained for a future resubmit. See [fdroid/README.md](fdroid/README.md#listing-status-paused).
+- **Interop:** [docs/BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md), [docs/EXTENSION-SYNC-VERIFY.md](docs/EXTENSION-SYNC-VERIFY.md), and [ARCHITECTURE.md](ARCHITECTURE.md) updated for Extension **3.0.x**.
 
 ## [0.3.7] - 2026-04-26
 

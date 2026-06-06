@@ -1,8 +1,8 @@
-import '../config/github_credentials.dart';
+import '../config/git_credentials.dart';
 import '../models/bookmark_node.dart';
 import 'bookmark_parser.dart';
 import 'debug_log.dart';
-import 'git_data_api.dart';
+import 'git_provider.dart';
 import 'remote_fetch.dart';
 import 'sync_diff.dart';
 import 'sync_state.dart';
@@ -28,10 +28,10 @@ class SyncResult {
   final bool hasConflict;
 }
 
-/// Coordinates three-way merge sync between the local cache and GitHub.
+/// Coordinates three-way merge sync between the local cache and the Git remote.
 ///
 /// Adapts the browser extension's sync-core logic for a mobile/desktop app
-/// where individual write operations (add/move/delete) go directly to GitHub,
+/// where individual write operations go directly to the provider API,
 /// and "sync" primarily means pulling changes from other devices.
 class SyncEngine {
   SyncEngine({required SyncStateService syncState}) : _syncState = syncState;
@@ -46,7 +46,7 @@ class SyncEngine {
   /// 4. Compute diffs and merge
   /// 5. Apply remote changes locally, push local changes to remote
   Future<SyncResult> sync({
-    required GithubCredentials creds,
+    required GitCredentials creds,
     required String profileId,
     required List<BookmarkFolder> cachedTree,
     String? deviceId,
@@ -210,7 +210,7 @@ class SyncEngine {
 
   /// Force-pull: overwrite local cache with remote state.
   Future<SyncResult> forcePull({
-    required GithubCredentials creds,
+    required GitCredentials creds,
     required String profileId,
   }) async {
     final api = _createApi(creds);
@@ -222,7 +222,7 @@ class SyncEngine {
       if (remote == null || remote.fileMap.isEmpty) {
         return SyncResult(
           success: false,
-          message: 'No bookmarks found on GitHub',
+          message: 'No bookmarks found on remote',
         );
       }
 
@@ -237,7 +237,7 @@ class SyncEngine {
 
       return SyncResult(
         success: true,
-        message: 'Pulled from GitHub',
+        message: 'Pulled from remote',
         rootFolders: tree,
         commitSha: remote.commitSha,
         fileMap: remote.fileMap,
@@ -250,7 +250,7 @@ class SyncEngine {
 
   /// Force-push: overwrite remote with the current cached tree.
   Future<SyncResult> forcePush({
-    required GithubCredentials creds,
+    required GitCredentials creds,
     required String profileId,
     required List<BookmarkFolder> cachedTree,
     String? deviceId,
@@ -302,7 +302,7 @@ class SyncEngine {
 
       return SyncResult(
         success: true,
-        message: 'Pushed to GitHub',
+        message: 'Pushed to remote',
         rootFolders: cachedTree,
         commitSha: newCommitSha,
         fileMap: localFiles,
@@ -318,8 +318,8 @@ class SyncEngine {
   // ---------------------------------------------------------------------------
 
   Future<SyncResult> _handleFirstSync({
-    required GitDataApi api,
-    required GithubCredentials creds,
+    required GitProviderClient api,
+    required GitCredentials creds,
     required String profileId,
     required String basePath,
     required List<BookmarkFolder> cachedTree,
@@ -344,7 +344,7 @@ class SyncEngine {
       );
       return SyncResult(
         success: true,
-        message: 'Pushed local bookmarks to GitHub',
+        message: 'Pushed local bookmarks to remote',
         rootFolders: cachedTree,
         commitSha: sha,
         fileMap: localFiles,
@@ -363,7 +363,7 @@ class SyncEngine {
       );
       return SyncResult(
         success: true,
-        message: 'Pulled bookmarks from GitHub',
+        message: 'Pulled bookmarks from remote',
         rootFolders: tree,
         commitSha: remote.commitSha,
         fileMap: remote.fileMap,
@@ -392,7 +392,7 @@ class SyncEngine {
   }
 
   Future<SyncResult> _pushLocalChanges({
-    required GitDataApi api,
+    required GitProviderClient api,
     required String basePath,
     required String profileId,
     required DiffResult localDiff,
@@ -468,10 +468,5 @@ class SyncEngine {
     return '$prefix from $device — ${DateTime.now().toUtc().toIso8601String()}';
   }
 
-  GitDataApi _createApi(GithubCredentials creds) => GitDataApi(
-        token: creds.token,
-        owner: creds.owner,
-        repo: creds.repo,
-        branch: creds.branch,
-      );
+  GitProviderClient _createApi(GitCredentials creds) => createGitProvider(creds);
 }
