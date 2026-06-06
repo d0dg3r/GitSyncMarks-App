@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import '../config/github_credentials.dart';
+import '../config/git_credentials.dart';
 import '../models/bookmark_node.dart';
 import 'bookmark_parser.dart';
-import 'git_data_api.dart';
+import 'git_provider.dart';
 import 'remote_fetch.dart';
 import 'sync_state.dart';
 
@@ -62,7 +62,7 @@ class SyncHistoryService {
 
   /// Lists recent commits that touched the bookmark base path.
   Future<List<CommitEntry>> listHistory(
-    GithubCredentials creds, {
+    GitCredentials creds, {
     int perPage = 20,
   }) async {
     final api = _createApi(creds);
@@ -76,7 +76,7 @@ class SyncHistoryService {
 
   /// Previews the diff between a target commit and the current local bookmarks.
   Future<DiffPreviewResult> previewCommitDiff(
-    GithubCredentials creds,
+    GitCredentials creds,
     String commitSha,
     List<BookmarkFolder> currentTree,
   ) async {
@@ -137,7 +137,7 @@ class SyncHistoryService {
   /// Restores bookmarks from a specific commit. Fetches the tree at that
   /// commit and pushes it as the new HEAD.
   Future<RestoreResult> restoreFromCommit(
-    GithubCredentials creds,
+    GitCredentials creds,
     String commitSha,
     String profileId, {
     String? deviceId,
@@ -206,7 +206,7 @@ class SyncHistoryService {
 
   /// Undoes the last sync by restoring from the previous commit.
   Future<RestoreResult> undoLastSync(
-    GithubCredentials creds,
+    GitCredentials creds,
     String profileId, {
     String? deviceId,
   }) async {
@@ -257,12 +257,7 @@ class SyncHistoryService {
     }
   }
 
-  GitDataApi _createApi(GithubCredentials creds) => GitDataApi(
-        token: creds.token,
-        owner: creds.owner,
-        repo: creds.repo,
-        branch: creds.branch,
-      );
+  GitProviderClient _createApi(GitCredentials creds) => createGitProvider(creds);
 }
 
 /// Result of a restore operation.

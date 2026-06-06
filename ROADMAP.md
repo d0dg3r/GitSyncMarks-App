@@ -71,9 +71,16 @@ import on empty state, golden_toolkit for screenshots, F-Droid screenshots/icon
 
 ---
 
-## Current (post-v0.3.7)
+### v0.4.0 (in progress on `develop/3.0`)
 
-- **Features:** Git Data API / three-way merge as in v0.3.5+; v0.3.7 documentation and in-app text aligned with extension roots (`toolbar` / `other` only); see [docs/EXTENSION-SYNC-VERIFY.md](docs/EXTENSION-SYNC-VERIFY.md)
+- **Multi-provider sync** (Extension 3.0 parity): GitHub (+ Enterprise), GitLab, Gitea, Forgejo, Codeberg, Gogs
+- Provider capability map, `gitProvider` + `serverUrl` profile fields, three write strategies (tree / gitlab_commits / contents)
+- Settings: provider picker, server URL, provider-specific token hints
+- Branch `develop/3.0` tracks Extension **3.0** compatibility; app release version **0.4.0**
+
+## Current (post-v0.3.7 / developing v0.4.0)
+
+- **Features:** Three-way merge (v0.3.5+); multi-provider transport (v0.4.0); roots `toolbar` / `other` only — see [docs/EXTENSION-SYNC-VERIFY.md](docs/EXTENSION-SYNC-VERIFY.md)
 - **Platforms:** Android (beta), iOS, Windows, macOS, Linux (alpha)
 - **Release:** Stable tags (`vX.Y.Z`); F-Droid metadata `commit:` must reference the release source commit (see `scripts/finish-release-fdroid-commit.sh`)
 

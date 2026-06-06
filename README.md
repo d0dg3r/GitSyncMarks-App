@@ -12,8 +12,8 @@
 
 **Status:** In active development. Before version 1.0, the app is considered beta; all platforms are maintained on a best-effort basis.
 
-Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your GitHub repo and opens URLs in your preferred browser.  
-Companion to the [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension. Uses the **GitHub Git Data API** for atomic commits (aligned with the extension), three-way merge sync, optional GitHub Repos / Linkwarden virtual folders, move, reorder, add, edit, and encrypted settings sync.
+Cross-platform app (Android, iOS, Windows, macOS, Linux) that syncs bookmarks from your Git repo and opens URLs in your preferred browser.
+Companion to the [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension **v3.0+**. Supports **GitHub** (incl. Enterprise), **GitLab**, **Gitea**, **Forgejo**, **Codeberg**, and **Gogs** with three-way merge sync, optional GitHub Repos / Linkwarden virtual folders, move, reorder, add, edit, and encrypted settings sync.
 
 
 
@@ -25,7 +25,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and [ROADMAP.md](ROADMAP.md
 
 ## Features
 
-- **Sync from GitHub**: GitSyncMarks-compatible repo via **Git Data API** (atomic commits), with three-way merge, conflict resolution (force push / pull), and sync history (preview, restore, undo)
+- **Multi-provider sync**: GitHub, GitLab, Gitea-family hosts — same on-disk bookmark format as the extension; three-way merge, conflict resolution (force push / pull), and sync history (preview, restore, undo)
 - **Settings Sync to Git**: Encrypted sync (extension-compatible), individual mode with client-name based `profiles/<alias>/settings.enc`, import from other device
 - **Move bookmarks**: Long-press to move bookmarks to any folder (including subfolders)
 - **Reorder bookmarks**: Drag-and-drop to reorder; changes persisted to repo
@@ -41,7 +41,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and [ROADMAP.md](ROADMAP.md
 - **Auto-lock edit mode**: Edit mode auto-locks after 60 seconds of inactivity
 - **Reset all data**: Clear all profiles, settings, and cached data from the About tab
 - **Local cache**: Bookmarks saved after sync, loaded from cache on app start (offline-capable)
-- **GitHub Personal Access Token**: Secure authentication with `repo` scope
+- **Personal access token**: Provider-specific (GitHub `repo` or fine-grained Contents R/W; GitLab `api`; Gitea-family repo scope)
 - **Folder selection**: Choose which root folders to display (toolbar, menu, mobile, other)
 - **Base path folder browser**: Browse repository folders when selecting the Git sync path
 - **Favicons**: Via DuckDuckGo API
@@ -112,7 +112,7 @@ Download the respective `.zip` from [Releases](https://github.com/d0dg3r/GitSync
 ### Configure the app
 
 1. Open the app and go to **Settings** (first tab)
-2. Enter your **Personal Access Token** (create one at [GitHub Settings > Tokens](https://github.com/settings/tokens/new?scopes=repo&description=GitSyncMarks+Sync) with `repo` scope)
+2. Choose your **Git provider** and enter a **Personal Access Token** (GitHub: [token settings](https://github.com/settings/tokens/new?scopes=repo&description=GitSyncMarks+Sync) with `repo` scope; GitLab: `api` scope; Gitea-family: repo read/write in instance settings)
 3. Enter **Repository Owner** and **Repository Name** (your bookmark repo)
 4. Set **Branch** (usually `main`) and **Base Path** (default `bookmarks` — must match your [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) extension config). Use the folder button to browse repo directories.
 5. In **GitHub > Folders**, select root/display folders to show (toolbar, menu, other, mobile)

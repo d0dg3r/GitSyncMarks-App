@@ -1,0 +1,1 @@
+Multi-provider Git sync (GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs) — Extension 3.0 parity. Provider picker and server URL in Settings.

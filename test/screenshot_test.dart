@@ -67,8 +67,8 @@ const _height = 960.0;
 const _pixelRatio = 2.0;
 
 /// Keep in sync with [pubspec.yaml] `version:` for What’s New / any version UI in goldens.
-const _mockPackageInfoVersion = '0.3.7';
-const _mockPackageInfoBuild = '14';
+const _mockPackageInfoVersion = '0.4.0-dev';
+const _mockPackageInfoBuild = '1';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -2,7 +2,7 @@
 
 This document describes the bookmark structure in the GitHub repo. The [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) browser extension and this app use the same on-disk format. For behaviour details, the extension’s [docs/DATA-FLOW.md](https://github.com/d0dg3r/GitSyncMarks/blob/main/docs/DATA-FLOW.md) is authoritative.
 
-**Interoperability:** The format is aligned with the extension **2.7.x** (npm `version` in the extension repo). The app reads and writes the same file layout and merge-ignored paths as the extension.
+**Interoperability:** The on-disk format is aligned with the extension **3.0.x** (no format change in v3.0 — transport layer only). The app reads and writes the same file layout and merge-ignored paths as the extension. Git hosts: GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs (see [ARCHITECTURE.md](../ARCHITECTURE.md)).
 
 ## Repository Structure
 

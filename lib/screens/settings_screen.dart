@@ -9,11 +9,12 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../config/git_provider_caps.dart';
 import '../config/github_credentials.dart';
 import '../models/bookmark_node.dart';
 import '../services/bookmark_parser.dart';
 import '../services/file_generators.dart';
-import '../services/git_data_api.dart';
+import '../services/git_provider.dart';
 import '../services/github_api.dart';
 import '../services/settings_sync_service.dart';
 import '../services/storage_service.dart';
@@ -54,6 +55,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   final _repoController = TextEditingController();
   final _branchController = TextEditingController();
   final _basePathController = TextEditingController();
+  final _serverUrlController = TextEditingController();
+  String _gitProvider = GitProviders.github;
   final _importExport = SettingsImportExportService();
   final _bookmarkExport = BookmarkExportService();
   String? _loadedProfileId;
@@ -83,12 +86,16 @@ class _SettingsScreenState extends State<SettingsScreen>
       _repoController.text = c.repo;
       _branchController.text = c.branch;
       _basePathController.text = c.basePath;
+      _gitProvider = c.gitProvider;
+      _serverUrlController.text = c.serverUrl;
     } else {
       _tokenController.text = '';
       _ownerController.text = '';
       _repoController.text = '';
       _branchController.text = 'main';
       _basePathController.text = 'bookmarks';
+      _gitProvider = GitProviders.github;
+      _serverUrlController.text = '';
     }
   }
 
@@ -102,6 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     _repoController.dispose();
     _branchController.dispose();
     _basePathController.dispose();
+    _serverUrlController.dispose();
     super.dispose();
   }
 
@@ -116,6 +124,8 @@ class _SettingsScreenState extends State<SettingsScreen>
       basePath: _basePathController.text.trim().isEmpty
           ? 'bookmarks'
           : _basePathController.text.trim(),
+      gitProvider: _gitProvider,
+      serverUrl: _serverUrlController.text.trim(),
     );
   }
 
@@ -203,6 +213,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           owner: owner,
           repo: repo,
           branch: branch,
+          gitProvider: _gitProvider,
+          serverUrl: _serverUrlController.text.trim(),
           initialPath: currentPath,
         );
       },
@@ -541,6 +553,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                     repoController: _repoController,
                     branchController: _branchController,
                     basePathController: _basePathController,
+                    serverUrlController: _serverUrlController,
+                    gitProvider: _gitProvider,
+                    onGitProviderChanged: (v) =>
+                        setState(() => _gitProvider = v),
                     subTabController: _githubSubTabController,
                     onSave: _onSave,
                     onTestConnection: _onTestConnection,
@@ -598,6 +614,9 @@ class _GitHubTab extends StatelessWidget {
     required this.repoController,
     required this.branchController,
     required this.basePathController,
+    required this.serverUrlController,
+    required this.gitProvider,
+    required this.onGitProviderChanged,
     required this.subTabController,
     required this.onSave,
     required this.onTestConnection,
@@ -612,6 +631,9 @@ class _GitHubTab extends StatelessWidget {
   final TextEditingController repoController;
   final TextEditingController branchController;
   final TextEditingController basePathController;
+  final TextEditingController serverUrlController;
+  final String gitProvider;
+  final ValueChanged<String> onGitProviderChanged;
   final TabController subTabController;
   final VoidCallback onSave;
   final VoidCallback onTestConnection;
@@ -663,6 +685,9 @@ class _GitHubTab extends StatelessWidget {
                 repoController: repoController,
                 branchController: branchController,
                 basePathController: basePathController,
+                serverUrlController: serverUrlController,
+                gitProvider: gitProvider,
+                onGitProviderChanged: onGitProviderChanged,
                 onSave: onSave,
                 onTestConnection: onTestConnection,
                 onSync: onSync,
@@ -802,6 +827,9 @@ class _ConnectionSubTab extends StatefulWidget {
     required this.repoController,
     required this.branchController,
     required this.basePathController,
+    required this.serverUrlController,
+    required this.gitProvider,
+    required this.onGitProviderChanged,
     required this.onSave,
     required this.onTestConnection,
     required this.onSync,
@@ -814,6 +842,9 @@ class _ConnectionSubTab extends StatefulWidget {
   final TextEditingController repoController;
   final TextEditingController branchController;
   final TextEditingController basePathController;
+  final TextEditingController serverUrlController;
+  final String gitProvider;
+  final ValueChanged<String> onGitProviderChanged;
   final VoidCallback onSave;
   final VoidCallback onTestConnection;
   final VoidCallback onSync;
@@ -840,22 +871,58 @@ class _ConnectionSubTabState extends State<_ConnectionSubTab> {
     final onSync = widget.onSync;
     final onBrowseBasePath = widget.onBrowseBasePath;
 
+    final caps = getProviderCaps(widget.gitProvider);
+    final showServerUrl = caps.requireServerUrl ||
+        (caps.selfHosted == GitSelfHostedMode.optional &&
+            widget.gitProvider != GitProviders.codeberg);
+    final ownerHint = caps.subgroups ? l.gitlabOwnerHint : l.ownerHint;
+    final tokenHint = _tokenHintForProvider(widget.gitProvider, l);
+    final tokenHelper = _tokenHelperForProvider(widget.gitProvider, l);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _SectionHeader(title: l.githubConnection),
+        _SectionHeader(title: l.gitConnection),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                DropdownButtonFormField<String>(
+                  value: widget.gitProvider,
+                  decoration: InputDecoration(labelText: l.gitProvider),
+                  items: GitProviders.supported
+                      .map((id) => DropdownMenuItem(
+                            value: id,
+                            child: Text(_providerLabel(id, l)),
+                          ))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) widget.onGitProviderChanged(v);
+                  },
+                ),
+                if (showServerUrl) ...[
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: widget.serverUrlController,
+                    decoration: InputDecoration(
+                      labelText: l.serverUrl,
+                      hintText: l.serverUrlHint,
+                      helperText: caps.requireServerUrl
+                          ? l.serverUrlHelperRequired
+                          : l.serverUrlHelperOptional,
+                    ),
+                    keyboardType: TextInputType.url,
+                  ),
+                ],
+                const SizedBox(height: 14),
                 TextField(
                   controller: tokenController,
                   decoration: InputDecoration(
                     labelText: l.personalAccessToken,
-                    hintText: l.tokenHint,
-                    helperText: l.tokenHelper,
+                    hintText: tokenHint,
+                    helperText: tokenHelper,
                     helperMaxLines: 3,
                     suffixIcon: IconButton(
                       tooltip: _obscureToken ? l.showSecret : l.hideSecret,
@@ -874,7 +941,7 @@ class _ConnectionSubTabState extends State<_ConnectionSubTab> {
                   controller: ownerController,
                   decoration: InputDecoration(
                     labelText: l.repositoryOwner,
-                    hintText: l.ownerHint,
+                    hintText: ownerHint,
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -1138,6 +1205,8 @@ class _BasePathBrowserDialog extends StatefulWidget {
     required this.owner,
     required this.repo,
     required this.branch,
+    required this.gitProvider,
+    required this.serverUrl,
     required this.initialPath,
   });
 
@@ -1145,6 +1214,8 @@ class _BasePathBrowserDialog extends StatefulWidget {
   final String owner;
   final String repo;
   final String branch;
+  final String gitProvider;
+  final String serverUrl;
   final String initialPath;
 
   @override
@@ -1175,6 +1246,8 @@ class _BasePathBrowserDialogState extends State<_BasePathBrowserDialog> {
       repo: widget.repo,
       branch: widget.branch,
       basePath: '',
+      gitProvider: widget.gitProvider,
+      serverUrl: widget.serverUrl,
     );
     try {
       final entries = await api.getContents(path);
@@ -1724,12 +1797,7 @@ class _ExportImportSubTabState extends State<_ExportImportSubTab> {
         return;
       }
 
-      final api = GitDataApi(
-        token: creds.token,
-        owner: creds.owner,
-        repo: creds.repo,
-        branch: creds.branch,
-      );
+      final api = createGitProvider(creds);
       try {
         await api.atomicCommit('Generate files from app', fileChanges);
         if (mounted) {
@@ -3679,6 +3747,45 @@ class _ProfileTile extends StatelessWidget {
       ),
       onTap: isActive ? null : onSelect,
     );
+  }
+}
+
+String _providerLabel(String id, AppLocalizations l) {
+  switch (id) {
+    case GitProviders.gitlab:
+      return l.providerGitLab;
+    case GitProviders.gitea:
+      return l.providerGitea;
+    case GitProviders.forgejo:
+      return l.providerForgejo;
+    case GitProviders.codeberg:
+      return l.providerCodeberg;
+    case GitProviders.gogs:
+      return l.providerGogs;
+    default:
+      return l.providerGitHub;
+  }
+}
+
+String _tokenHintForProvider(String providerId, AppLocalizations l) {
+  switch (providerId) {
+    case GitProviders.gitlab:
+      return l.tokenHintGitLab;
+    case GitProviders.github:
+      return l.tokenHint;
+    default:
+      return l.tokenHintGitea;
+  }
+}
+
+String _tokenHelperForProvider(String providerId, AppLocalizations l) {
+  switch (providerId) {
+    case GitProviders.gitlab:
+      return l.tokenHelperGitLab;
+    case GitProviders.github:
+      return l.tokenHelper;
+    default:
+      return l.tokenHelperGitea;
   }
 }
 

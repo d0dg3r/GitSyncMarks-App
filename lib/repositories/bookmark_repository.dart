@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import '../config/github_credentials.dart';
+import '../config/git_credentials.dart';
 import '../models/bookmark_node.dart';
 import '../services/bookmark_parser.dart';
-import '../services/git_data_api.dart';
+import '../services/git_provider.dart';
 import '../services/github_api.dart';
 import '../services/remote_fetch.dart';
 import '../utils/bookmark_filename.dart';
@@ -51,15 +51,10 @@ class BookmarkRepository {
   /// [baseFiles] allows reusing content from the last sync to skip unchanged
   /// blob downloads.
   Future<FetchResult> fetchBookmarks(
-    GithubCredentials creds, {
+    GitCredentials creds, {
     Map<String, SyncFileEntry>? baseFiles,
   }) async {
-    final api = GitDataApi(
-      token: creds.token,
-      owner: creds.owner,
-      repo: creds.repo,
-      branch: creds.branch,
-    );
+    final api = createGitProvider(creds);
     try {
       final remote = await fetchRemoteFileMap(
         api,
@@ -87,13 +82,13 @@ class BookmarkRepository {
 
   /// Adds a bookmark to a folder in the repo (single atomic commit).
   Future<bool> addBookmarkToFolder(
-    GithubCredentials creds,
+    GitCredentials creds,
     String folderPath,
     String title,
     String url,
   ) async {
     final api = _createContentsApi(creds);
-    final gitApi = _createGitDataApi(creds);
+    final gitApi = createGitProvider(creds);
     try {
       final filename = bookmarkFilename(title, url);
       final content = json.encode({'title': title, 'url': url});
@@ -122,7 +117,7 @@ class BookmarkRepository {
 
   /// Moves a bookmark between folders (single atomic commit).
   Future<bool> moveBookmarkToFolder(
-    GithubCredentials creds,
+    GitCredentials creds,
     String fromFolderPath,
     String toFolderPath,
     Bookmark bookmark,
@@ -130,7 +125,7 @@ class BookmarkRepository {
     if (fromFolderPath == toFolderPath) return true;
 
     final api = _createContentsApi(creds);
-    final gitApi = _createGitDataApi(creds);
+    final gitApi = createGitProvider(creds);
     try {
       final sourceFilename =
           bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
@@ -172,12 +167,12 @@ class BookmarkRepository {
 
   /// Deletes a bookmark from a folder (single atomic commit).
   Future<bool> deleteBookmarkFromFolder(
-    GithubCredentials creds,
+    GitCredentials creds,
     String folderPath,
     Bookmark bookmark,
   ) async {
     final api = _createContentsApi(creds);
-    final gitApi = _createGitDataApi(creds);
+    final gitApi = createGitProvider(creds);
     try {
       final filename =
           bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
@@ -205,11 +200,11 @@ class BookmarkRepository {
 
   /// Updates _order.json in a folder to match the given order entries.
   Future<bool> updateOrderInFolder(
-    GithubCredentials creds,
+    GitCredentials creds,
     String folderPath,
     List<OrderEntry> orderEntries,
   ) async {
-    final gitApi = _createGitDataApi(creds);
+    final gitApi = createGitProvider(creds);
     try {
       final list = orderEntries.map((e) {
         if (e.isFile) return e.filename!;
@@ -234,14 +229,14 @@ class BookmarkRepository {
   ///
   /// If the URL changed, the filename changes too (delete old + create new).
   Future<bool> editBookmarkInFolder(
-    GithubCredentials creds,
+    GitCredentials creds,
     String folderPath,
     Bookmark bookmark, {
     required String newTitle,
     required String newUrl,
   }) async {
     final api = _createContentsApi(creds);
-    final gitApi = _createGitDataApi(creds);
+    final gitApi = createGitProvider(creds);
     try {
       final oldFilename =
           bookmark.filename ?? bookmarkFilename(bookmark.title, bookmark.url);
@@ -278,12 +273,12 @@ class BookmarkRepository {
 
   /// Creates a new subfolder (single atomic commit).
   Future<bool> createFolder(
-    GithubCredentials creds,
+    GitCredentials creds,
     String parentFolderPath,
     String folderTitle,
   ) async {
     final api = _createContentsApi(creds);
-    final gitApi = _createGitDataApi(creds);
+    final gitApi = createGitProvider(creds);
     try {
       final dirName = _slugify(folderTitle);
       final newFolderPath = '$parentFolderPath/$dirName';
@@ -327,7 +322,7 @@ class BookmarkRepository {
   // ---------------------------------------------------------------------------
 
   /// Validates token and repo access. Returns root folder names.
-  Future<List<String>> testConnection(GithubCredentials creds) async {
+  Future<List<String>> testConnection(GitCredentials creds) async {
     final api = _createContentsApi(creds);
     try {
       final entries = await api.getContents(creds.basePath);
@@ -344,19 +339,14 @@ class BookmarkRepository {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  GithubApi _createContentsApi(GithubCredentials creds) => GithubApi(
+  GithubApi _createContentsApi(GitCredentials creds) => GithubApi(
         token: creds.token,
         owner: creds.owner,
         repo: creds.repo,
         branch: creds.branch,
         basePath: creds.basePath,
-      );
-
-  GitDataApi _createGitDataApi(GithubCredentials creds) => GitDataApi(
-        token: creds.token,
-        owner: creds.owner,
-        repo: creds.repo,
-        branch: creds.branch,
+        gitProvider: creds.gitProvider,
+        serverUrl: creds.serverUrl,
       );
 
   /// Reads _order.json via Contents API and returns a mutable list.

@@ -1,25 +1,26 @@
-GitSyncMarks-App — view your bookmarks from your GitHub repo on your phone or tablet.
+GitSyncMarks-App — view and edit your bookmarks from your Git repo on mobile and desktop.
 
 Development status: This app is in active development. Before version 1.0, all releases are considered beta. Features and stability may change.
 
 Why GitSyncMarks-App?
-Your bookmarks live in your Git repo. This app is the read-only mobile companion to the GitSyncMarks browser extension (Chrome, Firefox). Uses the same per-file format — sync once, browse offline. Works with the extension's folder structure (toolbar, menu, other, mobile).
+Your bookmarks live in your Git repo. This app is the cross-platform companion to the GitSyncMarks browser extension (Chrome, Firefox). Uses the same per-file format — sync once, browse offline. Works with the extension's folder structure (toolbar, other).
 
 Features:
-• Sync from GitHub via Contents API
+• Multi-provider sync: GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs
+• Three-way merge, conflict handling, sync history
 • Local cache — bookmarks load from cache on app start (offline)
-• GitHub Personal Access Token — secure, repo scope
-• Folder selection — toolbar, menu, mobile, other
+• Personal access token — stored securely per profile
+• Folder selection — toolbar, other (and virtual folders when enabled)
 • Favicons via DuckDuckGo
 • Pull-to-refresh
 • Light and dark mode (system theme)
-• German, English, Spanish, French
+• Multiple languages
 
 Setup:
-1. Create a GitHub Personal Access Token with repo scope
+1. Choose your Git provider and create a token with repository read/write
 2. Enter token, repository owner, and name in Settings
 3. Set branch (main) and base path (bookmarks)
 4. Tap Sync to fetch your bookmarks
 
 Requirements:
-A GitSyncMarks-compatible repository. See github.com/d0dg3r/GitSyncMarks for the format. Read-only — for bidirectional sync, use the browser extension.
+A GitSyncMarks-compatible repository. See github.com/d0dg3r/GitSyncMarks for the format. Bidirectional sync with the browser extension v3.0+.

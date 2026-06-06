@@ -37,8 +37,14 @@ Contains data models that represent the domain entities.
 ### lib/services/
 Contains business logic and external integrations.
 
-- `git_data_api.dart`: GitHub Git Data API (refs, commits, trees, blobs, `atomicCommit` with layered tree batching and inline content)
-- `remote_fetch.dart`: Recursive tree → SHA map, batched blob fetch, diff filters (generated/settings paths)
+- `git_provider_caps.dart`: Provider capability map (extension `PROVIDER_CAPS` parity)
+- `git_credentials.dart`: Profile credentials (`gitProvider`, `serverUrl`, token, owner, repo, branch, filePath)
+- `git_provider.dart`: `GitProviderClient` interface + `createGitProvider()` factory
+- `providers/github_provider.dart`: GitHub / GHE — Git Data API tree strategy
+- `providers/gitlab_provider.dart`: GitLab — repository tree + atomic commits API
+- `providers/gitea_provider.dart`: Gitea-family — Contents API read/write
+- `git_data_api.dart`: Backward-compatible export alias for `GithubProvider`
+- `remote_fetch.dart`: Provider-aware remote file map (tree+blobs or Contents walk), diff filters
 - `bookmark_parser.dart`: `BookmarkNode` tree ↔ flat file map (extension-parity filenames)
 - `sync_state.dart`: Hive sync base per profile (last commit SHA, file map, previous SHA for undo)
 - `sync_diff.dart`: Three-way diff, `_order.json` merge, conflict detection
@@ -50,7 +56,7 @@ Contains business logic and external integrations.
 - `bookmark_export.dart`: JSON + HTML / RSS / YAML / Markdown export helpers
 - `debug_log.dart`: Ring-buffer diagnostic log
 - `whats_new_service.dart`: Post-update highlights dialog
-- `github_api.dart`: GitHub Contents API (test connection, simple operations where still used)
+- `github_api.dart`: Contents API facade over `GitProviderClient` (folder browser, settings sync)
 - `settings_sync_service.dart`: Encrypted settings push/pull (extension-compatible)
 - `settings_crypto.dart`: PBKDF2 + AES-256-GCM (gitsyncmarks-enc:v1)
 - `storage_service.dart`: flutter_secure_storage for credentials, profiles, settings sync password
@@ -61,7 +67,7 @@ Contains business logic and external integrations.
 
 ### lib/screens/
 - `bookmark_list_screen.dart`: Main screen with folder tabs, ReorderableListView, move-to-folder
-- `settings_screen.dart`: Tabbed Settings (GitHub, Sync, Files, Help, About)
+- `settings_screen.dart`: Tabbed Settings (Git provider + connection, Sync, Files, General, Help, About)
 
 ### lib/providers/
 - `bookmark_provider.dart`: App state, sync engine, conflicts, history, GitHub Repos / Linkwarden loaders
