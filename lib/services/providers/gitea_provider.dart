@@ -557,14 +557,18 @@ class GiteaProvider implements GitProviderClient {
   @override
   Future<TokenValidationResult> validateToken() async {
     try {
-      final response = await _fetch('$_apiBase/user');
+      final response = await _fetchForTokenValidation('$_apiBase/user');
       if (!response.ok) {
         if (response.statusCode == 401) {
           return TokenValidationResult(valid: false);
         }
+        // Scoped tokens (e.g. read:repository only on Codeberg) return 403 on /user.
+        if (response.statusCode == 403) {
+          return const TokenValidationResult(valid: true, ambiguous: true);
+        }
         return TokenValidationResult(
-          valid: response.statusCode != 403,
-          ambiguous: true,
+          valid: false,
+          ambiguous: response.statusCode >= 500,
         );
       }
       final data = json.decode(response.body) as Map<String, dynamic>;
@@ -575,6 +579,16 @@ class GiteaProvider implements GitProviderClient {
       );
     } catch (_) {
       return TokenValidationResult(valid: false);
+    }
+  }
+
+  /// Like [_fetch] but does not throw on 401/403 (token probe only).
+  Future<http.Response> _fetchForTokenValidation(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      return await _client.get(uri, headers: _headers());
+    } catch (e) {
+      throw GitProviderException('Network error: $e', statusCode: 0);
     }
   }
 

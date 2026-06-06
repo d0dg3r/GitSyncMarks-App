@@ -355,7 +355,15 @@ class _SettingsScreenState extends State<SettingsScreen>
             );
         if (mounted) {
           _loadFromProvider();
-          _showSnackBar(l.importSuccess(parsed.profiles.length));
+          final missingTokens =
+              SettingsImportExportService.countProfilesMissingTokens(
+            parsed.profiles,
+          );
+          final successText = missingTokens > 0
+              ? '${l.importSuccess(parsed.profiles.length)} '
+                  '($missingTokens without token — re-export from extension or enter manually)'
+              : l.importSuccess(parsed.profiles.length);
+          _showSnackBar(successText, isError: missingTokens > 0);
           final provider = context.read<BookmarkProvider>();
           if (provider.hasCredentials) {
             provider.syncBookmarks();
