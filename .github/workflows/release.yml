@@ -61,9 +61,14 @@ jobs:
           fi
           echo "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}" >> "$GITHUB_ENV"
 
-      - name: Get version from tag
+      - name: Get version from ref
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          REF_SAFE="${GITHUB_REF_NAME//\//-}"
+          VERSION="${REF_SAFE#v}"
+          echo "REF_NAME=${REF_SAFE}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -223,9 +228,14 @@ jobs:
       - name: Export SOURCE_DATE_EPOCH
         run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
 
-      - name: Get version from tag
+      - name: Get version from ref
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          REF_SAFE="${GITHUB_REF_NAME//\//-}"
+          VERSION="${REF_SAFE#v}"
+          echo "REF_NAME=${REF_SAFE}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -277,9 +287,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Get version from tag
+      - name: Get version from ref
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          REF_SAFE="${GITHUB_REF_NAME//\//-}"
+          VERSION="${REF_SAFE#v}"
+          echo "REF_NAME=${REF_SAFE}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -342,6 +357,15 @@ jobs:
       - name: Export SOURCE_DATE_EPOCH
         run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
 
+      - name: Get version from ref
+        id: version
+        shell: pwsh
+        run: |
+          $refSafe = "${{ github.ref_name }}".Replace('/', '-')
+          $version = $refSafe.TrimStart('v')
+          "REF_NAME=$refSafe" >> $env:GITHUB_OUTPUT
+          "VERSION=$version" >> $env:GITHUB_OUTPUT
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -366,7 +390,7 @@ jobs:
       - name: Prepare Windows Release Artifacts
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
+          $version = "${{ steps.version.outputs.VERSION }}"
           New-Item -ItemType Directory -Force -Path build/release | Out-Null
           # Zip the portable version
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "build/release/GitSyncMarks-App-$version-windows-x64.zip"
@@ -388,6 +412,15 @@ jobs:
       - name: Export SOURCE_DATE_EPOCH
         run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
 
+      - name: Get version from ref
+        id: version
+        shell: bash
+        run: |
+          REF_SAFE="${GITHUB_REF_NAME//\//-}"
+          VERSION="${REF_SAFE#v}"
+          echo "REF_NAME=${REF_SAFE}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -403,10 +436,9 @@ jobs:
 
       - name: Prepare macOS ZIP
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p build/release
           cd build/macos/Build/Products/Release
-          zip -r ../../../../release/GitSyncMarks-App-${VERSION}-macos.zip *.app
+          zip -r ../../../../release/GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-macos.zip *.app
           cd -
 
       - name: Upload macOS
@@ -454,10 +486,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Get version from ref
+        id: version
+        shell: bash
+        run: |
+          REF_SAFE="${GITHUB_REF_NAME//\//-}"
+          VERSION="${REF_SAFE#v}"
+          echo "REF_NAME=${REF_SAFE}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: GitSyncMarks-App-${{ github.ref_name }}.flatpak
+          bundle: GitSyncMarks-App-${{ steps.version.outputs.REF_NAME }}.flatpak
           manifest-path: flatpak/io.github.d0dg3r.GitSyncMarksApp.yml
           cache-key: flatpak-${{ github.sha }}
           upload-artifact: false
@@ -481,9 +522,14 @@ jobs:
         build-flatpak,
       ]
     steps:
-      - name: Get version
+      - name: Get version from ref
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: |
+          REF_SAFE="${GITHUB_REF_NAME//\//-}"
+          VERSION="${REF_SAFE#v}"
+          echo "REF_NAME=${REF_SAFE}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v8
@@ -504,11 +550,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          name: "GitSyncMarks-App ${{ github.ref_name }}"
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          make_latest: ${{ !contains(github.ref_name, '-') }}
+          name: "GitSyncMarks-App ${{ steps.version.outputs.REF_NAME }}"
+          prerelease: ${{ contains(steps.version.outputs.REF_NAME, '-') }}
+          make_latest: ${{ !contains(steps.version.outputs.REF_NAME, '-') }}
           body: |
-            ## GitSyncMarks-App ${{ github.ref_name }}
+            ## GitSyncMarks-App ${{ steps.version.outputs.REF_NAME }}
 
             Cross-platform app (Android, Windows, macOS, Linux) for [GitSyncMarks](https://github.com/d0dg3r/GitSyncMarks) – view bookmarks from your GitHub repo.
 
@@ -521,7 +567,7 @@ jobs:
             | Windows (Installer) | `GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-windows-setup.exe` |
             | Windows (Portable ZIP) | `GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-windows-x64.zip` |
             | macOS | `GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-macos.zip` |
-            | Linux (Flatpak) | `GitSyncMarks-App-${{ github.ref_name }}.flatpak` |
+            | Linux (Flatpak) | `GitSyncMarks-App-${{ steps.version.outputs.REF_NAME }}.flatpak` |
             | Linux (Arch pacman) | `gitsyncmarks-app-…-x86_64.pkg.tar.zst` (name includes version) |
             | Linux (ZIP) | `GitSyncMarks-App-${{ steps.version.outputs.VERSION }}-linux-x64.zip` |
 
@@ -531,7 +577,7 @@ jobs:
             - **Android**: Download APK, open on device (allow from unknown sources if prompted), install
             - **Windows (Portable)**: Extract ZIP, run `gitsyncmarks.exe` (requires manual VC Redist installation if missing)
             - **macOS**: Extract ZIP, move `gitsyncmarks.app` to Applications (or run from Downloads)
-            - **Linux (Flatpak)**: `flatpak install --user ./GitSyncMarks-App-${{ github.ref_name }}.flatpak` then `flatpak run io.github.d0dg3r.GitSyncMarksApp`
+            - **Linux (Flatpak)**: `flatpak install --user ./GitSyncMarks-App-${{ steps.version.outputs.REF_NAME }}.flatpak` then `flatpak run io.github.d0dg3r.GitSyncMarksApp`
             - **Linux (Arch)**: `sudo pacman -U ./gitsyncmarks-app-<version>-1-x86_64.pkg.tar.zst` (exact filename on the release page; installs `gitsyncmarks_app`)
             - **Linux (ZIP)**: Extract ZIP, run `./gitsyncmarks_app`
 

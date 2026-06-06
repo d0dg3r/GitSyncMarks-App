@@ -18,9 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Get version from tag
+      - name: Get version from ref
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        run: |
+          REF_SAFE="${GITHUB_REF_NAME//\//-}"
+          VERSION="${REF_SAFE#v}"
+          echo "REF_NAME=${REF_SAFE}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -105,7 +109,7 @@ jobs:
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          bundle: GitSyncMarks-App-${{ github.ref_name }}.flatpak
+          bundle: GitSyncMarks-App-${{ steps.version.outputs.REF_NAME }}.flatpak
           manifest-path: flatpak/io.github.d0dg3r.GitSyncMarksApp.yml
           cache-key: flatpak-${{ github.sha }}
           upload-artifact: false
