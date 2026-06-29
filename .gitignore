@@ -528,6 +528,7 @@ macos/Flutter/ephemeral/
 
 # Test data
 test_data/
+test/failures/
 
 # Flatpak Tools (External Repositories)
 flatpak-builder-tools/
