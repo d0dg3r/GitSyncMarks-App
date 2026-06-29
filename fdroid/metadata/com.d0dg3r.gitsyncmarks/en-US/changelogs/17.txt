@@ -1,0 +1,1 @@
+v0.4.0: Stable multi-provider sync (GitHub, GitLab, Gitea, Codeberg). Gitea git-data performance path. Multi-provider Git Repos tab. Extension settings import fixes.

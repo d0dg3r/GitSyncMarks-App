@@ -169,14 +169,16 @@ lib/
 - [x] Folder browser for selecting base path in Settings
 - [x] `_index.json` compatibility handling (`{ "version": 2 }`)
 
-## Phase 11: Multi-Provider Sync (0.4.0) – In progress (`develop/3.0`)
+## Phase 11: Multi-Provider Sync (0.4.0) – Done
 
 - [x] `git_provider_caps.dart` + `GitCredentials` (`gitProvider`, `serverUrl`)
 - [x] Provider adapters: GitHub, GitLab, Gitea-family (`lib/services/providers/`)
 - [x] `createGitProvider()` wired through sync engine, repository, history, settings sync
 - [x] Settings UI: provider picker, server URL, token hints
-- [ ] Manual interop on GitLab + Codeberg (see [EXTENSION-SYNC-VERIFY.md](EXTENSION-SYNC-VERIFY.md))
-- [ ] Release `v0.4.0` after merge to `main`
+- [x] Gitea git-data read/write with Contents API fallback (extension 3.0 parity)
+- [x] Multi-provider Git Repos tab
+- [x] Automated interop parity tests (`test/extension_interop_test.dart`)
+- [x] Release `v0.4.0` on `main`
 
 ## Development Quick Start
 

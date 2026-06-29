@@ -12,7 +12,7 @@ import '../services/git_data_api.dart';
 import '../services/github_api.dart';
 import '../services/settings_sync_service.dart';
 import '../services/storage_service.dart';
-import '../services/github_repos_service.dart';
+import '../services/git_provider_repos_service.dart';
 import '../services/linkwarden_api.dart';
 import '../services/linkwarden_sync.dart';
 import '../services/sync_engine.dart';
@@ -55,7 +55,7 @@ class BookmarkProvider extends ChangeNotifier {
   DateTime? _nextAutoSyncAt;
   String _searchQuery = '';
   bool _hasConflict = false;
-  List<GitHubRepo> _githubRepos = [];
+  List<GitProviderRepo> _githubRepos = [];
   bool _githubReposLoading = false;
   String? _githubReposUsername;
   BookmarkFolder? _linkwardenFolder;
@@ -158,7 +158,7 @@ class BookmarkProvider extends ChangeNotifier {
 
   bool get hasConflict => _hasConflict;
 
-  List<GitHubRepo> get githubRepos => _githubRepos;
+  List<GitProviderRepo> get githubRepos => _githubRepos;
   bool get githubReposLoading => _githubReposLoading;
   String? get githubReposUsername => _githubReposUsername;
 
@@ -963,13 +963,18 @@ class BookmarkProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final svc = GitHubReposService(token: c.token);
+      final svc = GitProviderReposService(
+        token: c.token,
+        gitProvider: c.gitProvider,
+        serverUrl: c.serverUrl,
+      );
       if (_githubReposUsername == null || _githubReposUsername!.isEmpty) {
         _githubReposUsername = await svc.fetchCurrentUser();
       }
       _githubRepos = await svc.fetchUserRepos();
+      svc.close();
     } catch (e) {
-      debugPrint('GitHub repos error: $e');
+      debugPrint('Git provider repos error: $e');
     } finally {
       _githubReposLoading = false;
       notifyListeners();
@@ -978,9 +983,11 @@ class BookmarkProvider extends ChangeNotifier {
 
   BookmarkFolder? get githubReposFolder {
     if (_githubRepos.isEmpty) return null;
+    final prefix =
+        getProviderCaps(_credentials?.gitProvider).repoFolderPrefix;
     final name = _githubReposUsername ?? 'user';
     return BookmarkFolder(
-      title: 'GitHubRepos ($name)',
+      title: '$prefix ($name)',
       children: _githubRepos.map((r) {
         final title = r.isPrivate ? '${r.fullName} (private)' : r.fullName;
         return Bookmark(title: title, url: r.htmlUrl);

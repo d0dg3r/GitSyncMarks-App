@@ -1,7 +1,7 @@
 # Implementation Summary
 
 ## Overview
-Successfully implemented a cross-platform Flutter application (Android, iOS, Windows, macOS, Linux) that syncs and displays bookmarks from the GitSyncMarks GitHub repository. As of **v0.3.7**, bookmark I/O uses the **GitHub Git Data API** (atomic commits, three-way merge, sync history) in line with the browser extension, plus optional GitHub Repos / Linkwarden virtual folders, generated companion files, multi-format export, and docs/UI text aligned with extension sync roots (`toolbar` / `other` only, see `docs/BOOKMARK-FORMAT.md`). UX polish: density, debug log, What’s New.
+Successfully implemented a cross-platform Flutter application (Android, iOS, Windows, macOS, Linux) that syncs and displays bookmarks from GitSyncMarks-format Git repositories. As of **v0.4.0**, bookmark I/O supports **multi-provider Git sync** (GitHub, GitLab, Gitea, Forgejo, Codeberg, Gogs) with provider-specific adapters, three-way merge, sync history, and extension **3.0.x** interop. Gitea-family hosts use git-data tree/blob reads and atomic commits with Contents API fallback. Optional Git Repos virtual folder works across providers; Linkwarden integration; generated companion files; multi-format export.
 
 ## v0.3.0 Additions
 
@@ -39,8 +39,9 @@ Successfully implemented a cross-platform Flutter application (Android, iOS, Win
 - ✅ Conflict UI; edit bookmark; create folder; FAB add; generated files; export HTML/RSS/YAML/Markdown
 - ✅ Optional GitHub Repos + Linkwarden; `AppDensityController`; `WhatsNewService`; `DebugLogService`
 
-### 2. Bookmark Syncing from GitHub
-- ✅ Fetches and writes via Git Data API (`git_data_api.dart`, `bookmark_repository.dart`); Contents API retained for simple operations
+### 2. Bookmark Syncing from Git providers
+- ✅ Fetches and writes via provider adapters (`lib/services/providers/`, `createGitProvider()`)
+- ✅ GitHub/GitLab: Git Data API; Gitea-family: git-data with Contents API fallback
 - ✅ GitSyncMarks per-file format (see [BOOKMARK-FORMAT.md](docs/BOOKMARK-FORMAT.md))
 - ✅ Move, reorder, add bookmarks; changes persisted to repo
 - ✅ Parses hierarchical bookmark structure with `_order.json`

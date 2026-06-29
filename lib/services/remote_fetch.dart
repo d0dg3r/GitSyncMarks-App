@@ -1,4 +1,3 @@
-import '../config/git_provider_caps.dart';
 import 'git_provider.dart';
 import 'providers/gitea_provider.dart';
 
@@ -56,68 +55,99 @@ Map<String, String> filterForDiff(Map<String, String> files) {
   return out;
 }
 
+Future<({List<TreeEntry> tree, bool truncated})> fetchTreeEntriesForCommit(
+  GitProviderClient api,
+  String commitSha,
+) async {
+  if (api is GiteaProvider) {
+    final direct = await api.getRecursiveTreeForCommit(commitSha);
+    if (direct != null) {
+      return (tree: direct.tree, truncated: direct.truncated);
+    }
+  }
+  final treeSha = await api.getCommitTreeSha(commitSha);
+  final tree = await api.getTree(treeSha);
+  return (tree: tree, truncated: false);
+}
+
+Future<({Map<String, String> shaMap, Map<String, String> fileMap})>
+    buildRemoteMaps(
+  GitProviderClient api,
+  String basePath,
+  Map<String, SyncFileEntry>? baseFiles,
+  String commitSha,
+) async {
+  Future<({Map<String, String> shaMap, Map<String, String> fileMap})>
+      loadViaContents(Object? primaryErr) async {
+    if (api is! GiteaProvider) {
+      if (primaryErr != null) {
+        if (primaryErr is GitProviderException) throw primaryErr;
+        throw GitProviderException(primaryErr.toString(), statusCode: 422);
+      }
+      return (shaMap: <String, String>{}, fileMap: <String, String>{});
+    }
+
+    try {
+      final result =
+          await api.fetchFileMapViaContents(basePath, commitSha);
+      return (shaMap: result.shaMap, fileMap: result.fileMap);
+    } catch (contentsErr) {
+      final primaryMsg = primaryErr?.toString() ?? 'tree read unavailable';
+      final contentsMsg = contentsErr.toString();
+      final statusCode = contentsErr is GitProviderException
+          ? contentsErr.statusCode
+          : primaryErr is GitProviderException
+              ? primaryErr.statusCode
+              : 422;
+      throw GitProviderException(
+        'Remote read failed (tree: $primaryMsg; contents: $contentsMsg)',
+        statusCode: statusCode,
+      );
+    }
+  }
+
+  try {
+    final treeResult = await fetchTreeEntriesForCommit(api, commitSha);
+    if (treeResult.truncated) {
+      throw GitProviderException(
+        'Git tree listing truncated — repo too large for safe sync',
+        statusCode: 422,
+      );
+    }
+    final shaMap = gitTreeToShaMap(treeResult.tree, basePath);
+    if (shaMap.isEmpty) {
+      if (api is GiteaProvider) {
+        return loadViaContents(
+          GitProviderException(
+            'Git tree listing empty under base path',
+            statusCode: 422,
+          ),
+        );
+      }
+      return (shaMap: <String, String>{}, fileMap: <String, String>{});
+    }
+    final pairs = shaMap.entries.map((e) => MapEntry(e.key, e.value)).toList();
+    final fileMap = await api.fetchBlobsBatched(pairs, baseFiles: baseFiles);
+    return (shaMap: shaMap, fileMap: fileMap);
+  } catch (err) {
+    return loadViaContents(err);
+  }
+}
+
 Future<RemoteFileMapResult?> fetchRemoteFileMap(
   GitProviderClient api,
   String basePath, {
   Map<String, SyncFileEntry>? baseFiles,
   String? providerId,
 }) async {
-  final pid = providerId ?? api.providerId;
-
-  if (usesContentsApiReads(pid)) {
-    return _fetchViaContents(api as GiteaProvider, basePath, baseFiles);
-  }
-
   final commitSha = await api.getLatestCommitSha();
   if (commitSha == null) return null;
 
-  final commit = await api.getCommit(commitSha);
-  final treeSha = await api.getCommitTreeSha(commit.sha);
-  final treeEntries = await api.getTree(treeSha);
-  final shaMap = gitTreeToShaMap(treeEntries, basePath);
-
-  if (shaMap.isEmpty) {
-    return RemoteFileMapResult(
-      shaMap: {},
-      fileMap: {},
-      commitSha: commitSha,
-    );
-  }
-
-  final pairs = shaMap.entries.map((e) => MapEntry(e.key, e.value)).toList();
-  final fileMap = await api.fetchBlobsBatched(pairs, baseFiles: baseFiles);
+  final maps = await buildRemoteMaps(api, basePath, baseFiles, commitSha);
 
   return RemoteFileMapResult(
-    shaMap: shaMap,
-    fileMap: fileMap,
-    commitSha: commitSha,
-  );
-}
-
-Future<RemoteFileMapResult?> _fetchViaContents(
-  GiteaProvider api,
-  String basePath,
-  Map<String, SyncFileEntry>? baseFiles,
-) async {
-  final commitSha = await api.getLatestCommitSha();
-  if (commitSha == null) return null;
-
-  final result = await api.fetchFileMapViaContents(basePath, commitSha);
-  final fileMap = <String, String>{};
-
-  for (final entry in result.fileMap.entries) {
-    final base = baseFiles?[entry.key];
-    final sha = result.shaMap[entry.key];
-    if (base != null && sha != null && base.sha == sha) {
-      fileMap[entry.key] = base.content;
-    } else {
-      fileMap[entry.key] = entry.value;
-    }
-  }
-
-  return RemoteFileMapResult(
-    shaMap: result.shaMap,
-    fileMap: fileMap,
+    shaMap: maps.shaMap,
+    fileMap: maps.fileMap,
     commitSha: commitSha,
   );
 }
@@ -128,37 +158,11 @@ Future<RemoteFileMapResult> fetchRemoteFileMapAtCommit(
   String commitSha, {
   String? providerId,
 }) async {
-  final pid = providerId ?? api.providerId;
-
-  if (usesContentsApiReads(pid)) {
-    final gitea = api as GiteaProvider;
-    final result = await gitea.fetchFileMapViaContents(basePath, commitSha);
-    return RemoteFileMapResult(
-      shaMap: result.shaMap,
-      fileMap: result.fileMap,
-      commitSha: commitSha,
-    );
-  }
-
-  final commit = await api.getCommit(commitSha);
-  final treeSha = await api.getCommitTreeSha(commit.sha);
-  final treeEntries = await api.getTree(treeSha);
-  final shaMap = gitTreeToShaMap(treeEntries, basePath);
-
-  if (shaMap.isEmpty) {
-    return RemoteFileMapResult(
-      shaMap: {},
-      fileMap: {},
-      commitSha: commitSha,
-    );
-  }
-
-  final pairs = shaMap.entries.map((e) => MapEntry(e.key, e.value)).toList();
-  final fileMap = await api.fetchBlobsBatched(pairs);
+  final maps = await buildRemoteMaps(api, basePath, null, commitSha);
 
   return RemoteFileMapResult(
-    shaMap: shaMap,
-    fileMap: fileMap,
+    shaMap: maps.shaMap,
+    fileMap: maps.fileMap,
     commitSha: commitSha,
   );
 }

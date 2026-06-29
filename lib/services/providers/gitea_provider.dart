@@ -5,6 +5,10 @@ import 'package:http/http.dart' as http;
 import '../../config/git_provider_caps.dart' as caps;
 import '../git_provider.dart';
 import '../git_provider_exception.dart';
+import '../git_tree_batch.dart';
+
+const int _blobConcurrency = 5;
+const Set<int> _giteaWriteFallbackStatuses = {401, 404, 405, 422, 501};
 
 class GiteaProvider implements GitProviderClient {
   GiteaProvider({
@@ -51,7 +55,6 @@ class GiteaProvider implements GitProviderClient {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-    // Gitea rejects invalid tokens even for public repos; omit auth when empty.
     if (includeAuth && token.isNotEmpty) {
       headers['Authorization'] = 'token $token';
     }
@@ -88,6 +91,9 @@ class GiteaProvider implements GitProviderClient {
         case 'PUT':
           response =
               await _client.put(uri, headers: headers, body: encodedBody);
+        case 'PATCH':
+          response =
+              await _client.patch(uri, headers: headers, body: encodedBody);
         case 'DELETE':
           response = await _client.delete(uri,
               headers: headers, body: encodedBody);
@@ -132,9 +138,71 @@ class GiteaProvider implements GitProviderClient {
     return (meta['sha'] ?? meta['id'] ?? meta['SHA'] ?? '').toString();
   }
 
+  static String _pickTreeShaFromCommitPayload(Map<String, dynamic>? data) {
+    if (data == null) return '';
+    final direct = _pickSha(data['tree']) != ''
+        ? _pickSha(data['tree'])
+        : _pickSha((data['commit'] as Map?)?['tree']) != ''
+            ? _pickSha((data['commit'] as Map?)?['tree'])
+            : (data['tree_sha'] as String?) ?? '';
+    if (direct.isNotEmpty) return direct;
+
+    final treeMeta = (data['commit'] as Map?)?['tree'] ?? data['tree'];
+    if (treeMeta is Map) {
+      final url = treeMeta['url']?.toString() ?? '';
+      final match = RegExp(r'/git/trees/([0-9a-f]{7,64})', caseSensitive: false)
+          .firstMatch(url);
+      if (match != null) return match.group(1)!;
+    }
+    return '';
+  }
+
   String _encodeContentPath(String path) {
     if (path.isEmpty) return path;
     return path.split('/').map(Uri.encodeComponent).join('/');
+  }
+
+  Future<Map<String, dynamic>?> _fetchJsonOk(String url) async {
+    final response = await _fetch(url);
+    if (!response.ok) return null;
+    final decoded = json.decode(response.body);
+    return decoded is Map<String, dynamic> ? decoded : null;
+  }
+
+  /// Recursive tree for a commit or branch ref (Gitea git/trees/{ref}?recursive=1).
+  Future<
+      ({
+        String treeSha,
+        List<TreeEntry> tree,
+        bool truncated,
+      })?> getRecursiveTreeForCommit(String commitSha) async {
+    final refs = <String>[
+      commitSha,
+      branch,
+      'refs/heads/$branch',
+    ];
+    for (final ref in refs.toSet()) {
+      final data = await _fetchJsonOk(
+        '$_apiBase/repos/$owner/$repo/git/trees/${Uri.encodeComponent(ref)}?recursive=1',
+      );
+      if (data == null || data['tree'] is! List) continue;
+      final entries = (data['tree'] as List).map((e) {
+        final m = e as Map<String, dynamic>;
+        return TreeEntry(
+          path: m['path'] as String,
+          mode: (m['mode'] as String?) ?? '100644',
+          type: m['type'] as String,
+          sha: m['sha'] as String,
+          size: m['size'] as int?,
+        );
+      }).toList();
+      return (
+        treeSha: _pickSha(data),
+        tree: entries,
+        truncated: data['truncated'] == true,
+      );
+    }
+    return null;
   }
 
   @override
@@ -171,13 +239,35 @@ class GiteaProvider implements GitProviderClient {
 
   @override
   Future<CommitInfo> getCommit(String commitSha) async {
-    final sha = commitSha;
-    try {
-      final treeSha = await getCommitTreeSha(commitSha);
-      return CommitInfo(sha: sha, treeSha: treeSha);
-    } catch (_) {
-      return CommitInfo(sha: sha, treeSha: sha);
+    final gitCommit = await _fetchJsonOk(
+      '$_apiBase/repos/$owner/$repo/git/commits/$commitSha',
+    );
+    if (gitCommit != null) {
+      final treeSha = _pickTreeShaFromCommitPayload(gitCommit);
+      if (treeSha.isNotEmpty) {
+        return CommitInfo(sha: _pickSha(gitCommit), treeSha: treeSha);
+      }
     }
+
+    final repoCommit = await _fetchJsonOk(
+      '$_apiBase/repos/$owner/$repo/commits/$commitSha',
+    );
+    if (repoCommit != null) {
+      final treeSha = _pickTreeShaFromCommitPayload(repoCommit);
+      if (treeSha.isNotEmpty) {
+        return CommitInfo(sha: _pickSha(repoCommit), treeSha: treeSha);
+      }
+    }
+
+    final recursive = await getRecursiveTreeForCommit(commitSha);
+    if (recursive != null && recursive.treeSha.isNotEmpty) {
+      return CommitInfo(sha: commitSha, treeSha: recursive.treeSha);
+    }
+
+    throw GitProviderException(
+      'Failed to get commit $commitSha',
+      statusCode: 404,
+    );
   }
 
   @override
@@ -185,23 +275,64 @@ class GiteaProvider implements GitProviderClient {
     if (_lastCommitSha == commitSha && _lastTreeSha != null) {
       return _lastTreeSha!;
     }
-    return commitSha;
+
+    final recursive = await getRecursiveTreeForCommit(commitSha);
+    if (recursive != null && recursive.treeSha.isNotEmpty) {
+      _lastCommitSha = commitSha;
+      _lastTreeSha = recursive.treeSha;
+      return recursive.treeSha;
+    }
+
+    final commit = await getCommit(commitSha);
+    _lastCommitSha = commitSha;
+    _lastTreeSha = commit.treeSha;
+    return commit.treeSha;
   }
 
   @override
   Future<List<TreeEntry>> getTree(String treeSha) async {
-    throw GitProviderException(
-      'Gitea-family providers use Contents API for tree reads',
-      statusCode: 400,
+    final response = await _fetch(
+      '$_apiBase/repos/$owner/$repo/git/trees/${Uri.encodeComponent(treeSha)}?recursive=1',
     );
+    if (!response.ok) {
+      throw GitProviderException(
+        'Failed to get tree $treeSha',
+        statusCode: response.statusCode,
+      );
+    }
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    if (data['truncated'] == true) {
+      throw GitProviderException(
+        'Git tree listing truncated — repo too large for safe sync',
+        statusCode: 422,
+      );
+    }
+    final entries = data['tree'] as List<dynamic>? ?? [];
+    return entries.map((e) {
+      final m = e as Map<String, dynamic>;
+      return TreeEntry(
+        path: m['path'] as String,
+        mode: (m['mode'] as String?) ?? '100644',
+        type: m['type'] as String,
+        sha: m['sha'] as String,
+        size: m['size'] as int?,
+      );
+    }).toList();
   }
 
   @override
   Future<String> getBlob(String blobSha) async {
-    throw GitProviderException(
-      'Gitea-family providers use Contents API for blob reads',
-      statusCode: 400,
+    final response = await _fetch(
+      '$_apiBase/repos/$owner/$repo/git/blobs/$blobSha',
     );
+    if (!response.ok) {
+      throw GitProviderException(
+        'Failed to get blob $blobSha',
+        statusCode: response.statusCode,
+      );
+    }
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return _decodeBase64(data['content'] as String? ?? '');
   }
 
   @override
@@ -210,12 +341,29 @@ class GiteaProvider implements GitProviderClient {
     Map<String, SyncFileEntry>? baseFiles,
   }) async {
     final fileMap = <String, String>{};
+    final toFetch = <MapEntry<String, String>>[];
+
     for (final entry in pathShaPairs) {
       final base = baseFiles?[entry.key];
       if (base != null && base.sha == entry.value) {
         fileMap[entry.key] = base.content;
       } else {
-        fileMap[entry.key] = await getFileContent(entry.key);
+        toFetch.add(entry);
+      }
+    }
+
+    for (var i = 0; i < toFetch.length; i += _blobConcurrency) {
+      final batch = toFetch.sublist(
+        i,
+        i + _blobConcurrency > toFetch.length
+            ? toFetch.length
+            : i + _blobConcurrency,
+      );
+      final results = await Future.wait(
+        batch.map((e) async => MapEntry(e.key, await getBlob(e.value))),
+      );
+      for (final r in results) {
+        fileMap[r.key] = r.value;
       }
     }
     return fileMap;
@@ -250,6 +398,264 @@ class GiteaProvider implements GitProviderClient {
     }).toList();
   }
 
+  Future<String> _createBlob(String content) async {
+    final response = await _fetch(
+      '$_apiBase/repos/$owner/$repo/git/blobs',
+      method: 'POST',
+      body: {'content': _encodeBase64(content), 'encoding': 'base64'},
+    );
+    if (response.statusCode != 201) {
+      throw GitProviderException(
+        _apiErrorMessage(response.body) ?? 'Failed to create blob',
+        statusCode: response.statusCode,
+      );
+    }
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return _pickSha(data);
+  }
+
+  Future<String> _createTree(
+    String? baseTreeSha,
+    List<Map<String, dynamic>> items,
+  ) async {
+    final body = <String, dynamic>{'tree': items};
+    if (baseTreeSha != null && baseTreeSha.isNotEmpty) {
+      body['base_tree'] = baseTreeSha;
+    }
+    final response = await _fetch(
+      '$_apiBase/repos/$owner/$repo/git/trees',
+      method: 'POST',
+      body: body,
+    );
+    if (response.statusCode != 201) {
+      throw GitProviderException(
+        _apiErrorMessage(response.body) ?? 'Failed to create tree',
+        statusCode: response.statusCode,
+      );
+    }
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return _pickSha(data);
+  }
+
+  Future<String> _createCommit(
+    String message,
+    String treeSha, {
+    String? parentSha,
+  }) async {
+    final response = await _fetch(
+      '$_apiBase/repos/$owner/$repo/git/commits',
+      method: 'POST',
+      body: {
+        'message': message,
+        'tree': treeSha,
+        'parents': parentSha != null ? [parentSha] : <String>[],
+      },
+    );
+    if (response.statusCode != 201) {
+      throw GitProviderException(
+        _apiErrorMessage(response.body) ?? 'Failed to create commit',
+        statusCode: response.statusCode,
+      );
+    }
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return _pickSha(data);
+  }
+
+  Future<void> _updateRef(String commitSha) async {
+    final response = await _fetch(
+      '$_apiBase/repos/$owner/$repo/git/refs/heads/${Uri.encodeComponent(branch)}',
+      method: 'PATCH',
+      body: {'sha': commitSha},
+    );
+    if (!response.ok) {
+      throw GitProviderException(
+        _apiErrorMessage(response.body) ?? 'Failed to update ref',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  Future<void> _createRef(String commitSha) async {
+    final response = await _fetch(
+      '$_apiBase/repos/$owner/$repo/git/refs',
+      method: 'POST',
+      body: {'ref': 'refs/heads/$branch', 'sha': commitSha},
+    );
+    if (response.statusCode != 201) {
+      throw GitProviderException(
+        _apiErrorMessage(response.body) ?? 'Failed to create ref',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  Future<String> _buildLayeredTree(
+    String? baseTreeSha,
+    List<List<Map<String, dynamic>>> batches,
+  ) async {
+    var sha = baseTreeSha;
+    for (final batch in batches) {
+      sha = await _createTree(sha, batch);
+    }
+    return sha!;
+  }
+
+  bool _shouldFallbackContentsWrite(GitProviderException e) {
+    if (_giteaWriteFallbackStatuses.contains(e.statusCode)) return true;
+    return e.message.toLowerCase().contains('modified in the meantime');
+  }
+
+  Future<Map<String, String>> _getPathShaMap() async {
+    try {
+      final latestCommitSha = await getLatestCommitSha();
+      if (latestCommitSha == null) {
+        return {};
+      }
+      final recursive = await getRecursiveTreeForCommit(latestCommitSha);
+      if (recursive == null || recursive.tree.isEmpty) return {};
+      final pathToSha = <String, String>{};
+      for (final entry in recursive.tree) {
+        if (entry.type == 'blob') {
+          pathToSha[entry.path] = entry.sha;
+        }
+      }
+      return pathToSha;
+    } on GitProviderException catch (e) {
+      if (e.statusCode == 404 || e.statusCode == 409) return {};
+      rethrow;
+    }
+  }
+
+  Future<String> _atomicCommitViaGitData(
+    String message,
+    Map<String, String?> fileChanges,
+  ) async {
+    Future<String> commitOnExistingBranch(
+      String baseTreeSha,
+      String parentSha,
+      List<List<Map<String, dynamic>>> batches,
+    ) async {
+      var tree = baseTreeSha;
+      var parent = parentSha;
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final newTreeSha = await _buildLayeredTree(tree, batches);
+        final newCommitSha =
+            await _createCommit(message, newTreeSha, parentSha: parent);
+        try {
+          await _updateRef(newCommitSha);
+          _lastCommitSha = newCommitSha;
+          _lastTreeSha = newTreeSha;
+          return newCommitSha;
+        } on GitProviderException catch (e) {
+          final isConflict = e.statusCode == 409 || e.statusCode == 422;
+          if (!isConflict || attempt >= 2) rethrow;
+          final freshSha = await getLatestCommitSha();
+          if (freshSha == null) rethrow;
+          final freshCommit = await getCommit(freshSha);
+          tree = freshCommit.treeSha;
+          parent = freshCommit.sha;
+        }
+      }
+      throw GitProviderException(
+        'Failed to update ref after retries',
+        statusCode: 409,
+      );
+    }
+
+    String? currentCommitSha;
+    String? currentTreeSha;
+    var isEmptyRepo = false;
+
+    try {
+      currentCommitSha = await getLatestCommitSha();
+      if (currentCommitSha == null) {
+        isEmptyRepo = true;
+      } else {
+        final commit = await getCommit(currentCommitSha);
+        currentTreeSha = commit.treeSha;
+      }
+    } on GitProviderException catch (e) {
+      if (e.statusCode == 404 || e.statusCode == 409) {
+        isEmptyRepo = true;
+      } else {
+        rethrow;
+      }
+    }
+
+    final deletions = <String>[];
+    final uploads = <({String path, String content})>[];
+    for (final entry in fileChanges.entries) {
+      if (entry.value == null) {
+        if (!isEmptyRepo) deletions.add(entry.key);
+      } else {
+        uploads.add((path: entry.key, content: entry.value!));
+      }
+    }
+
+    if (deletions.isEmpty && uploads.isEmpty) {
+      return currentCommitSha ?? '';
+    }
+
+    final uploadsWithSha = <ShaTreeUploadEntry>[];
+    for (var i = 0; i < uploads.length; i += _blobConcurrency) {
+      final chunk = uploads.sublist(
+        i,
+        i + _blobConcurrency > uploads.length
+            ? uploads.length
+            : i + _blobConcurrency,
+      );
+      final chunkResults = await Future.wait(
+        chunk.map((u) async {
+          final sha = await _createBlob(u.content);
+          return ShaTreeUploadEntry(u.path, sha);
+        }),
+      );
+      uploadsWithSha.addAll(chunkResults);
+    }
+
+    final batches =
+        chunkAtomicCommitShaTreeBatches(deletions, uploadsWithSha);
+
+    if (isEmptyRepo) {
+      for (var attempt = 0; attempt < 4; attempt++) {
+        final newTreeSha = await _buildLayeredTree(null, batches);
+        final newCommitSha = await _createCommit(message, newTreeSha);
+        try {
+          await _createRef(newCommitSha);
+          _lastCommitSha = newCommitSha;
+          _lastTreeSha = newTreeSha;
+          return newCommitSha;
+        } on GitProviderException catch (e) {
+          final isConflict = e.statusCode == 409 || e.statusCode == 422;
+          if (!isConflict) rethrow;
+          try {
+            final latestSha = await getLatestCommitSha();
+            if (latestSha != null) {
+              final fresh = await getCommit(latestSha);
+              return commitOnExistingBranch(
+                fresh.treeSha,
+                fresh.sha,
+                batches,
+              );
+            }
+          } catch (_) {
+            if (attempt >= 3) rethrow;
+          }
+        }
+      }
+      throw GitProviderException(
+        'Failed to create initial branch ref after retries',
+        statusCode: 409,
+      );
+    }
+
+    return commitOnExistingBranch(
+      currentTreeSha!,
+      currentCommitSha!,
+      batches,
+    );
+  }
+
   Future<bool> _isEmptyRepo() async {
     try {
       await getLatestCommitSha();
@@ -271,27 +677,14 @@ class GiteaProvider implements GitProviderClient {
     return pathToSha[path];
   }
 
-  @override
-  Future<String> atomicCommit(
+  Future<String> _atomicCommitSequential(
     String message,
     Map<String, String?> fileChanges,
+    Map<String, String> pathToSha,
   ) async {
-    final entries = fileChanges.entries.toList();
-    if (entries.isEmpty) {
-      return (await getLatestCommitSha()) ?? '';
-    }
-
-    final pathToSha = <String, String>{};
-    if (!await _isEmptyRepo()) {
-      final latest = await getLatestCommitSha();
-      if (latest != null) {
-        final map = await fetchFileMapViaContents(basePath, latest);
-        pathToSha.addAll(map.shaMap);
-      }
-    }
-
     String? lastCommitSha;
-    final sorted = entries..sort((a, b) => a.key.compareTo(b.key));
+    final sorted = fileChanges.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
 
     for (final entry in sorted) {
       if (entry.value == null) {
@@ -335,6 +728,25 @@ class GiteaProvider implements GitProviderClient {
     }
 
     return lastCommitSha ?? (await getLatestCommitSha()) ?? '';
+  }
+
+  @override
+  Future<String> atomicCommit(
+    String message,
+    Map<String, String?> fileChanges,
+  ) async {
+    if (fileChanges.isEmpty) {
+      return (await getLatestCommitSha()) ?? '';
+    }
+
+    try {
+      return await _atomicCommitViaGitData(message, fileChanges);
+    } on GitProviderException catch (e) {
+      if (!_shouldFallbackContentsWrite(e)) rethrow;
+      final pathToSha =
+          await _isEmptyRepo() ? <String, String>{} : await _getPathShaMap();
+      return _atomicCommitSequential(message, fileChanges, pathToSha);
+    }
   }
 
   static Map<String, dynamic>? _tryParseJson(String body) {
@@ -426,7 +838,7 @@ class GiteaProvider implements GitProviderClient {
     return refs.toSet().toList();
   }
 
-  /// Fetch bookmark files via Contents API (extension-aligned).
+  /// Fetch bookmark files via Contents API (fallback when git tree read fails).
   Future<({Map<String, String> shaMap, Map<String, String> fileMap})>
       fetchFileMapViaContents(String basePath, String ref) async {
     final base = basePath.replaceAll(RegExp(r'/+$'), '');
@@ -562,9 +974,8 @@ class GiteaProvider implements GitProviderClient {
         if (response.statusCode == 401) {
           return TokenValidationResult(valid: false);
         }
-        // Scoped tokens (e.g. read:repository only on Codeberg) return 403 on /user.
         if (response.statusCode == 403) {
-          return const TokenValidationResult(valid: true, ambiguous: true);
+          return TokenValidationResult(valid: true, ambiguous: true);
         }
         return TokenValidationResult(
           valid: false,
@@ -582,7 +993,6 @@ class GiteaProvider implements GitProviderClient {
     }
   }
 
-  /// Like [_fetch] but does not throw on 401/403 (token probe only).
   Future<http.Response> _fetchForTokenValidation(String url) async {
     final uri = Uri.parse(url);
     try {

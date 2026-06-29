@@ -1542,7 +1542,7 @@ class _SyncTabState extends State<_SyncTab> {
           ),
         ),
         const SizedBox(height: 16),
-        const _SectionHeader(title: 'GitHub Repos'),
+        const _SectionHeader(title: 'Git Repos'),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -1551,9 +1551,9 @@ class _SyncTabState extends State<_SyncTab> {
               children: [
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Show GitHub Repos tab'),
+                  title: const Text('Show Git Repos tab'),
                   subtitle: Text(
-                    'Display your GitHub repositories as a virtual bookmark folder',
+                    'Display your ${active?.credentials.gitProvider ?? 'Git'} repositories as a virtual bookmark folder',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
                         ),
