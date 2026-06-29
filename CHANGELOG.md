@@ -9,10 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-29
+
+Stable multi-provider release aligned with GitSyncMarks browser extension **3.0.x**.
+
+### Added
+
+- **Gitea-family git-data path:** Tree + blob reads with Contents API fallback; atomic git-data commits (batched blobs + layered trees) with Contents API fallback on write — matches extension 3.0 performance.
+- **Multi-provider Git Repos tab:** Lists repositories from GitHub, GitLab, and Gitea-family providers (provider-specific folder prefix).
+- **Interop tests:** `test/extension_interop_test.dart` validates provider caps, diff ignores, and settings.enc pattern against extension 3.0.
+
 ### Fixed
 
 - **Settings import:** Extension-compatible token field aliases (`githubToken`, `repoOwner`, `repoName`); preserves `gitProvider` and `serverUrl` on import; warns when imported profiles have no token.
 - **Codeberg / Gitea token check:** `validateToken` treats HTTP 403 on `/user` as valid-but-ambiguous (repo-scoped tokens without `read:user`).
+
+### Changed
+
+- **Remote fetch:** Gitea-family providers try git tree reads first (extension-aligned), then Contents API fallback.
+
+### Documentation
+
+- [docs/EXTENSION-SYNC-VERIFY.md](docs/EXTENSION-SYNC-VERIFY.md) verification log; Gitea git-data behaviour documented.
 
 ## [0.4.0-beta.2] - 2026-06-06
 

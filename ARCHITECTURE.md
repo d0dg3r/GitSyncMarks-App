@@ -95,7 +95,8 @@ BookmarkRepository.fetchBookmarks()
 └────────────────────────────┘
          ↓
 ┌────────────────────────────┐
-│   Fetch from GitHub API    │
+│   Fetch from Git provider  │
+│   (GitHub / GitLab / Gitea)│
 └────────────────────────────┘
          ↓
 ┌────────────────────────────┐

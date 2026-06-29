@@ -2,6 +2,14 @@
 
 Use this after GitSyncMarks (browser extension) or GitSyncMarks-App changes that touch repo layout, merge rules, or Git provider API behaviour. **Target: extension 3.0.x** and the app version in `pubspec.yaml` on `develop/3.0` / `main`.
 
+## Verification log
+
+| Date | App | Extension | Automated | Manual bidirectional |
+|------|-----|-----------|-----------|----------------------|
+| 2026-06-29 | `develop/3.0` (pre-0.4.0) | 3.0.4 | `test/extension_interop_test.dart` — provider caps, diff ignores, settings.enc pattern, port normalization, repo prefixes | Pending user run on live repos |
+
+Run automated parity: `flutter test test/extension_interop_test.dart`
+
 ## Prerequisites
 
 - A disposable Git repo on your chosen provider (GitHub, GitLab, Codeberg, etc.), or a copy you can reset.
@@ -30,7 +38,7 @@ Repeat bidirectional interop for at least:
 
 - **GitHub** (default profile, no `serverUrl`)
 - **GitLab** subgroup path if used (`owner` = `group/subgroup`)
-- **Codeberg** or self-hosted **Gitea** (Contents API read/write — expect multiple commits per large push on Gitea-family hosts)
+- **Codeberg** or self-hosted **Gitea** — git tree + blob reads with Contents API fallback; git-data atomic commit with Contents fallback on write; custom port; repo-scoped token
 
 ## If something diverges
 
