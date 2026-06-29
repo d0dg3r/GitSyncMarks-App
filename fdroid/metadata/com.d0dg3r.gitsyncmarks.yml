@@ -307,7 +307,7 @@ Builds:
 
   - versionName: 0.4.0
     versionCode: 17
-    commit: 0000000000000000000000000000000000000000
+    commit: bcc84a895ff1a956142c4c686cc7f77bdc531cec
     output: build/app/outputs/flutter-apk/app-release.apk
     binary: https://github.com/d0dg3r/GitSyncMarks-App/releases/download/v%v/GitSyncMarks-App-%v.apk
     srclibs:
